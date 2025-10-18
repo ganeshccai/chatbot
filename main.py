@@ -8,12 +8,13 @@ app = Flask(__name__)
 # Make sure Firestore is enabled in the same GCP project
 db = firestore.Client()
 
+
 @app.route("/", methods=["GET"])
 def home():
     return "Chat Agent Webhook running!", 200
 
 
-# 1️⃣ User messages from Dialogflow webhook
+#User messages from Dialogflow webhook
 @app.route("/webhook", methods=["POST"])
 def webhook():
     """Receive messages from Dialogflow CX and save to Firestore"""
@@ -26,27 +27,32 @@ def webhook():
     # Try to extract message text
     text_input = ""
     try:
-        text_input = data["text"]
-    except:
-        try:
+        if "text" in data and isinstance(data["text"], dict):
+            text_list = data["text"].get("text", [])
+            text_input = text_list[0] if text_list else ""
+        elif "queryResult" in data and "text" in data["queryResult"]:
             text_input = data["queryResult"]["text"]
-        except:
-            text_input = "no text found"
+        else:
+            text_input = data.get("message", "no text found")
+    except Exception:
+        text_input = "no text found"
 
     # Save user's message
     save_message(session_id, "user", text_input)
 
     # Respond to Dialogflow (no AI, just ack)
-    return jsonify({
-        "fulfillment_response": {
-            "messages": [
-                {"text": {"text": ["✅ Message received by Agent Webhook"]}}
-            ]
+    return jsonify(
+        {
+            "fulfillment_response": {
+                "messages": [
+                    {"text": {"text": ["✅ Message received by Agent Webhook"]}}
+                ]
+            }
         }
-    })
+    )
 
 
-# 2️⃣ Agent manual reply (can be called from your custom UI)
+#Agent manual reply (can be called from your custom UI)
 @app.route("/agent-reply", methods=["POST"])
 def agent_reply():
     """Agent manually sends a message"""
@@ -67,17 +73,14 @@ def save_message(session_id, sender, message):
     session_ref = db.collection("sessions").document(session_id)
     msg_ref = session_ref.collection("messages").document()
 
-    msg_ref.set({
-        "sender": sender,
-        "message": message,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    })
+    msg_ref.set(
+        {"sender": sender, "message": message, "timestamp": firestore.SERVER_TIMESTAMP}
+    )
 
     # update session info (optional)
-    session_ref.set({
-        "last_sender": sender,
-        "updated_at": firestore.SERVER_TIMESTAMP
-    }, merge=True)
+    session_ref.set(
+        {"last_sender": sender, "updated_at": firestore.SERVER_TIMESTAMP}, merge=True
+    )
 
 
 if __name__ == "__main__":
