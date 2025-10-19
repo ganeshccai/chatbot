@@ -111,29 +111,40 @@
 
   <!-- ✅ Firebase v9 Modular Import Only -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-    console.log("✅ Script loaded successfully");
+  // 🔹 Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
+    authDomain: "project001-474715.firebaseapp.com",
+    projectId: "project001-474715",
+    storageBucket: "project001-474715.firebasestorage.app",
+    messagingSenderId: "788207962975",
+    appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
+  };
 
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
-      authDomain: "project001-474715.firebaseapp.com",
-      projectId: "project001-474715",
-      storageBucket: "project001-474715.firebasestorage.app",
-      messagingSenderId: "788207962975",
-      appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
-    };
+  // ✅ Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const chatBox = document.getElementById("chat-box");
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  // 🟩 Detect real CX session ID from df-messenger
+  let sessionId = null;
+  const messenger = document.querySelector("df-messenger");
+  messenger.addEventListener("df-request-sent", (e) => {
+    if (!sessionId && e.detail?.request?.session) {
+      sessionId = e.detail.request.session.split("/").pop();
+      console.log("✅ Session ID detected:", sessionId);
+      startListening(sessionId);
+    }
+  });
 
-    const sessionId = "test_session";
-    const chatBox = document.getElementById("chat-box");
-
-    // 🔁 Real-time Firestore updates
+  // 🔁 Firestore listener
+  function startListening(sessionId) {
+    console.log("👂 Listening to session:", sessionId);
     const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
+
     onSnapshot(q, (snapshot) => {
       chatBox.innerHTML = "";
       snapshot.forEach((doc) => {
@@ -145,27 +156,28 @@
       });
       chatBox.scrollTop = chatBox.scrollHeight;
     });
+  }
 
-    // ✉️ Send message to webhook
-    async function sendMessage() {
-      const text = document.getElementById("message").value.trim();
-      if (!text) return;
+  // ✉️ Send user message manually
+  window.sendMessage = async function () {
+    if (!sessionId) return alert("Session not ready yet!");
+    const text = document.getElementById("message").value.trim();
+    if (!text) return;
 
-      console.log("📤 Sending to webhook:", text);
+    console.log("📤 Sending to webhook:", text);
+    await fetch("https://chatbot-788207962975.us-central1.run.app/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionInfo: { session: sessionId },
+        queryInput: { text: { text } },
+      }),
+    });
 
-      await fetch("https://chatbot-788207962975.us-central1.run.app/webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionInfo: { session: sessionId },
-          queryInput: { text: { text: text } }
-        })
-      });
+    document.getElementById("message").value = "";
+  };
+</script>
 
-      document.getElementById("message").value = "";
-    }
-
-    window.sendMessage = sendMessage;
-  </script>
 </body>
 </html>
+
