@@ -5,8 +5,8 @@
   <title>CCAI Agent Dashboard</title>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getFirestore, collection, query, orderBy, onSnapshot, doc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
     // ✅ Firebase Config
     const firebaseConfig = {
@@ -38,9 +38,15 @@
     });
 
     // 🔹 Load selected session chat
-    function loadChat(sessionId) {
+    async function loadChat(sessionId) {
       currentSession = sessionId;
       chatBox.innerHTML = "";
+      // Ensure session doc exists (for robustness)
+      await setDoc(doc(db, "sessions", sessionId), {
+        id: sessionId,
+        status: "active",
+        timestamp: new Date()
+      }, { merge: true });
       const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
       onSnapshot(q, (snapshot) => {
         chatBox.innerHTML = "";
