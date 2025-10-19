@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CCAI User Chatbot</title>
+
+  <!-- Dialogflow CX Messenger -->
+  <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
+  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    // ✅ Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
+      authDomain: "project001-474715.firebaseapp.com",
+      projectId: "project001-474715",
+      storageBucket: "project001-474715.firebasestorage.app",
+      messagingSenderId: "788207962975",
+      appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
+    };
+
+    // ✅ Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🔹 Detect current session (from dfMessenger)
+    window.addEventListener("dfMessengerLoaded", function () {
+      const dfMessenger = document.querySelector("df-messenger");
+
+      dfMessenger.addEventListener("df-request-sent", (event) => {
+        const sessionId = dfMessenger._state?.sessionId;
+        console.log("🆔 Session ID:", sessionId);
+
+        // Start listening to Firestore messages
+        const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
+        onSnapshot(q, (snapshot) => {
+          snapshot.forEach(doc => console.log("🔥 Firestore:", doc.data()));
+        });
+      });
+    });
+  </script>
+
+  <style>
+    df-messenger {
+      z-index: 999;
+      position: fixed;
+      --df-messenger-font-color: #000;
+      --df-messenger-font-family: Google Sans;
+      --df-messenger-chat-background: #f3f6fc;
+      --df-messenger-message-user-background: #d3e3fd;
+      --df-messenger-message-bot-background: #fff;
+      bottom: 16px;
+      right: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <df-messenger
+    location="us-central1"
+    project-id="project001-474715"
+    agent-id="f82d4b5f-ee2f-402c-8aa6-cb11b0a8e56d"
+    language-code="en"
+    max-query-length="-1">
+    <df-messenger-chat-bubble chat-title="Support Bot"></df-messenger-chat-bubble>
+  </df-messenger>
+</body>
+</html>
