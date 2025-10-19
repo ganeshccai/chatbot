@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <title>CCAI User Chatbot</title>
 
-  <!-- Dialogflow CX Messenger -->
+  <!-- ✅ Dialogflow CX Messenger -->
   <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
-  <!-- Firebase -->
+  <!-- ✅ Firebase SDK (v10) -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-    // ✅ Firebase Config
+    // 🔹 Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
       authDomain: "project001-474715.firebaseapp.com",
@@ -23,43 +23,57 @@
       appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
     };
 
-    // ✅ Initialize Firebase
+    // 🔹 Initialize Firebase + Firestore
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 🔹 Detect current session (from dfMessenger)
-    window.addEventListener("dfMessengerLoaded", function () {
+    // 🔹 Wait for chatbot to load
+    window.addEventListener("dfMessengerLoaded", () => {
       const dfMessenger = document.querySelector("df-messenger");
 
-      dfMessenger.addEventListener("df-request-sent", (event) => {
+      // Trigger when user sends a message
+      dfMessenger.addEventListener("df-request-sent", () => {
         const sessionId = dfMessenger._state?.sessionId;
         console.log("🆔 Session ID:", sessionId);
 
-        // Start listening to Firestore messages
+        // ✅ Listen to Firestore for live chat updates
+        if (!sessionId) return;
         const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
         onSnapshot(q, (snapshot) => {
-          snapshot.forEach(doc => console.log("🔥 Firestore:", doc.data()));
+          console.clear();
+          console.log("🔥 Firestore messages:");
+          snapshot.forEach((doc) => console.log(doc.data()));
         });
       });
     });
   </script>
 
   <style>
+    body {
+      margin: 0;
+      background: #f5f7fa;
+      font-family: "Google Sans", Arial, sans-serif;
+    }
+
     df-messenger {
       z-index: 999;
       position: fixed;
+      bottom: 16px;
+      right: 16px;
+
       --df-messenger-font-color: #000;
       --df-messenger-font-family: Google Sans;
       --df-messenger-chat-background: #f3f6fc;
       --df-messenger-message-user-background: #d3e3fd;
       --df-messenger-message-bot-background: #fff;
-      bottom: 16px;
-      right: 16px;
+      --df-messenger-send-icon: #1a73e8;
+      --df-messenger-chat-bubble-icon: #1a73e8;
     }
   </style>
 </head>
 
 <body>
+  <!-- 🔹 Dialogflow Messenger -->
   <df-messenger
     location="us-central1"
     project-id="project001-474715"
