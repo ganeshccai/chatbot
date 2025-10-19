@@ -26,6 +26,17 @@ app = Flask(__name__)
 print("=" * 50)
 print("Starting CCAI Chat Server...")
 print("=" * 50)
+# Check for credentials at startup
+creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if not creds_path:
+    print("\n⚠️ ERROR: GOOGLE_APPLICATION_CREDENTIALS environment variable not set!")
+    print("Please set it to your service account key file path:")
+    print('    $env:GOOGLE_APPLICATION_CREDENTIALS="C:\\path\\to\\your-key.json"\n')
+elif not os.path.exists(creds_path):
+    print(f"\n⚠️ ERROR: Service account key file not found at: {creds_path}")
+    print("Please check if the file exists and the path is correct\n")
+else:
+    print(f"\n✅ Using service account key: {creds_path}")
 
 # Allow browser-based agent UI to call endpoints (adjust origins in production)
 CORS(app, resources={r"/*": {"origins": "*"}})
