@@ -13,6 +13,7 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project001-474715")
 LOCATION = os.getenv("LOCATION", "us-central1")
 AGENT_ID = os.getenv("AGENT_ID", "<YOUR_AGENT_ID_HERE>")
 
+
 # =============== USER SIDE (Webhook) ===============
 @app.route("/webhook", methods=["POST", "GET"])
 def webhook():
@@ -23,7 +24,9 @@ def webhook():
     print("🔍 Webhook received:", data)
 
     # Get session id
-    session_path = data.get("session") or data.get("sessionInfo", {}).get("session") or ""
+    session_path = (
+        data.get("session") or data.get("sessionInfo", {}).get("session") or ""
+    )
     session_id = session_path.split("/")[-1] if "/" in session_path else "test_session"
 
     # Extract user message safely
@@ -43,13 +46,18 @@ def webhook():
 
     save_message(session_id, "user", text_input)
 
-    return jsonify({
-        "fulfillment_response": {
-            "messages": [
-                {"text": {"text": ["✅ Message received by Agent Webhook"]}}
-            ]
-        }
-    }), 200
+    return (
+        jsonify(
+            {
+                "fulfillment_response": {
+                    "messages": [
+                        {"text": {"text": ["✅ Message received by Agent Webhook"]}}
+                    ]
+                }
+            }
+        ),
+        200,
+    )
 
 
 # =============== AGENT SIDE (Manual Reply) ===============
@@ -79,15 +87,12 @@ def save_message(session_id, sender, message):
     """Save messages under sessions/{session_id}/messages"""
     session_ref = db.collection("sessions").document(session_id)
     msg_ref = session_ref.collection("messages").document()
-    msg_ref.set({
-        "sender": sender,
-        "message": message,
-        "timestamp": firestore.SERVER_TIMESTAMP
-    })
-    session_ref.set({
-        "last_sender": sender,
-        "updated_at": firestore.SERVER_TIMESTAMP
-    }, merge=True)
+    msg_ref.set(
+        {"sender": sender, "message": message, "timestamp": firestore.SERVER_TIMESTAMP}
+    )
+    session_ref.set(
+        {"last_sender": sender, "updated_at": firestore.SERVER_TIMESTAMP}, merge=True
+    )
 
 
 def send_to_cx(session_id, message):
@@ -98,7 +103,9 @@ def send_to_cx(session_id, message):
     text_input = dialogflow.TextInput(text=message)
     query_input = dialogflow.QueryInput(text=text_input, language_code="en")
 
-    response = client.detect_intent(session=session, query_input=query_input)
+    request = dialogflow.DetectIntentRequest(session=session, query_input=query_input)
+
+    response = client.detect_intent(request=request)
     print("📩 Sent to CX:", response.query_result.response_messages)
 
 
