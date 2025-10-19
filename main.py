@@ -19,6 +19,8 @@ def home():
 def webhook():
     """Receive messages from Dialogflow CX and save to Firestore"""
     data = request.get_json(silent=True, force=True)
+    print("🔍 Webhook received:", data)
+
 
     # Extract session id (last part of the session path)
     session_path = data.get("session") or ""
