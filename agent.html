@@ -30,16 +30,23 @@
       console.log("✅ Agent dashboard connected to Firestore");
 
       // 🔁 Show all sessions live
-      onSnapshot(collection(db, "sessions"), (snapshot) => {
-  console.log("📡 Snapshot triggered:", snapshot.size);
+      import { getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+// Load session list once every 5 seconds
+async function loadSessions() {
+  const snap = await getDocs(collection(db, "sessions"));
   sessionList.innerHTML = "";
-  snapshot.forEach(docSnap => {
+  snap.forEach(docSnap => {
     const li = document.createElement("li");
     li.textContent = docSnap.id;
     li.onclick = () => loadChat(docSnap.id);
     sessionList.appendChild(li);
   });
-});
+}
+
+loadSessions();
+setInterval(loadSessions, 5000); // refresh every 5 sec
+
 
       // 🔹 Load selected chat session
       function loadChat(sessionId) {
@@ -161,4 +168,5 @@
   </div>
 </body>
 </html>
+
 
