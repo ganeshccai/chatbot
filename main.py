@@ -32,7 +32,11 @@ def webhook():
             text_list = data["text"].get("text", [])
             text_input = text_list[0] if text_list else ""
         elif "queryResult" in data and "text" in data["queryResult"]:
-            text_input = data["queryResult"]["text"]
+            text_input = (
+    data.get("text", {}).get("text", [""])[0]
+    or data.get("queryResult", {}).get("text", "")
+    or "no text found"
+)
         else:
             text_input = data.get("message", "no text found")
     except Exception:
