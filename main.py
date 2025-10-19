@@ -5,10 +5,10 @@ import os
 
 app = Flask(__name__)
 
-# 🔹 Firestore init
+# Firestore init
 db = firestore.Client()
 
-# 🔹 Dialogflow CX setup
+# Dialogflow CX setup
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project001-474715")
 LOCATION = os.getenv("LOCATION", "us-central1")
 AGENT_ID = os.getenv("AGENT_ID", "<YOUR_AGENT_ID_HERE>")
@@ -21,7 +21,7 @@ def webhook():
         return "Webhook active", 200
 
     data = request.get_json(silent=True, force=True)
-    print("🔍 Webhook received:", data)
+    print("Webhook received:", data)
 
     # Get session id
     session_path = (
@@ -41,7 +41,7 @@ def webhook():
         else:
             text_input = "no text found"
     except Exception as e:
-        print("❌ Error extracting text:", e)
+        print("Error extracting text:", e)
         text_input = "no text found"
 
     save_message(session_id, "user", text_input)
@@ -51,7 +51,7 @@ def webhook():
             {
                 "fulfillment_response": {
                     "messages": [
-                        {"text": {"text": ["✅ Message received by Agent Webhook"]}}
+                        {"text": {"text": ["Message received by Agent Webhook"]}}
                     ]
                 }
             }
@@ -78,7 +78,7 @@ def agent_reply():
         send_to_cx(session_id, message)
         return jsonify({"status": "sent to CX and saved"}), 200
     except Exception as e:
-        print("❌ Error sending to CX:", e)
+        print("Error sending to CX:", e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -97,7 +97,12 @@ def save_message(session_id, sender, message):
 
 def send_to_cx(session_id, message):
     """Send message back to Dialogflow CX"""
-    client = dialogflow.SessionsClient()
+    from google.cloud import dialogflowcx_v3 as dialogflow
+
+    # Force correct regional endpoint (important!)
+    client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
+    client = dialogflow.SessionsClient(client_options=client_options)
+
     session = f"projects/{PROJECT_ID}/locations/{LOCATION}/agents/{AGENT_ID}/sessions/{session_id}"
 
     text_input = dialogflow.TextInput(text=message)
@@ -106,7 +111,7 @@ def send_to_cx(session_id, message):
     request = dialogflow.DetectIntentRequest(session=session, query_input=query_input)
 
     response = client.detect_intent(request=request)
-    print("📩 Sent to CX:", response.query_result.response_messages)
+    print("Sent to CX:", response.query_result.response_messages)
 
 
 if __name__ == "__main__":
