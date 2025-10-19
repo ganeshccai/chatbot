@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CCAI Chatbot + Firestore Panel</title>
+
+  <!-- Dialogflow CX Messenger -->
+  <link rel="stylesheet"
+        href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
+  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+
+  <style>
+    body {
+      background: #f6f9fc;
+      font-family: "Inter", sans-serif;
+      display: flex;
+      justify-content: space-between;
+      padding: 40px;
+    }
+
+    .chat-container {
+      width: 400px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    .chat-box {
+      height: 500px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      margin: 6px 0;
+      padding: 8px 10px;
+      border-radius: 8px;
+      width: fit-content;
+      max-width: 80%;
+    }
+
+    .user {
+      background: #d1e7dd;
+      margin-left: auto;
+    }
+
+    .agent {
+      background: #f8d7da;
+      margin-right: auto;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 8px 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    df-messenger {
+      z-index: 999;
+      position: fixed;
+      --df-messenger-font-color: #000;
+      --df-messenger-font-family: Google Sans;
+      --df-messenger-chat-background: #f3f6fc;
+      --df-messenger-message-user-background: #d3e3fd;
+      --df-messenger-message-bot-background: #fff;
+      bottom: 16px;
+      right: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 🔹 Firestore Chat Monitor -->
+  <div class="chat-container">
+    <h2>🧠 CCAI Firestore Chat Log</h2>
+    <div class="chat-box" id="chat-box"></div>
+
+    <div class="input-row">
+      <input id="message" type="text" placeholder="Type message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- 🔹 Dialogflow CX Chatbot -->
+  <df-messenger
+    location="us-central1"
+    project-id="project001-474715"
+    agent-id="f82d4b5f-ee2f-402c-8aa6-cb11b0a8e56d"
+    language-code="en"
+    max-query-length="-1">
+    <df-messenger-chat-bubble chat-title="Chatbot"></df-messenger-chat-bubble>
+  </df-messenger>
+
+  <!-- ✅ Firebase v9 Modular Import Only -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    console.log("✅ Script loaded successfully");
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
+      authDomain: "project001-474715.firebaseapp.com",
+      projectId: "project001-474715",
+      storageBucket: "project001-474715.firebasestorage.app",
+      messagingSenderId: "788207962975",
+      appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const sessionId = "test_session";
+    const chatBox = document.getElementById("chat-box");
+
+    // 🔁 Real-time Firestore updates
+    const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
+    onSnapshot(q, (snapshot) => {
+      chatBox.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const msg = doc.data();
+        const div = document.createElement("div");
+        div.classList.add("message", msg.sender);
+        div.textContent = `${msg.sender}: ${msg.message}`;
+        chatBox.appendChild(div);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // ✉️ Send message to webhook
+    async function sendMessage() {
+      const text = document.getElementById("message").value.trim();
+      if (!text) return;
+
+      console.log("📤 Sending to webhook:", text);
+
+      await fetch("https://chatbot-788207962975.us-central1.run.app/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionInfo: { session: sessionId },
+          queryInput: { text: { text: text } }
+        })
+      });
+
+      document.getElementById("message").value = "";
+    }
+
+    window.sendMessage = sendMessage;
+  </script>
+</body>
+</html>
