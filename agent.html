@@ -6,84 +6,82 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    import { 
+      getFirestore, collection, query, orderBy, onSnapshot, doc, getDocs 
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      // ✅ Firebase Config
-      const firebaseConfig = {
-        apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
-        authDomain: "project001-474715.firebaseapp.com",
-        projectId: "project001-474715",
-        storageBucket: "project001-474715.firebasestorage.app",
-        messagingSenderId: "788207962975",
-        appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
-      };
+    // ✅ Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
+      authDomain: "project001-474715.firebaseapp.com",
+      projectId: "project001-474715",
+      storageBucket: "project001-474715.firebasestorage.app",
+      messagingSenderId: "788207962975",
+      appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
+    };
 
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-      const sessionList = document.getElementById("session-list");
-      const chatBox = document.getElementById("chat-box");
-      const input = document.getElementById("message");
-      let currentSession = null;
+    const sessionList = document.getElementById("session-list");
+    const chatBox = document.getElementById("chat-box");
+    const input = document.getElementById("message");
+    let currentSession = null;
+    let unsubscribe = null;
 
-      console.log("✅ Agent dashboard connected to Firestore");
+    // 🔁 Load session list
+    async function loadSessions() {
+      const snap = await getDocs(collection(db, "sessions"));
+      sessionList.innerHTML = "";
+      snap.forEach(docSnap => {
+        const li = document.createElement("li");
+        li.textContent = docSnap.id;
+        li.onclick = () => loadChat(docSnap.id);
+        sessionList.appendChild(li);
+      });
+    }
 
-      // 🔁 Show all sessions live
-      import { getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    // Refresh session list every 5 seconds
+    loadSessions();
+    setInterval(loadSessions, 5000);
 
-// Load session list once every 5 seconds
-async function loadSessions() {
-  const snap = await getDocs(collection(db, "sessions"));
-  sessionList.innerHTML = "";
-  snap.forEach(docSnap => {
-    const li = document.createElement("li");
-    li.textContent = docSnap.id;
-    li.onclick = () => loadChat(docSnap.id);
-    sessionList.appendChild(li);
-  });
-}
+    // 🔹 Load selected session messages
+    function loadChat(sessionId) {
+      currentSession = sessionId;
+      chatBox.innerHTML = "";
 
-loadSessions();
-setInterval(loadSessions, 5000); // refresh every 5 sec
+      if (unsubscribe) unsubscribe(); // stop previous listener
 
-
-      // 🔹 Load selected chat session
-      function loadChat(sessionId) {
-        currentSession = sessionId;
+      const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        console.log("👂 Listening to:", sessionId);
         chatBox.innerHTML = "";
-        console.log("📂 Viewing session:", sessionId);
-
-        const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
-        onSnapshot(q, (snapshot) => {
-          chatBox.innerHTML = "";
-          snapshot.forEach(docSnap => {
-            const msg = docSnap.data();
-            const div = document.createElement("div");
-            div.classList.add("message", msg.sender);
-            div.textContent = `${msg.sender}: ${msg.message}`;
-            chatBox.appendChild(div);
-          });
-          chatBox.scrollTop = chatBox.scrollHeight;
+        snapshot.forEach(docSnap => {
+          const msg = docSnap.data();
+          const div = document.createElement("div");
+          div.classList.add("message", msg.sender);
+          div.textContent = `${msg.sender}: ${msg.message}`;
+          chatBox.appendChild(div);
         });
-      }
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
 
-      // 📨 Send reply to Cloud Run webhook
-      window.sendReply = async function () {
-        const text = input.value.trim();
-        if (!text || !currentSession) return alert("Select a session first!");
+    // 📨 Send agent reply
+    window.sendReply = async function () {
+      const text = input.value.trim();
+      if (!text || !currentSession) return;
 
-        console.log("📤 Sending reply to:", currentSession);
+      console.log("📤 Sending to webhook:", text);
 
-        await fetch("https://chatbot-788207962975.us-central1.run.app/agent-reply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session: currentSession, message: text })
-        });
+      await fetch("https://chatbot-788207962975.us-central1.run.app/agent-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session: currentSession, message: text })
+      });
 
-        input.value = "";
-      };
-    });
+      input.value = "";
+    };
   </script>
 
   <style>
@@ -93,6 +91,7 @@ setInterval(loadSessions, 5000); // refresh every 5 sec
       display: flex;
       height: 100vh;
       margin: 0;
+      padding: 0;
     }
 
     .sessions {
@@ -103,7 +102,7 @@ setInterval(loadSessions, 5000); // refresh every 5 sec
       padding: 10px;
     }
 
-    ul { list-style: none; padding: 0; margin: 0; }
+    ul { list-style: none; padding: 0; }
     li {
       padding: 10px;
       border-bottom: 1px solid #eee;
@@ -168,5 +167,3 @@ setInterval(loadSessions, 5000); // refresh every 5 sec
   </div>
 </body>
 </html>
-
-
