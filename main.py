@@ -223,25 +223,54 @@ def send_to_cx(session_id, message, timeout_check=None):
     if timeout_check and timeout_check():
         return "Sorry, the request is taking too long. Please try again."
 
-    client_options = {
-        "api_endpoint": f"{LOCATION}-dialogflow.googleapis.com",
-        # Set shorter timeout for API calls
-        "timeout": 20,
-    }
+    # Validate environment and credentials
+    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        logging.error("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
+        return "Configuration error: Missing credentials"
+
+    if not all([PROJECT_ID, LOCATION, AGENT_ID]):
+        logging.error(
+            "Missing required config: PROJECT_ID=%s, LOCATION=%s, AGENT_ID=%s",
+            PROJECT_ID,
+            LOCATION,
+            AGENT_ID,
+        )
+        return "Configuration error: Missing project settings"
+
+    client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
     try:
+        logging.info(
+            "Initializing Dialogflow CX client with endpoint: %s",
+            client_options["api_endpoint"],
+        )
         client = dialogflow.SessionsClient(client_options=client_options)
         session_path = f"projects/{PROJECT_ID}/locations/{LOCATION}/agents/{AGENT_ID}/sessions/{session_id}"
+        logging.info("Using session path: %s", session_path)
 
         text_input = dialogflow.TextInput(text=message)
         query_input = dialogflow.QueryInput(text=text_input, language_code="en")
 
+        logging.info("Sending detect_intent request to Dialogflow CX...")
         response = client.detect_intent(
-            request={"session": session_path, "query_input": query_input}
+            request={"session": session_path, "query_input": query_input},
+            timeout=20,  # Set timeout here instead of in client_options
         )
 
         logging.info("Sent to CX: %s", message)
+        if not response:
+            logging.error("Empty response from Dialogflow CX")
+            return "Error: No response from bot"
+
+        if not response.query_result:
+            logging.error("No query result in response")
+            return "Error: Invalid response format"
+
         logging.info(
-            "CX Response messages: %s", response.query_result.response_messages
+            "Response received - Messages: %s", response.query_result.response_messages
+        )
+        logging.info(
+            "Response intent: %s",
+            getattr(response.query_result, "intent", "No intent matched"),
         )
 
         # Extract text replies (if any)
