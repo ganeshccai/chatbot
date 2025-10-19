@@ -13,6 +13,7 @@ from google.api_core.exceptions import GoogleAPICallError
 import os
 import uuid
 import logging
+import time
 
 # Configure logging to show timestamps and level
 logging.basicConfig(
@@ -70,8 +71,17 @@ def webhook():
     if request.method == "GET":
         return "Webhook active", 200
 
+    start_time = time.time()
     data = request.get_json(silent=True, force=True) or {}
     logging.info("📩 Webhook received: %s", data)
+
+    # Add timeout check
+    def check_timeout():
+        # Dialogflow has 30s timeout, we'll respond by 25s
+        if time.time() - start_time > 25:
+            logging.warning("Webhook approaching timeout, returning early")
+            return True
+        return False
 
     # Extract session id safely
     # Try several possible locations for session id used by Dialogflow CX
