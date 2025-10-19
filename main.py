@@ -9,57 +9,51 @@ app = Flask(__name__)
 db = firestore.Client()
 
 
-@app.route("/", methods=["GET"])
-def home():
-    return "Chat Agent Webhook running!", 200
-
-
-#User messages from Dialogflow webhook
-@app.route("/webhook", methods=["POST"])
+@app.route("/webhook", methods=["POST", "GET"])
 def webhook():
-    """Receive messages from Dialogflow CX and save to Firestore"""
+    if request.method == "GET":
+        return "Webhook active", 200
+
     data = request.get_json(silent=True, force=True)
-    print("Webhook received:", data)
+    print("🔍 Webhook received:", data)
 
+    # Safe session id
+    session_path = (
+        data.get("session")
+        or data.get("sessionInfo", {}).get("session")
+        or ""
+    )
+    session_id = session_path.split("/")[-1] if "/" in session_path else "test_session"
 
-    # Extract session id (last part of the session path)
-    session_path = data.get("session") or ""
-    session_id = (session_path.split("/")[-1] if "/" in session_path else data.get("sessionInfo", {}).get("session", "test_session"))
-
-
-    # Try to extract message text
+    # Safe text extraction
     text_input = ""
     try:
-        if "text" in data and isinstance(data["text"], dict):
-            text_list = data["text"].get("text", [])
-            text_input = text_list[0] if text_list else ""
-        elif "queryResult" in data and "text" in data["queryResult"]:
-            text_input = (
-    data.get("text", {}).get("text", [""])[0]
-    or data.get("queryResult", {}).get("text", "")
-    or data.get("queryInput", {}).get("text", {}).get("text", "")
-    or data.get("messages", [{}])[0].get("text", {}).get("text", [""])[0]
-    or "no text found"
-)
-        else:
-            text_input = data.get("message", "no text found")
-    except Exception:
+        text_input = (
+            data.get("text", {}).get("text", [""])[0]
+            or data.get("queryResult", {}).get("text", "")
+            or data.get("queryInput", {}).get("text", {}).get("text", "")
+            or (
+                data.get("messages", [{}])[0].get("text", {}).get("text", [""])[0]
+                if data.get("messages")
+                else ""
+            )
+        )
+    except Exception as e:
+        print("❌ Error extracting text:", e)
         text_input = "no text found"
 
-    # Save user's message
+    if not text_input:
+        text_input = "no text found"
+
     save_message(session_id, "user", text_input)
 
-    # Respond to Dialogflow (no AI, just ack)
-    return jsonify(
-        {
-            "fulfillment_response": {
-                "messages": [
-                    {"text": {"text": ["✅ Message received by Agent Webhook"]}}
-                ]
-            }
+    return jsonify({
+        "fulfillment_response": {
+            "messages": [
+                {"text": {"text": ["✅ Message received by Agent Webhook"]}}
+            ]
         }
-    )
-
+    }), 200
 
 #Agent manual reply (can be called from your custom UI)
 @app.route("/agent-reply", methods=["POST"])
