@@ -132,16 +132,19 @@ def webhook():
         logging.warning("Failed to save user message for session %s", session_id)
 
     # Get Dialogflow CX agent reply
-    # Get Dialogflow CX agent reply
     try:
-        cx_reply = send_to_cx(session_id, text_input)
+        cx_reply = send_to_cx(session_id, text_input, timeout_check=check_timeout)
 
-        # Save agent reply to Firestore (if any)
-        if cx_reply:
-            save_message(session_id, "agent", cx_reply)
+        # Check timeout before saving to Firestore
+        if not check_timeout():
+            # Save agent reply to Firestore (if any)
+            if cx_reply:
+                save_message(session_id, "agent", cx_reply)
+        else:
+            cx_reply = "Sorry, the request is taking too long. Please try again."
     except Exception as e:
         logging.exception("Error while sending to Dialogflow CX: %s", e)
-        cx_reply = ""
+        cx_reply = "An error occurred. Please try again."
 
     # Respond back to Dialogflow or user
     # Respond back to Dialogflow with the agent text (if available)
@@ -210,13 +213,21 @@ def save_message(session_id, sender, message):
         return False
 
 
-def send_to_cx(session_id, message):
+def send_to_cx(session_id, message, timeout_check=None):
     """Send message to Dialogflow CX and return agent text reply"""
     if not message:
         logging.info("No message provided to send_to_cx for session %s", session_id)
         return ""
 
-    client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
+    # Check for timeout before making external call
+    if timeout_check and timeout_check():
+        return "Sorry, the request is taking too long. Please try again."
+
+    client_options = {
+        "api_endpoint": f"{LOCATION}-dialogflow.googleapis.com",
+        # Set shorter timeout for API calls
+        "timeout": 20,
+    }
     try:
         client = dialogflow.SessionsClient(client_options=client_options)
         session_path = f"projects/{PROJECT_ID}/locations/{LOCATION}/agents/{AGENT_ID}/sessions/{session_id}"
