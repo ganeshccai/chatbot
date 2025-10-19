@@ -43,16 +43,26 @@ def webhook():
         print("Error extracting text:", e)
         text_input = "no text found"
 
-    # Save message to Firestore
+    # Save user message
     save_message(session_id, "user", text_input)
 
+    # Get Dialogflow CX agent reply
+    try:
+        cx_reply = send_to_cx(session_id, text_input)
+
+        # Save agent reply to Firestore
+        if cx_reply:
+            save_message(session_id, "agent", cx_reply)
+    except Exception as e:
+        print("Error while CX detect_intent:", e)
+        cx_reply = "Error from CX"
+
+    # Respond back to Dialogflow or user
     return (
         jsonify(
             {
                 "fulfillment_response": {
-                    "messages": [
-                        {"text": {"text": ["Message received by Agent Webhook"]}}
-                    ]
+                    "messages": [{"text": {"text": [cx_reply]}}],
                 }
             }
         ),
@@ -73,10 +83,10 @@ def agent_reply():
     # Save to Firestore
     save_message(session_id, "agent", message)
 
-    # Send to Dialogflow CX
+    # Send to Dialogflow CX (so CX can continue the flow)
     try:
         send_to_cx(session_id, message)
-        return jsonify({"status": "Sent to CX and saved"}), 200
+        return jsonify({"status": "Agent reply sent to CX"}), 200
     except Exception as e:
         print("Error sending to CX:", e)
         return jsonify({"error": str(e)}), 500
@@ -99,7 +109,7 @@ def save_message(session_id, sender, message):
 
 
 def send_to_cx(session_id, message):
-    """Send agent's message to Dialogflow CX"""
+    """Send message to Dialogflow CX and return agent text reply"""
     client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
     client = dialogflow.SessionsClient(client_options=client_options)
 
@@ -108,13 +118,20 @@ def send_to_cx(session_id, message):
     text_input = dialogflow.TextInput(text=message)
     query_input = dialogflow.QueryInput(text=text_input, language_code="en")
 
-    # Correct method call
     response = client.detect_intent(
         request={"session": session_path, "query_input": query_input}
     )
 
-    print("Sent to CX successfully.")
-    print("CX Response:", response.query_result.response_messages)
+    print("Sent to CX:", message)
+    print("💬 CX Response:", response.query_result.response_messages)
+
+    # Extract text replies (if any)
+    messages = []
+    for msg in response.query_result.response_messages:
+        if msg.text and msg.text.text:
+            messages.extend(msg.text.text)
+
+    return " ".join(messages) if messages else "CX replied but no text found."
 
 
 # ================== MAIN ==================
