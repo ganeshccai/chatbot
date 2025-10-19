@@ -1,15 +1,31 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from google.cloud import firestore
-from google.cloud import dialogflowcx_v3 as dialogflow
+
+try:
+    from google.cloud import dialogflowcx_v3 as dialogflow
+except ImportError as e:
+    print(
+        "ERROR: Could not import dialogflowcx_v3. Try running: pip install google-cloud-dialogflow-cx==0.6.0"
+    )
+    raise
 from google.api_core.exceptions import GoogleAPICallError
 import os
 import uuid
 import logging
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging to show timestamps and level
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 app = Flask(__name__)
+
+# Print startup message
+print("=" * 50)
+print("Starting CCAI Chat Server...")
+print("=" * 50)
+
 # Allow browser-based agent UI to call endpoints (adjust origins in production)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -221,4 +237,23 @@ def send_to_cx(session_id, message):
 
 # ================== MAIN ==================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    port = int(os.environ.get("PORT", 8080))
+    print(f"\nServer starting on http://localhost:{port}")
+    print("You can test the server with:")
+    print(f"  Health check: http://localhost:{port}/health")
+    print(f"  Webhook test: Use PowerShell to run:")
+    print(
+        '    $body = @{"session"="test-session"; "queryInput"=@{"text"=@{"text"="hello"}}} | ConvertTo-Json'
+    )
+    print(
+        f'    Invoke-RestMethod -Method Post -Uri http://localhost:{port}/webhook -ContentType "application/json" -Body $body'
+    )
+    print("\nPress Ctrl+C to stop the server")
+    print("=" * 50)
+
+    try:
+        app.run(host="0.0.0.0", port=port, debug=True)
+    except Exception as e:
+        print(f"\nERROR: Failed to start server: {e}")
+        logging.exception("Server startup failed")
+        raise
