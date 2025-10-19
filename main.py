@@ -28,18 +28,18 @@ def webhook():
     # Safe text extraction
     text_input = ""
     try:
-        text_input = (
-            data.get("text", {}).get("text", [""])[0]
-            or data.get("queryResult", {}).get("text", "")
-            or data.get("queryInput", {}).get("text", {}).get("text", "")
-            or (
-                data.get("messages", [{}])[0].get("text", {}).get("text", [""])[0]
-                if data.get("messages")
-                else ""
-            )
-        )
+        if isinstance(data.get("text"), str):
+            text_input = data.get("text")
+        elif isinstance(data.get("text"), dict):
+            text_input = data.get("text", {}).get("text", [""])[0]
+        elif isinstance(data.get("queryResult"), dict):
+            text_input = data.get("queryResult", {}).get("text", "")
+        elif isinstance(data.get("queryInput"), dict):
+            text_input = data.get("queryInput", {}).get("text", {}).get("text", "")
+        else:
+            text_input = "no text found"
     except Exception as e:
-        print("❌ Error extracting text:", e)
+        print("❌ Error extracting text safely:", e)
         text_input = "no text found"
 
     if not text_input:
@@ -55,7 +55,8 @@ def webhook():
         }
     }), 200
 
-#Agent manual reply (can be called from your custom UI)
+
+# 2️⃣ Agent manual reply (can be called from your custom UI)
 @app.route("/agent-reply", methods=["POST"])
 def agent_reply():
     """Agent manually sends a message"""
@@ -76,14 +77,17 @@ def save_message(session_id, sender, message):
     session_ref = db.collection("sessions").document(session_id)
     msg_ref = session_ref.collection("messages").document()
 
-    msg_ref.set(
-        {"sender": sender, "message": message, "timestamp": firestore.SERVER_TIMESTAMP}
-    )
+    msg_ref.set({
+        "sender": sender,
+        "message": message,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    })
 
     # update session info (optional)
-    session_ref.set(
-        {"last_sender": sender, "updated_at": firestore.SERVER_TIMESTAMP}, merge=True
-    )
+    session_ref.set({
+        "last_sender": sender,
+        "updated_at": firestore.SERVER_TIMESTAMP
+    }, merge=True)
 
 
 if __name__ == "__main__":
