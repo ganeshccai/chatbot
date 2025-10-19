@@ -11,7 +11,7 @@ db = firestore.Client()
 # Dialogflow CX setup
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project001-474715")
 LOCATION = os.getenv("LOCATION", "us-central1")
-AGENT_ID = os.getenv("AGENT_ID", "<YOUR_AGENT_ID_HERE>")
+AGENT_ID = os.getenv("AGENT_ID", "f82d4b5f-ee2f-402c-8aa6-cb11b0a8e56d")
 
 
 # =============== USER SIDE (Webhook) ===============
