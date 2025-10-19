@@ -4,9 +4,13 @@
   <meta charset="UTF-8" />
   <title>CCAI Agent Dashboard</title>
 
+  <!-- ✅ Firebase SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { 
+      getFirestore, collection, query, orderBy, onSnapshot, 
+      doc, getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
     // ✅ Firebase Config
     const firebaseConfig = {
@@ -18,33 +22,42 @@
       appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
     };
 
+    // ✅ Initialize
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // 🔹 DOM elements
     const sessionList = document.getElementById("session-list");
     const chatBox = document.getElementById("chat-box");
     const input = document.getElementById("message");
     let currentSession = null;
+    let unsubscribe = null;
 
-    // 🔁 Show list of all sessions
-    onSnapshot(collection(db, "sessions"), (snapshot) => {
-      sessionList.innerHTML = "";
-      snapshot.forEach(docSnap => {
-        const li = document.createElement("li");
-        li.textContent = docSnap.id;
-        li.onclick = () => loadChat(docSnap.id);
-        sessionList.appendChild(li);
+    // 🔁 Load all sessions dynamically
+    async function loadSessions() {
+      const q = collection(db, "sessions");
+      onSnapshot(q, (snapshot) => {
+        sessionList.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const li = document.createElement("li");
+          li.textContent = docSnap.id;
+          li.onclick = () => loadChat(docSnap.id);
+          if (docSnap.id === currentSession) li.classList.add("active");
+          sessionList.appendChild(li);
+        });
       });
-    });
+    }
 
-    // 🔹 Load selected session chat
+    // 🔹 Load specific chat
     function loadChat(sessionId) {
       currentSession = sessionId;
       chatBox.innerHTML = "";
+      if (unsubscribe) unsubscribe(); // stop previous listener
+
       const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
-      onSnapshot(q, (snapshot) => {
+      unsubscribe = onSnapshot(q, (snapshot) => {
         chatBox.innerHTML = "";
-        snapshot.forEach(docSnap => {
+        snapshot.forEach((docSnap) => {
           const msg = docSnap.data();
           const div = document.createElement("div");
           div.classList.add("message", msg.sender);
@@ -55,10 +68,12 @@
       });
     }
 
-    // 📨 Send agent reply
+    // 📨 Send agent reply to Cloud Run webhook
     window.sendReply = async function () {
       const text = input.value.trim();
       if (!text || !currentSession) return;
+
+      console.log("📤 Sending to webhook:", text);
 
       await fetch("https://chatbot-788207962975.us-central1.run.app/agent-reply", {
         method: "POST",
@@ -68,8 +83,12 @@
 
       input.value = "";
     };
+
+    // 🚀 Initialize session list on load
+    window.onload = loadSessions;
   </script>
 
+  <!-- ✅ Styling -->
   <style>
     body {
       font-family: "Inter", sans-serif;
@@ -77,24 +96,35 @@
       display: flex;
       height: 100vh;
       margin: 0;
-      padding: 0;
     }
 
     .sessions {
-      width: 250px;
+      width: 260px;
       background: #fff;
       border-right: 1px solid #ddd;
       overflow-y: auto;
       padding: 10px;
     }
 
-    ul { list-style: none; padding: 0; }
+    h3 {
+      margin: 10px 0;
+      font-size: 18px;
+      color: #333;
+      text-align: center;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
     li {
       padding: 10px;
       border-bottom: 1px solid #eee;
       cursor: pointer;
+      transition: background 0.2s;
     }
     li:hover { background: #f0f0f0; }
+    li.active {
+      background: #e0ebff;
+      font-weight: 600;
+    }
 
     .chat {
       flex: 1;
@@ -109,7 +139,14 @@
       padding: 20px;
     }
 
-    .message { margin: 5px 0; padding: 8px 10px; border-radius: 6px; }
+    .message {
+      margin: 5px 0;
+      padding: 8px 10px;
+      border-radius: 6px;
+      width: fit-content;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
     .user { background: #d1e7dd; margin-left: auto; }
     .agent { background: #f8d7da; margin-right: auto; }
 
@@ -117,6 +154,7 @@
       display: flex;
       padding: 10px;
       border-top: 1px solid #ddd;
+      background: #fafafa;
     }
 
     input {
@@ -134,16 +172,23 @@
       padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #0056d2;
     }
   </style>
 </head>
 
 <body>
+  <!-- 🔹 Left: Session list -->
   <div class="sessions">
     <h3>💬 User Sessions</h3>
     <ul id="session-list"></ul>
   </div>
 
+  <!-- 🔹 Right: Chat view -->
   <div class="chat">
     <div class="chat-box" id="chat-box"></div>
     <div class="input-row">
