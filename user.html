@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CCAI User Chatbot</title>
+  <title>USER</title>
 
-  <!-- ✅ Dialogflow CX Messenger -->
+  <!-- Dialogflow CX Messenger -->
   <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
   <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
 
-  <!-- ✅ Firebase SDK (v10) -->
+  <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, doc, onSnapshot, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-    // 🔹 Firebase Config
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
       authDomain: "project001-474715.firebaseapp.com",
@@ -23,57 +23,68 @@
       appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
     };
 
-    // 🔹 Initialize Firebase + Firestore
+    // ✅ Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 🔹 Wait for chatbot to load
-    window.addEventListener("dfMessengerLoaded", () => {
+    // 🔹 Detect current session (from dfMessenger)
+    window.addEventListener("dfMessengerLoaded", function () {
       const dfMessenger = document.querySelector("df-messenger");
+      let currentSessionId = null;
 
-      // Trigger when user sends a message
-      dfMessenger.addEventListener("df-request-sent", () => {
+      dfMessenger.addEventListener("df-request-sent", async (event) => {
         const sessionId = dfMessenger._state?.sessionId;
+        currentSessionId = sessionId;
         console.log("🆔 Session ID:", sessionId);
 
-        // ✅ Listen to Firestore for live chat updates
-        if (!sessionId) return;
+        // Initialize session in Firestore if it doesn't exist
+        await addDoc(collection(db, "sessions"), {
+          id: sessionId,
+          timestamp: new Date(),
+          status: "active"
+        });
+
+        // Add user message to Firestore
+        await addDoc(collection(db, "sessions", sessionId, "messages"), {
+          message: event.detail.queryInput.text,
+          sender: "user",
+          timestamp: new Date()
+        });
+
+        // Start listening to Firestore messages
         const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
         onSnapshot(q, (snapshot) => {
-          console.clear();
-          console.log("🔥 Firestore messages:");
-          snapshot.forEach((doc) => console.log(doc.data()));
+          snapshot.docChanges().forEach(change => {
+            if (change.type === "added") {
+              const msg = change.doc.data();
+              console.log("🔥 New message:", msg);
+              // If it's an agent message, display it
+              if (msg.sender === "agent") {
+                dfMessenger.renderCustomText(msg.message);
+              }
+            }
+          });
         });
       });
     });
   </script>
 
   <style>
-    body {
-      margin: 0;
-      background: #f5f7fa;
-      font-family: "Google Sans", Arial, sans-serif;
-    }
-
     df-messenger {
       z-index: 999;
       position: fixed;
-      bottom: 16px;
-      right: 16px;
-
       --df-messenger-font-color: #000;
       --df-messenger-font-family: Google Sans;
       --df-messenger-chat-background: #f3f6fc;
       --df-messenger-message-user-background: #d3e3fd;
       --df-messenger-message-bot-background: #fff;
-      --df-messenger-send-icon: #1a73e8;
-      --df-messenger-chat-bubble-icon: #1a73e8;
+      bottom: 16px;
+      right: 16px;
     }
   </style>
 </head>
 
 <body>
-  <!-- 🔹 Dialogflow Messenger -->
   <df-messenger
     location="us-central1"
     project-id="project001-474715"
