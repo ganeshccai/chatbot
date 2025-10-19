@@ -27,16 +27,6 @@ print("=" * 50)
 print("Starting CCAI Chat Server...")
 print("=" * 50)
 # Check for credentials at startup
-creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-if not creds_path:
-    print("\n⚠️ ERROR: GOOGLE_APPLICATION_CREDENTIALS environment variable not set!")
-    print("Please set it to your service account key file path:")
-    print('    $env:GOOGLE_APPLICATION_CREDENTIALS="C:\\path\\to\\your-key.json"\n')
-elif not os.path.exists(creds_path):
-    print(f"\n⚠️ ERROR: Service account key file not found at: {creds_path}")
-    print("Please check if the file exists and the path is correct\n")
-else:
-    print(f"\n✅ Using service account key: {creds_path}")
 
 # Allow browser-based agent UI to call endpoints (adjust origins in production)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -235,9 +225,18 @@ def send_to_cx(session_id, message, timeout_check=None):
         return "Sorry, the request is taking too long. Please try again."
 
     # Validate environment and credentials
-    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-        logging.error("GOOGLE_APPLICATION_CREDENTIALS environment variable not set")
-        return "Configuration error: Missing credentials"
+    creds_env = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not creds_env:
+        # In GCP (Cloud Run, Cloud Functions, GCE) Application Default Credentials (ADC)
+        # are available via the attached service account, so we shouldn't fail here.
+        logging.info(
+            "GOOGLE_APPLICATION_CREDENTIALS not set; attempting Application Default Credentials (ADC)."
+        )
+        logging.info(
+            "If you're running locally, set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'."
+        )
+    else:
+        logging.info("Using service account key from: %s", creds_env)
 
     if not all([PROJECT_ID, LOCATION, AGENT_ID]):
         logging.error(
