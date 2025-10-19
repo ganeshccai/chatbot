@@ -24,7 +24,11 @@ def webhook():
 
     # Extract session id (last part of the session path)
     session_path = data.get("session") or ""
-    session_id = session_path.split("/")[-1] if "/" in session_path else "test_session"
+    session_id = (
+    session_path.split("/")[-1]
+    if "/" in session_path
+    else data.get("sessionInfo", {}).get("session", "test_session")
+)
 
 
     # Try to extract message text
