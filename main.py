@@ -8,9 +8,33 @@ import uuid
 import logging
 
 logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__)
 # Allow browser-based agent UI to call endpoints (adjust origins in production)
 CORS(app, resources={r"/*": {"origins": "*"}})
+
+
+# ================== HEALTH ENDPOINT ==================
+@app.route("/health", methods=["GET"])
+def health():
+    result = {"firestore": False, "dialogflow": False}
+    # Firestore check
+    try:
+        # Try listing collections (should not fail if Firestore is up)
+        _ = list(db.collections())
+        result["firestore"] = True
+    except Exception as e:
+        logging.exception("Firestore health check failed: %s", e)
+    # Dialogflow CX check
+    try:
+        client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
+        client = dialogflow.SessionsClient(client_options=client_options)
+        # Just create client, don't send request
+        result["dialogflow"] = True
+    except Exception as e:
+        logging.exception("Dialogflow CX health check failed: %s", e)
+    return jsonify(result), 200
+
 
 # ================== CONFIG ==================
 try:
