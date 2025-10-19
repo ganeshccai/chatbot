@@ -37,6 +37,8 @@ def webhook():
             text_input = (
     data.get("text", {}).get("text", [""])[0]
     or data.get("queryResult", {}).get("text", "")
+    or data.get("queryInput", {}).get("text", {}).get("text", "")
+    or data.get("messages", [{}])[0].get("text", {}).get("text", [""])[0]
     or "no text found"
 )
         else:
