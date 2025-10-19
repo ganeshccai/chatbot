@@ -31,15 +31,15 @@
 
       // 🔁 Show all sessions live
       onSnapshot(collection(db, "sessions"), (snapshot) => {
-        sessionList.innerHTML = "";
-        snapshot.forEach(docSnap => {
-          const li = document.createElement("li");
-          li.textContent = docSnap.id;
-          li.style.cursor = "pointer";
-          li.onclick = () => loadChat(docSnap.id);
-          sessionList.appendChild(li);
-        });
-      });
+  console.log("📡 Snapshot triggered:", snapshot.size);
+  sessionList.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const li = document.createElement("li");
+    li.textContent = docSnap.id;
+    li.onclick = () => loadChat(docSnap.id);
+    sessionList.appendChild(li);
+  });
+});
 
       // 🔹 Load selected chat session
       function loadChat(sessionId) {
@@ -161,3 +161,4 @@
   </div>
 </body>
 </html>
+
