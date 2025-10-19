@@ -10,8 +10,8 @@
 
   <!-- Firebase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, doc, onSnapshot, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, onSnapshot, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
     // ✅ Firebase Config
     const firebaseConfig = {
@@ -37,12 +37,12 @@
         currentSessionId = sessionId;
         console.log("🆔 Session ID:", sessionId);
 
-        // Initialize session in Firestore if it doesn't exist
-        await addDoc(collection(db, "sessions"), {
+        // Create or update session doc deterministically
+        await setDoc(doc(db, "sessions", sessionId), {
           id: sessionId,
           timestamp: new Date(),
           status: "active"
-        });
+        }, { merge: true });
 
         // Add user message to Firestore
         await addDoc(collection(db, "sessions", sessionId, "messages"), {
