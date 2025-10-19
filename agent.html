@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>CCAI Agent Dashboard</title>
+  <title>CCAI Agent Dashboard (Fixed)</title>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { 
-      getFirestore, collection, query, orderBy, onSnapshot, doc, getDocs 
+      getFirestore, collection, query, orderBy, onSnapshot, getDocs 
     } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
     // ✅ Firebase Config
@@ -29,56 +29,75 @@
     let currentSession = null;
     let unsubscribe = null;
 
-    // 🔁 Load session list
+    // 🔁 Load all sessions once + refresh every 5 sec
     async function loadSessions() {
-      const snap = await getDocs(collection(db, "sessions"));
-      sessionList.innerHTML = "";
-      snap.forEach(docSnap => {
-        const li = document.createElement("li");
-        li.textContent = docSnap.id;
-        li.onclick = () => loadChat(docSnap.id);
-        sessionList.appendChild(li);
-      });
+      try {
+        const snap = await getDocs(collection(db, "sessions"));
+        sessionList.innerHTML = "";
+        snap.forEach(docSnap => {
+          const li = document.createElement("li");
+          li.textContent = docSnap.id;
+          li.onclick = () => loadChat(docSnap.id);
+          sessionList.appendChild(li);
+        });
+        console.log("✅ Sessions loaded:", snap.size);
+      } catch (err) {
+        console.error("❌ Error loading sessions:", err);
+      }
     }
 
-    // Refresh session list every 5 seconds
     loadSessions();
     setInterval(loadSessions, 5000);
 
-    // 🔹 Load selected session messages
+    // 🔹 Load messages for chosen session
     function loadChat(sessionId) {
+      console.log("📂 Opening session:", sessionId);
       currentSession = sessionId;
       chatBox.innerHTML = "";
 
-      if (unsubscribe) unsubscribe(); // stop previous listener
+      // stop previous listener
+      if (unsubscribe) unsubscribe();
 
-      const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
+      const msgRef = collection(db, "sessions", sessionId, "messages");
+      const q = query(msgRef, orderBy("timestamp"));
+
       unsubscribe = onSnapshot(q, (snapshot) => {
-        console.log("👂 Listening to:", sessionId);
+        console.log(`📡 Listening to Firestore for ${sessionId} (${snapshot.size} msgs)`);
         chatBox.innerHTML = "";
         snapshot.forEach(docSnap => {
           const msg = docSnap.data();
+          console.log("🔥 Message:", msg);
+
           const div = document.createElement("div");
           div.classList.add("message", msg.sender);
-          div.textContent = `${msg.sender}: ${msg.message}`;
+          div.textContent = `${msg.sender || 'unknown'}: ${msg.message || ''}`;
           chatBox.appendChild(div);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
+      }, (err) => {
+        console.error("❌ Snapshot error:", err);
       });
     }
 
-    // 📨 Send agent reply
+    // 📨 Send agent reply via webhook
     window.sendReply = async function () {
       const text = input.value.trim();
-      if (!text || !currentSession) return;
+      if (!text || !currentSession) return alert("Select a session first!");
 
-      console.log("📤 Sending to webhook:", text);
+      console.log("📤 Sending agent reply:", text);
 
-      await fetch("https://chatbot-788207962975.us-central1.run.app/agent-reply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session: currentSession, message: text })
-      });
+      try {
+        const res = await fetch("https://chatbot-788207962975.us-central1.run.app/agent-reply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session: currentSession, message: text })
+        });
+
+        const data = await res.text();
+        console.log("✅ Webhook response:", data);
+      } catch (err) {
+        console.error("❌ Webhook error:", err);
+      }
 
       input.value = "";
     };
