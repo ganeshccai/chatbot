@@ -33,6 +33,13 @@ header {
   margin-top: 6px;
 }
 
+#ticket-status {
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  margin-top: 6px;
+}
+
 #chat-container {
   flex: 1 1 auto;
   display: flex;
@@ -104,6 +111,7 @@ header {
 </head>
 <body>
 <div id="agent-status">Checking agent status...</div>
+<div id="ticket-status">Ticket: Unread</div>
 <header>Heart to Heart 💖</header>
 <div id="chat-container"></div>
 
@@ -121,6 +129,45 @@ const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 
 let lastMessageCount = 0; // track messages to prevent re-render / duplicates
+
+const ticketStatusEl = document.getElementById('ticket-status');
+let ticketRead = false;
+let _lastObservedMsg = null;
+
+function markTicketRead(reader) {
+  if (ticketRead) return;
+  ticketRead = true;
+  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+
+  // NOTE: Assumes a server endpoint exists to mark the ticket/message as read.
+  // Sending { chat_id, reader } to `${baseUrl}/mark_read`.
+  // Update endpoint/payload if your server expects a different format.
+  fetch(`${baseUrl}/mark_read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, reader })
+  }).catch(() => { /* ignore network errors */ });
+}
+
+const _observer = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      // User viewing the messages; mark ticket read by user
+      markTicketRead('user');
+    }
+  }
+}, { root: chatContainer, threshold: 0.9 });
+
+function observeLastMessage() {
+  try {
+    if (_lastObservedMsg) _observer.unobserve(_lastObservedMsg);
+    const last = chatContainer.lastElementChild;
+    if (last) {
+      _observer.observe(last);
+      _lastObservedMsg = last;
+    }
+  } catch (e) { /* safe fallback */ }
+}
 
 // ---------- Load existing messages ----------
 async function loadMessages() {
@@ -147,6 +194,9 @@ async function loadMessages() {
     const len = msgInput.value.length;
     try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
   }
+  // Ensure observer watches the last message so that when it becomes visible
+  // we can mark the ticket as read.
+  observeLastMessage();
 }
 
 // ---------- Send user message ----------
@@ -178,6 +228,9 @@ async function sendMessage() {
   }, 0);
 
   if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
+  // After sending a message locally, observe the last message so that
+  // when it's visible the ticket will be marked read by the recipient view.
+  observeLastMessage();
 }
 
 // ---------- Floating hearts ----------
