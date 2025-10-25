@@ -1,319 +1,113 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, session, jsonify
 from flask_cors import CORS
-from google.cloud import firestore
 
-try:
-    from google.cloud import dialogflowcx_v3 as dialogflow
-except ImportError as e:
-    print(
-        "ERROR: Could not import dialogflowcx_v3. Try running: pip install google-cloud-dialogflow-cx==0.6.0"
-    )
-    raise
-from google.api_core.exceptions import GoogleAPICallError
-import os
-import uuid
-import logging
-import time
+app = Flask(__name__, template_folder="../templates", static_folder="../static")
+app.secret_key = "temp_key"
+CORS(app)
 
-# Configure logging to show timestamps and level
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+CHAT_ID = "1234"
+CHAT_PASSWORD = "1"
 
-app = Flask(__name__)
-
-# Print startup message
-print("=" * 50)
-print("Starting CCAI Chat Server...")
-print("=" * 50)
-# Check for credentials at startup
-
-# Allow browser-based agent UI to call endpoints (adjust origins in production)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# In-memory stores
+all_chats = {}
+online_users = {}
+live_typing = {}
 
 
-# ================== HEALTH ENDPOINT ==================
-@app.route("/health", methods=["GET"])
-def health():
-    result = {"firestore": False, "dialogflow": False}
-    # Firestore check
-    try:
-        # Try listing collections (should not fail if Firestore is up)
-        _ = list(db.collections())
-        result["firestore"] = True
-    except Exception as e:
-        logging.exception("Firestore health check failed: %s", e)
-    # Dialogflow CX check
-    try:
-        client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
-        client = dialogflow.SessionsClient(client_options=client_options)
-        # Just create client, don't send request
-        result["dialogflow"] = True
-    except Exception as e:
-        logging.exception("Dialogflow CX health check failed: %s", e)
-    return jsonify(result), 200
+# ---------------- User Page ----------------
+@app.route("/user", methods=["GET", "POST"])
+def user_page():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == CHAT_PASSWORD:
+            session["chat_id"] = CHAT_ID
+            all_chats[CHAT_ID] = []
+            online_users[CHAT_ID] = True  # user online
+            live_typing[CHAT_ID] = ""
+            return render_template("user.html")
+        return "Wrong password"
+    return """<form method="post">
+                <input type="password" name="password" placeholder="*****"/>
+                <input type="submit" value="➤"/>
+              </form>"""
 
 
-# ================== CONFIG ==================
-try:
-    db = firestore.Client()
-except Exception as e:
-    logging.exception("Failed to initialize Firestore client: %s", e)
-    db = None
-
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "project001-474715")
-LOCATION = os.getenv("LOCATION", "us-central1")
-AGENT_ID = os.getenv("AGENT_ID", "f82d4b5f-ee2f-402c-8aa6-cb11b0a8e56d")
-
-
-# ================== USER SIDE (Webhook) ==================
-@app.route("/webhook", methods=["POST", "GET"])
-def webhook():
-    if request.method == "GET":
-        return "Webhook active", 200
-
-    start_time = time.time()
-    data = request.get_json(silent=True, force=True) or {}
-    logging.info("📩 Webhook received: %s", data)
-
-    # Add timeout check
-    def check_timeout():
-        # Dialogflow has 30s timeout, we'll respond by 25s
-        if time.time() - start_time > 25:
-            logging.warning("Webhook approaching timeout, returning early")
-            return True
-        return False
-
-    # Extract session id safely
-    # Try several possible locations for session id used by Dialogflow CX
-    session_path = (
-        data.get("session")
-        or data.get("sessionInfo", {}).get("session")
-        or data.get("originalDetectIntentRequest", {}).get("payload", {}).get("session")
-        or ""
-    )
-    if session_path:
-        session_id = session_path.split("/")[-1]
-    else:
-        # Fallback to generated id to avoid collisions; in production prefer client-provided session id
-        session_id = f"session-{uuid.uuid4().hex}"
-
-    logging.info("Using session_id=%s", session_id)
-
-    # Extract user message safely
-    # Extract user message from common Dialogflow CX webhook payload shapes
-    text_input = ""
-    try:
-        # direct text field
-        if isinstance(data.get("text"), str) and data.get("text").strip():
-            text_input = data.get("text").strip()
-        # queryInput.text.text (from df-messenger)
-        elif data.get("queryInput") and data["queryInput"].get("text"):
-            # queryInput.text may be either a string or an object with 'text'
-            qi_text = data["queryInput"]["text"]
-            if isinstance(qi_text, dict):
-                text_input = qi_text.get("text", "") or qi_text.get("text", "")
-            elif isinstance(qi_text, str):
-                text_input = qi_text
-        # queryResult.text (older/alternate payloads)
-        elif data.get("queryResult") and data["queryResult"].get("text"):
-            text_input = data["queryResult"]["text"]
-        else:
-            text_input = ""
-    except Exception:
-        logging.exception("Error extracting text from webhook payload")
-        text_input = ""
-
-    if not text_input:
-        logging.info("No text found in payload; setting text_input to empty string")
-
-    # Save user message
-    saved = save_message(session_id, "user", text_input)
-    if not saved:
-        logging.warning("Failed to save user message for session %s", session_id)
-
-    # Get Dialogflow CX agent reply
-    try:
-        cx_reply = send_to_cx(session_id, text_input, timeout_check=check_timeout)
-
-        # Check timeout before saving to Firestore
-        if not check_timeout():
-            # Save agent reply to Firestore (if any)
-            if cx_reply:
-                save_message(session_id, "agent", cx_reply)
-        else:
-            cx_reply = "Sorry, the request is taking too long. Please try again."
-    except Exception as e:
-        logging.exception("Error while sending to Dialogflow CX: %s", e)
-        cx_reply = "An error occurred. Please try again."
-
-    # Respond back to Dialogflow or user
-    # Respond back to Dialogflow with the agent text (if available)
-    return (
-        jsonify(
-            {"fulfillment_response": {"messages": [{"text": {"text": [cx_reply]}}]}}
-        ),
-        200,
-    )
+# ---------------- Agent Page ----------------
+@app.route("/agent", methods=["GET", "POST"])
+def agent_page():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == CHAT_PASSWORD:
+            online_users["agent"] = True  # mark agent online
+            return render_template("agent.html")
+        return "Wrong password"
+    return """<form method="post">
+                <input type="password" name="password" placeholder="Enter Password"/>
+                <input type="submit" value="Login"/>
+              </form>"""
 
 
-# ================== AGENT SIDE (Manual Reply) ==================
-@app.route("/agent-reply", methods=["POST"])
-def agent_reply():
+# ---------------- Send Message ----------------
+@app.route("/send", methods=["POST"])
+def send_message():
     data = request.get_json()
-    session_id = data.get("session")
-    message = data.get("message")
-
-    if not session_id or not message:
-        return jsonify({"error": "session and message are required"}), 400
-
-    # Save to Firestore
-    saved = save_message(session_id, "agent", message)
-    if not saved:
-        return jsonify({"error": "failed to save message to Firestore"}), 500
-
-    # Send to Dialogflow CX (so CX can continue the flow)
-    try:
-        send_to_cx(session_id, message)
-        return jsonify({"status": "Agent reply sent to CX"}), 200
-    except Exception as e:
-        logging.exception("Error sending agent reply to CX: %s", e)
-        return jsonify({"error": str(e)}), 500
+    chat_id = data.get("chat_id")
+    all_chats.setdefault(chat_id, []).append(data)
+    return jsonify({"status": "ok"})
 
 
-# ================== HELPERS ==================
-def save_message(session_id, sender, message):
-    """Store messages under sessions/{session_id}/messages"""
-    if db is None:
-        logging.error("Firestore client is not initialized; cannot save message")
-        return False
-
-    try:
-        session_ref = db.collection("sessions").document(session_id)
-        msg_ref = session_ref.collection("messages").document()
-
-        msg_ref.set(
-            {
-                "sender": sender,
-                "message": message,
-                "timestamp": firestore.SERVER_TIMESTAMP,
-            }
-        )
-
-        # Update session info
-        session_ref.set(
-            {"last_sender": sender, "updated_at": firestore.SERVER_TIMESTAMP},
-            merge=True,
-        )
-        return True
-    except GoogleAPICallError as e:
-        logging.exception("Firestore API error when saving message: %s", e)
-        return False
-    except Exception as e:
-        logging.exception("Unexpected error when saving message: %s", e)
-        return False
+# ---------------- Get Messages ----------------
+@app.route("/messages/<chat_id>")
+def get_messages(chat_id):
+    return jsonify(all_chats.get(chat_id, []))
 
 
-def send_to_cx(session_id, message, timeout_check=None):
-    """Send message to Dialogflow CX and return agent text reply"""
-    if not message:
-        logging.info("No message provided to send_to_cx for session %s", session_id)
-        return ""
-
-    # Check for timeout before making external call
-    if timeout_check and timeout_check():
-        return "Sorry, the request is taking too long. Please try again."
-
-    # Validate environment and credentials
-    creds_env = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if not creds_env:
-        # In GCP (Cloud Run, Cloud Functions, GCE) Application Default Credentials (ADC)
-        # are available via the attached service account, so we shouldn't fail here.
-        logging.info(
-            "GOOGLE_APPLICATION_CREDENTIALS not set; attempting Application Default Credentials (ADC)."
-        )
-        logging.info(
-            "If you're running locally, set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'."
-        )
-    else:
-        logging.info("Using service account key from: %s", creds_env)
-
-    if not all([PROJECT_ID, LOCATION, AGENT_ID]):
-        logging.error(
-            "Missing required config: PROJECT_ID=%s, LOCATION=%s, AGENT_ID=%s",
-            PROJECT_ID,
-            LOCATION,
-            AGENT_ID,
-        )
-        return "Configuration error: Missing project settings"
-
-    client_options = {"api_endpoint": f"{LOCATION}-dialogflow.googleapis.com"}
-    try:
-        logging.info(
-            "Initializing Dialogflow CX client with endpoint: %s",
-            client_options["api_endpoint"],
-        )
-        client = dialogflow.SessionsClient(client_options=client_options)
-        session_path = f"projects/{PROJECT_ID}/locations/{LOCATION}/agents/{AGENT_ID}/sessions/{session_id}"
-        logging.info("Using session path: %s", session_path)
-
-        text_input = dialogflow.TextInput(text=message)
-        query_input = dialogflow.QueryInput(text=text_input, language_code="en")
-
-        logging.info("Sending detect_intent request to Dialogflow CX...")
-        response = client.detect_intent(
-            request={"session": session_path, "query_input": query_input},
-            timeout=20,  # Set timeout here instead of in client_options
-        )
-
-        logging.info("Sent to CX: %s", message)
-        if not response:
-            logging.error("Empty response from Dialogflow CX")
-            return "Error: No response from bot"
-
-        if not response.query_result:
-            logging.error("No query result in response")
-            return "Error: Invalid response format"
-
-        logging.info(
-            "Response received - Messages: %s", response.query_result.response_messages
-        )
-        logging.info(
-            "Response intent: %s",
-            getattr(response.query_result, "intent", "No intent matched"),
-        )
-
-        # Extract text replies (if any)
-        messages = []
-        for msg in response.query_result.response_messages:
-            if getattr(msg, "text", None) and getattr(msg.text, "text", None):
-                messages.extend(msg.text.text)
-
-        return " ".join(messages) if messages else ""
-    except Exception as e:
-        logging.exception("Dialogflow CX request failed: %s", e)
-        raise
+# ---------------- Online Status ----------------
+@app.route("/is_online/<chat_id>")
+def is_online(chat_id):
+    user_online = online_users.get(chat_id, False)
+    agent_online = online_users.get("agent", False)
+    return jsonify(
+        {
+            "user_online": user_online,
+            "online": agent_online,  # keep 'online' for backward compatibility
+        }
+    )
 
 
-# ================== MAIN ==================
+# ---------------- Live Typing ----------------
+@app.route("/live_typing", methods=["POST"])
+def update_live_typing():
+    data = request.get_json()
+    chat_id = data.get("chat_id")
+    text = data.get("text", "")
+    live_typing[chat_id] = text.strip()
+    return jsonify({"status": "ok"})
+
+
+@app.route("/get_live_typing/<chat_id>")
+def get_live_typing(chat_id):
+    return jsonify({"text": live_typing.get(chat_id, "")})
+
+
+# ---------------- Logout Handlers ----------------
+@app.route("/logout_user", methods=["POST"])
+def logout_user():
+    data = request.get_json(force=True, silent=True) or {}
+    chat_id = data.get("chat_id", CHAT_ID)
+    online_users[chat_id] = False
+    live_typing[chat_id] = ""
+    return jsonify({"status": "ok"})
+
+
+@app.route("/logout_agent", methods=["POST"])
+def logout_agent():
+    online_users["agent"] = False
+    return jsonify({"status": "ok"})
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    print(f"\nServer starting on http://localhost:{port}")
-    print("You can test the server with:")
-    print(f"  Health check: http://localhost:{port}/health")
-    print(f"  Webhook test: Use PowerShell to run:")
-    print(
-        '    $body = @{"session"="test-session"; "queryInput"=@{"text"=@{"text"="hello"}}} | ConvertTo-Json'
-    )
-    print(
-        f'    Invoke-RestMethod -Method Post -Uri http://localhost:{port}/webhook -ContentType "application/json" -Body $body'
-    )
-    print("\nPress Ctrl+C to stop the server")
-    print("=" * 50)
+    import os
 
-    try:
-        app.run(host="0.0.0.0", port=port, debug=True)
-    except Exception as e:
-        print(f"\nERROR: Failed to start server: {e}")
-        logging.exception("Server startup failed")
-        raise
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
