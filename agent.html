@@ -101,7 +101,7 @@ header {
 <div id="chat-container"></div>
 
 <div id="input-container">
-  <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
+  <textarea id="msg" placeholder="Type message..." rows="2" enterkeyhint="enter"></textarea>
   <button id="send-btn" type="button">Send</button>
 </div>
 
@@ -180,10 +180,14 @@ async function loadLiveTyping() {
 // ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
 
+// Allow Enter to insert a newline. Use Ctrl+Enter or Cmd+Enter to send.
 msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) { 
-    e.preventDefault(); // prevent new line
-    sendMessage();
+  if (e.key === "Enter") {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault(); // prevent inserting newline when sending
+      sendMessage();
+    }
+    // otherwise allow newline to be inserted by the textarea
   }
 });
 
