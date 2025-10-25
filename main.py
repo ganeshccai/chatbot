@@ -1,5 +1,15 @@
-from flask import Flask, render_template, request, session, jsonify
+from flask import (
+    Flask,
+    render_template,
+    request,
+    session,
+    jsonify,
+    Response,
+    stream_with_context,
+)
 from flask_cors import CORS
+import queue
+import json
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = "temp_key"
@@ -12,6 +22,8 @@ CHAT_PASSWORD = "1"
 all_chats = {}
 online_users = {}
 live_typing = {}
+# SSE subscribers per chat_id: mapping chat_id -> list of Queue
+sse_subscribers = {}
 
 
 # ---------------- User Page ----------------
@@ -126,7 +138,53 @@ def mark_read():
     if reader not in seen:
         seen.append(reader)
     last["seen_by"] = seen
+    # publish SSE event to subscribers in this instance so other connected clients
+    # (same Cloud Run instance) can react immediately
+    try:
+        subscribers = sse_subscribers.get(chat_id, [])
+        payload = json.dumps(
+            {
+                "type": "read",
+                "index": len(msgs) - 1,
+                "seen_by": seen,
+                "chat_id": chat_id,
+            }
+        )
+        for q in list(subscribers):
+            try:
+                q.put_nowait(payload)
+            except Exception:
+                # ignore failing subscribers
+                pass
+    except Exception:
+        pass
+
     return jsonify({"status": "ok", "seen_by": seen})
+
+
+@app.route("/events/<chat_id>")
+def events(chat_id):
+    # Simple in-memory SSE stream (only works reliably for single-instance deployments)
+    q = queue.Queue()
+    sse_subscribers.setdefault(chat_id, []).append(q)
+
+    def gen():
+        try:
+            while True:
+                data = q.get()
+                if data is None:
+                    break
+                yield f"data: {data}\n\n"
+        except GeneratorExit:
+            pass
+        finally:
+            # cleanup subscriber
+            try:
+                sse_subscribers.get(chat_id, []).remove(q)
+            except Exception:
+                pass
+
+    return Response(stream_with_context(gen()), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":
