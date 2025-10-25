@@ -102,7 +102,7 @@ header {
 
 <div id="input-container">
   <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
-  <button id="send-btn">Send</button>
+  <button id="send-btn" type="button">Send</button>
 </div>
 
 <script>
@@ -111,23 +111,32 @@ const chatId = "1234";
 
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
-let lastMessageCount = 0;
 
-// ---------- Load messages ----------
+// ---------- Load existing messages ----------
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
 
-  for (let i = lastMessageCount; i < data.length; i++) {
-    const msg = data[i];
+  // Preserve whether the message input currently has focus so we can restore it
+  const inputWasFocused = (document.activeElement === msgInput);
+
+  // Rebuild messages (simple approach). Restore focus afterwards to avoid
+  // mobile keyboard closing/re-opening during periodic updates.
+  chatContainer.innerHTML = "";
+  data.forEach(msg => {
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
     chatContainer.appendChild(div);
-  }
-
-  lastMessageCount = data.length;
+  });
   chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  if (inputWasFocused) {
+    // Re-focus and move caret to end to keep the keyboard visible and the input usable
+    msgInput.focus();
+    const len = msgInput.value.length;
+    try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
+  }
 }
 
 // ---------- Send agent message ----------
@@ -141,6 +150,7 @@ async function sendMessage() {
     body: JSON.stringify({chat_id: chatId, sender: "agent", text: message})
   });
 
+  // Append message directly to avoid keyboard flicker
   const div = document.createElement("div");
   div.className = "message agent-msg";
   div.textContent = message;
@@ -151,25 +161,28 @@ async function sendMessage() {
   msgInput.focus(); // keep keyboard open
 }
 
-// ---------- Online status ----------
+// ---------- Check user online status ----------
 async function checkOnline() {
   const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
-  document.getElementById("online-status").textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
+  const status = document.getElementById("online-status");
+  status.textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
 }
 
-// ---------- Live typing ----------
+// ---------- Load live typing ----------
 async function loadLiveTyping() {
   const res = await fetch(`${baseUrl}/get_live_typing/${chatId}`);
   const data = await res.json();
-  document.getElementById("live-typing").textContent = data.text ? `Typing: ${data.text}` : "";
+  const typingElem = document.getElementById("live-typing");
+  typingElem.textContent = data.text ? `Typing: ${data.text}` : "";
 }
 
 // ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
+
 msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
+  if (e.key === "Enter" && !e.shiftKey) { 
+    e.preventDefault(); // prevent new line
     sendMessage();
   }
 });
@@ -182,7 +195,8 @@ window.addEventListener("beforeunload", async () => {
 // ---------- Intervals ----------
 setInterval(loadMessages, 1500);
 setInterval(checkOnline, 1000);
-setInterval(loadLiveTyping, 200);
+// Poll live-typing at a slightly lower frequency to reduce frequent DOM updates
+setInterval(loadLiveTyping, 500);
 
 loadMessages();
 checkOnline();
