@@ -32,6 +32,7 @@ header {background:linear-gradient(90deg,#ff5f6d,#ffc371,#ff9a9e,#f77062); color
   <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
   <button id="send-btn" type="button">Send</button>
 </div>
+
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
@@ -44,94 +45,94 @@ const liveTypingEl = document.getElementById('live-typing');
 
 let lastIndex = 0;
 
-// Clear chat on load
-chatContainer.innerHTML='';
-
-// Append message function
-function appendMessage(msg,index){
+// append message
+function appendMessage(msg, index){
   if(chatContainer.querySelector(`[data-index='${index}']`)) return;
-  const div=document.createElement('div');
-  div.className='message '+(msg.sender==='user'?'user-msg':'agent-msg');
-  div.textContent=msg.text;
-  div.dataset.index=index;
+  const div = document.createElement('div');
+  div.className = 'message ' + (msg.sender==='user'?'user-msg':'agent-msg');
+  div.textContent = msg.text;
+  div.dataset.index = index;
   if(msg.seen_by && msg.seen_by.includes('agent')){
-    const span=document.createElement('span');
-    span.className='seen-indicator';
-    span.textContent='Seen';
+    const span = document.createElement('span');
+    span.className = 'seen-indicator';
+    span.textContent = 'Seen';
     div.appendChild(span);
-    ticketStatusEl.textContent='Ticket: Read ✅';
+    ticketStatusEl.textContent = 'Ticket: Read ✅';
   }
   chatContainer.appendChild(div);
-  chatContainer.scrollTop=chatContainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Send agent message
+// send agent message
 async function sendMessage(){
-  const text=msgInput.value.trim();
+  const text = msgInput.value.trim();
   if(!text) return;
-  await fetch(`${baseUrl}/send`,{
+  await fetch(`${baseUrl}/send`, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,sender:'agent',text})
+    body:JSON.stringify({chat_id: chatId, sender:'agent', text})
   });
-  appendMessage({sender:'agent',text,seen_by:[]},lastIndex);
+  appendMessage({sender:'agent', text, seen_by:[]}, lastIndex);
   lastIndex++;
-  msgInput.value='';
-  ticketStatusEl.textContent='Ticket: Unread';
+  msgInput.value = '';
+  ticketStatusEl.textContent = 'Ticket: Unread';
 }
 
-// SSE for real-time updates
-const es=new EventSource(`${baseUrl}/events/${chatId}`);
-es.onmessage=e=>{
+// SSE for live updates
+const es = new EventSource(`${baseUrl}/events/${chatId}`);
+es.onmessage = e => {
   try{
-    const data=JSON.parse(e.data);
+    const data = JSON.parse(e.data);
     if(data.type==='new_message'){
-      appendMessage(data.message,lastIndex);
+      appendMessage(data.message, lastIndex);
       lastIndex++;
-    }else if(data.type==='read'){
+    } else if(data.type==='read'){
       if(data.seen_by.includes('agent')){
-        const el=chatContainer.querySelector(`[data-index='${data.index}']`);
+        const el = chatContainer.querySelector(`[data-index='${data.index}']`);
         if(el && !el.querySelector('.seen-indicator')){
-          const span=document.createElement('span');
-          span.className='seen-indicator';
-          span.textContent='Seen';
+          const span = document.createElement('span');
+          span.className = 'seen-indicator';
+          span.textContent = 'Seen';
           el.appendChild(span);
         }
-        ticketStatusEl.textContent='Ticket: Read ✅';
+        ticketStatusEl.textContent = 'Ticket: Read ✅';
       }
     }
-  }catch(err){}
+  } catch(err){}
 };
 
-// Check user online
+// check user online
 async function checkOnline(){
-  const res=await fetch(`${baseUrl}/is_online/${chatId}`);
-  const data=await res.json();
-  onlineStatusEl.textContent=data.user_online?'User Online 🟢':'User Offline ❌';
+  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
+  const data = await res.json();
+  onlineStatusEl.textContent = data.user_online ? 'User Online 🟢' : 'User Offline ❌';
 }
 
-// Load live typing (only for agent)
+// live typing display
 async function loadLiveTyping(){
-  const res=await fetch(`${baseUrl}/get_live_typing/${chatId}`);
-  const data=await res.json();
-  liveTypingEl.textContent=data.text?`Typing: ${data.text}`:'';
+  const res = await fetch(`${baseUrl}/get_live_typing/${chatId}`);
+  const data = await res.json();
+  liveTypingEl.textContent = data.text ? `Typing: ${data.text}` : '';
 }
 
-// Event listeners
-document.getElementById("send-btn").addEventListener("click",sendMessage);
-msgInput.addEventListener("keydown",e=>{
+// clear chat on load
+chatContainer.innerHTML='';
+lastIndex=0;
+
+// events
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+msgInput.addEventListener("keydown", e=>{
   if(e.key==='Enter' && !e.shiftKey){e.preventDefault(); sendMessage();}
 });
 
-// Logout agent
-window.addEventListener("beforeunload",async()=>{
-  await fetch(`${baseUrl}/logout_agent`,{method:"POST",headers:{"Content-Type":"application/json"}});
+// logout agent
+window.addEventListener("beforeunload", async ()=> {
+  await fetch(`${baseUrl}/logout_agent`, {method:"POST", headers:{"Content-Type":"application/json"}});
 });
 
-// Intervals
-setInterval(checkOnline,500);
-setInterval(loadLiveTyping,500);
-
+// intervals
+setInterval(checkOnline, 1000);
+setInterval(loadLiveTyping, 500);
 checkOnline();
 loadLiveTyping();
 </script>
