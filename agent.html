@@ -111,18 +111,22 @@ const chatId = "1234";
 
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
+let lastMessageCount = 0;
 
-// ---------- Load existing messages ----------
+// ---------- Load messages ----------
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
-  chatContainer.innerHTML = "";
-  data.forEach(msg => {
+
+  for (let i = lastMessageCount; i < data.length; i++) {
+    const msg = data[i];
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
     chatContainer.appendChild(div);
-  });
+  }
+
+  lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
@@ -137,7 +141,6 @@ async function sendMessage() {
     body: JSON.stringify({chat_id: chatId, sender: "agent", text: message})
   });
 
-  // Append message directly to avoid keyboard flicker
   const div = document.createElement("div");
   div.className = "message agent-msg";
   div.textContent = message;
@@ -148,28 +151,25 @@ async function sendMessage() {
   msgInput.focus(); // keep keyboard open
 }
 
-// ---------- Check user online status ----------
+// ---------- Online status ----------
 async function checkOnline() {
   const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
-  const status = document.getElementById("online-status");
-  status.textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
+  document.getElementById("online-status").textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
 }
 
-// ---------- Load live typing ----------
+// ---------- Live typing ----------
 async function loadLiveTyping() {
   const res = await fetch(`${baseUrl}/get_live_typing/${chatId}`);
   const data = await res.json();
-  const typingElem = document.getElementById("live-typing");
-  typingElem.textContent = data.text ? `Typing: ${data.text}` : "";
+  document.getElementById("live-typing").textContent = data.text ? `Typing: ${data.text}` : "";
 }
 
 // ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-
 msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) { 
-    e.preventDefault(); // prevent new line
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
     sendMessage();
   }
 });
