@@ -5,115 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heart to Heart 💖</title>
 <style>
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f7f9;
-  display: flex;
-  flex-direction: column;
-}
-
-header {
-  background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
-  color: white;
-  padding: 12px;
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  border-bottom: 2px solid #ff9a9e;
-  border-radius: 0 0 15px 15px;
-}
-
-#agent-status {
-  font-weight: bold;
-  color: #333;
-  text-align: center;
-  margin-top: 6px;
-}
-
-#ticket-status {
-  text-align: center;
-  font-size: 14px;
-  color: #333;
-  margin-top: 6px;
-}
-
-#chat-container {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  overflow-y: auto;
-}
-
-.message {
-  max-width: 80%;
-  margin: 4px 0;
-  padding: 8px 12px;
-  border-radius: 12px;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-}
-
-.seen-indicator {
-  display: block;
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-  text-align: right;
-}
-
-.user-msg { background: #ffc0cb; align-self: flex-end; }
-.agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
-
-#input-container {
-  flex-shrink: 0;
-  display: flex;
-  padding: 10px;
-  background: #fff;
-  border-top: 1px solid #ccc;
-}
-
-#msg {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  resize: none;
-}
-
-#send-btn {
-  margin-left: 8px;
-  padding: 8px 16px;
-  border: none;
-  background: linear-gradient(90deg, #ff5f6d, #ffc371);
-  color: white;
-  border-radius: 20px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-#send-btn:active { opacity: 0.8; }
-
-.love-bubble {
-  position: absolute;
-  font-size: 16px;
-  opacity: 0.9;
-  color: red;
-  animation: floatGrowVibe 3s forwards;
-  pointer-events: none;
-}
-
-@keyframes floatGrowVibe {
-  0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
-  25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
-  50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
-  75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
-  100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
-}
+html, body { height:100%; margin:0; padding:0; font-family:Arial,sans-serif; background:#f4f7f9; display:flex; flex-direction:column; }
+header { background:linear-gradient(90deg,#ff5f6d,#ffc371,#ff9a9e,#f77062); color:white; padding:12px; text-align:center; font-size:20px; font-weight:bold; border-bottom:2px solid #ff9a9e; border-radius:0 0 15px 15px; }
+#agent-status { font-weight:bold; color:#333; text-align:center; margin-top:6px; }
+#ticket-status { text-align:center; font-size:14px; color:#333; margin-top:6px; }
+#chat-container { flex:1 1 auto; display:flex; flex-direction:column; padding:10px; overflow-y:auto; }
+.message { max-width:80%; margin:4px 0; padding:8px 12px; border-radius:12px; word-wrap:break-word; white-space:pre-wrap; }
+.seen-indicator { display:block; font-size:12px; color:#666; margin-top:4px; text-align:right; }
+.user-msg { background:#ffc0cb; align-self:flex-end; }
+.agent-msg { background:#ffffff; border:1px solid #ddd; align-self:flex-start; }
+#input-container { flex-shrink:0; display:flex; padding:10px; background:#fff; border-top:1px solid #ccc; }
+#msg { flex:1; padding:8px 12px; border-radius:20px; border:1px solid #ccc; font-size:14px; resize:none; }
+#send-btn { margin-left:8px; padding:8px 16px; border:none; background:linear-gradient(90deg,#ff5f6d,#ffc371); color:white; border-radius:20px; font-size:14px; cursor:pointer; }
+#send-btn:active { opacity:0.8; }
 </style>
 </head>
 <body>
@@ -121,10 +25,9 @@ header {
 <div id="ticket-status">Ticket: Unread</div>
 <header>Heart to Heart 💖</header>
 <div id="chat-container"></div>
-
 <div id="input-container">
   <textarea id="msg" placeholder="Type message..." rows="2" enterkeyhint="enter"></textarea>
-  <button id="send-btn" type="button" tabindex="-1">Send</button>
+  <button id="send-btn" type="button">Send</button>
 </div>
 
 <script>
@@ -136,16 +39,14 @@ const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 const ticketStatusEl = document.getElementById('ticket-status');
 
-let lastMessageCount = 0;
+let renderedIndexes = new Set();
 let ticketRead = false;
 let _lastObservedMsg = null;
 
-// IntersectionObserver to mark last incoming message as read
+// IntersectionObserver for marking read
 const _observer = new IntersectionObserver(entries => {
   for (const entry of entries) {
-    if (entry.isIntersecting) {
-      markTicketRead('user');
-    }
+    if (entry.isIntersecting) markTicketRead('user');
   }
 }, { root: chatContainer, threshold: 0.9 });
 
@@ -154,10 +55,7 @@ function observeLastMessage(shouldObserve) {
   _lastObservedMsg = null;
   if (!shouldObserve) return;
   const last = chatContainer.lastElementChild;
-  if (last) {
-    _observer.observe(last);
-    _lastObservedMsg = last;
-  }
+  if (last) { _observer.observe(last); _lastObservedMsg = last; }
 }
 
 function markTicketRead(reader) {
@@ -165,10 +63,10 @@ function markTicketRead(reader) {
   ticketRead = true;
   ticketStatusEl.textContent = 'Ticket: Read ✅';
   fetch(`${baseUrl}/mark_read`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, reader })
-  }).catch(() => {});
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:chatId, reader})
+  }).catch(()=>{});
 }
 
 function showSeenIndicator(index) {
@@ -180,163 +78,115 @@ function showSeenIndicator(index) {
   el.appendChild(span);
 }
 
+// Load messages
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
+  const inputFocused = document.activeElement === msgInput;
 
-  const inputWasFocused = (document.activeElement === msgInput);
+  data.forEach((msg,i)=>{
+    if (!renderedIndexes.has(i)) {
+      const div = document.createElement("div");
+      div.className = "message " + (msg.sender==="user"?"user-msg":"agent-msg");
+      div.textContent = msg.text;
+      div.dataset.index = i;
+      chatContainer.appendChild(div);
+      renderedIndexes.add(i);
+    }
+  });
 
-  for (let i = lastMessageCount; i < data.length; i++) {
-    const msg = data[i];
-    const div = document.createElement("div");
-    div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
-    div.textContent = msg.text;
-    div.dataset.index = i;
-    chatContainer.appendChild(div);
-  }
-  lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
-  if (inputWasFocused) {
-    msgInput.focus();
-    const len = msgInput.value.length;
-    try { msgInput.setSelectionRange(len, len); } catch(e){}
-  }
+  if (inputFocused) { msgInput.focus(); const len=msgInput.value.length; try{msgInput.setSelectionRange(len,len);}catch(e){} }
 
-  // Handle seen indicator
-  if (data.length > 0) {
-    const lastMsg = data[data.length - 1];
-    const other = 'agent';
-    if (lastMsg.seen_by && lastMsg.seen_by.includes(other)) {
-      showSeenIndicator(data.length - 1);
-      ticketRead = true;
-      ticketStatusEl.textContent = 'Ticket: Read ✅';
-    } else if (!ticketRead) {
-      ticketStatusEl.textContent = 'Ticket: Unread';
+  if (data.length>0){
+    const lastMsg = data[data.length-1];
+    const other='agent';
+    if (lastMsg.seen_by && lastMsg.seen_by.includes(other)){
+      ticketRead=true; ticketStatusEl.textContent='Ticket: Read ✅';
+      showSeenIndicator(data.length-1);
+    } else if (!ticketRead){
+      ticketStatusEl.textContent='Ticket: Unread';
+      const lastEl = chatContainer.querySelector(`[data-index='${data.length-1}']`);
+      if (lastEl && lastEl.querySelector('.seen-indicator')) lastEl.querySelector('.seen-indicator').remove();
     }
-  }
-
-  const shouldObserve = data.length > 0 && data[data.length - 1].sender !== localRole;
-  observeLastMessage(shouldObserve);
+    observeLastMessage(lastMsg.sender!==localRole);
+  } else observeLastMessage(false);
 }
 
+// Send user message
 async function sendMessage() {
   const message = msgInput.value.trim();
   if (!message) return;
 
   await fetch(`${baseUrl}/send`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({chat_id:chatId, sender:"user", text:message})
   });
 
   const div = document.createElement("div");
   div.className = "message user-msg";
   div.textContent = message;
-  div.dataset.index = lastMessageCount;
+  const newIndex = renderedIndexes.size;
+  div.dataset.index = newIndex;
   chatContainer.appendChild(div);
+  renderedIndexes.add(newIndex);
   chatContainer.scrollTop = chatContainer.scrollHeight;
-  msgInput.value = "";
-  lastMessageCount++;
-  ticketRead = false;
-  ticketStatusEl.textContent = 'Ticket: Unread';
 
-  setTimeout(() => {
-    msgInput.focus();
-    const len = msgInput.value.length;
-    try { msgInput.setSelectionRange(len, len); } catch(e){}
-  }, 0);
-
+  msgInput.value="";
+  msgInput.focus();
   observeLastMessage(false);
-
-  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
+  ticketRead=false;
+  ticketStatusEl.textContent='Ticket: Unread';
 }
 
-// Floating hearts animation
-function createMultipleLoveBubbles() {
-  for (let i = 0; i < 5; i++) {
-    const bubble = document.createElement("div");
-    bubble.className = "love-bubble";
-    bubble.textContent = "❤";
-    bubble.style.left = Math.random() * (window.innerWidth - 50) + "px";
-    bubble.style.bottom = "0px";
-    bubble.style.animationDelay = (Math.random() * 0.5) + "s";
-    document.body.appendChild(bubble);
-    setTimeout(() => document.body.removeChild(bubble), 3000);
-  }
+// SSE for read notifications
+try {
+  const es = new EventSource(`${baseUrl}/events/${chatId}`);
+  es.onmessage = e=>{
+    try{
+      const payload=JSON.parse(e.data);
+      const other='agent';
+      if (payload.type==='read' && payload.seen_by && payload.seen_by.includes(other)){
+        showSeenIndicator(payload.index);
+        ticketRead=true;
+        ticketStatusEl.textContent='Ticket: Read ✅';
+      }
+    }catch(err){}
+  };
+}catch(err){}
+
+// Check agent status
+async function checkAgentStatus(){
+  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
+  const data = await res.json();
+  document.getElementById("agent-status").textContent = data.online ? "Agent Online 🟢":"Agent Offline 🔴";
+}
+
+// Live typing
+async function sendLiveTyping(){
+  await fetch(`${baseUrl}/live_typing`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ chat_id: chatId, text: msgInput.value })
+  });
 }
 
 // Event listeners
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  }
-});
+msgInput.addEventListener("keydown", e=>{if(e.key==="Enter"){if(e.ctrlKey||e.metaKey){e.preventDefault();sendMessage();}}});
 
-// Check agent status
-async function checkAgentStatus() {
-  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
-  const data = await res.json();
-  const statusEl = document.getElementById("agent-status");
-  statusEl.textContent = data.online ? "Agent Online 🟢" : "Agent Offline 🔴";
-}
-
-// Send live typing updates
-async function sendLiveTyping() {
-  await fetch(`${baseUrl}/live_typing`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ chat_id: chatId, text: msgInput.value })
-  });
-}
+// Logout user
+window.addEventListener("beforeunload", ()=>{navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));});
 
 // Intervals
-setInterval(loadMessages, 1500);
-setInterval(sendLiveTyping, 500);
-setInterval(checkAgentStatus, 2000);
+setInterval(loadMessages,1500);
+setInterval(sendLiveTyping,500);
+setInterval(checkAgentStatus,2000);
+
+loadMessages();
 checkAgentStatus();
-
-// SSE for seen updates
-try {
-  const es = new EventSource(`${baseUrl}/events/${chatId}`);
-  es.onmessage = e => {
-    try {
-      const payload = JSON.parse(e.data);
-      if (payload.type === 'read') {
-        const other = 'agent';
-        if (payload.seen_by && payload.seen_by.includes(other)) {
-          showSeenIndicator(payload.index);
-          ticketRead = true;
-          ticketStatusEl.textContent = 'Ticket: Read ✅';
-        }
-      }
-    } catch(err){}
-  };
-} catch(err){}
-
-// Mark user offline on unload
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
-});
-
-// Prevent mobile keyboard flicker on button tap
-const sendBtn = document.getElementById('send-btn');
-if (sendBtn) {
-  sendBtn.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'touch' || e.pointerType === 'pen') {
-      e.preventDefault();
-      const onUp = () => {
-        try { sendMessage(); } catch(err){}
-        window.removeEventListener('pointerup', onUp);
-      };
-      window.addEventListener('pointerup', onUp);
-    }
-  });
-}
 </script>
 </body>
 </html>
