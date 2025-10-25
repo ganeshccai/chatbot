@@ -67,6 +67,14 @@ header {
   white-space: pre-wrap;
 }
 
+.seen-indicator {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  text-align: right;
+}
+
 .user-msg { background: #ffc0cb; align-self: flex-start; }
 .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-end; }
 
@@ -182,6 +190,8 @@ async function loadMessages() {
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
+    // set data-index so we can reference this element later for seen indicator
+    div.dataset.index = i;
     chatContainer.appendChild(div);
   }
 
@@ -201,8 +211,15 @@ async function loadMessages() {
     if (lastMsg.seen_by && Array.isArray(lastMsg.seen_by) && lastMsg.seen_by.includes(other)) {
       if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
       ticketRead = true;
+      // show seen indicator under the last message
+      showSeenIndicator(data.length - 1);
     } else {
       if (ticketStatusEl && !ticketRead) ticketStatusEl.textContent = 'Ticket: Unread';
+      // remove any seen indicator if present
+      const lastEl = chatContainer.querySelector(`[data-index='${data.length - 1}']`);
+      if (lastEl && lastEl.querySelector('.seen-indicator')) {
+        lastEl.querySelector('.seen-indicator').remove();
+      }
     }
     // Observe the last message only if the last message was sent by the other party
     const shouldObserve = lastMsg.sender !== localRole;
@@ -241,6 +258,36 @@ async function sendMessage() {
   ticketRead = false;
   if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Unread';
 }
+
+function showSeenIndicator(index) {
+  const el = chatContainer.querySelector(`[data-index='${index}']`);
+  if (!el) return;
+  // avoid duplicate indicator
+  if (el.querySelector('.seen-indicator')) return;
+  const span = document.createElement('span');
+  span.className = 'seen-indicator';
+  span.textContent = 'Seen';
+  el.appendChild(span);
+}
+
+// Subscribe to server-sent events for immediate read notifications (single-instance)
+try {
+  const eventsUrl = `${baseUrl}/events/${chatId}`;
+  const es = new EventSource(eventsUrl);
+  es.onmessage = e => {
+    try {
+      const payload = JSON.parse(e.data);
+      if (payload.type === 'read') {
+        const other = localRole === 'agent' ? 'user' : 'agent';
+        if (payload.seen_by && payload.seen_by.includes(other)) {
+          showSeenIndicator(payload.index);
+          ticketRead = true;
+          if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+        }
+      }
+    } catch (err) { /* ignore */ }
+  };
+} catch (err) { /* ignore EventSource errors */ }
 
 // ---------- Check user online status ----------
 async function checkOnline() {
