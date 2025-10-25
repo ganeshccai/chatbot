@@ -5,7 +5,6 @@ from flask import (
 from flask_cors import CORS
 import queue
 import json
-import time
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = "temp_key"
@@ -150,10 +149,12 @@ def events(chat_id):
     def gen():
         try:
             while True:
-                data = q.get()
-                if data is None:
-                    break
-                yield f"data: {data}\n\n"
+                try:
+                    data = q.get(timeout=0.5)  # non-blocking wait
+                    yield f"data: {data}\n\n"
+                except queue.Empty:
+                    # heartbeat to keep connection alive
+                    yield "data: {}\n\n"
         except GeneratorExit:
             pass
         finally:
