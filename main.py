@@ -1,10 +1,8 @@
-from flask import (
-    Flask, render_template, request, session,
-    jsonify, Response, stream_with_context
-)
+from flask import Flask, render_template, request, session, jsonify, Response, stream_with_context
 from flask_cors import CORS
 import queue
 import json
+import time
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = "temp_key"
@@ -14,10 +12,10 @@ CHAT_ID = "1234"
 CHAT_PASSWORD = "1"
 
 # In-memory stores
-all_chats = {}          # chat_id -> list of messages
-online_users = {}       # chat_id -> True/False
-live_typing = {}        # chat_id -> text
-sse_subscribers = {}    # chat_id -> list of Queues
+all_chats = {}
+online_users = {}
+live_typing = {}
+sse_subscribers = {}
 
 # ---------------- User Page ----------------
 @app.route("/user", methods=["GET", "POST"])
@@ -26,8 +24,7 @@ def user_page():
         password = request.form.get("password")
         if password == CHAT_PASSWORD:
             session["chat_id"] = CHAT_ID
-            # clear old messages on login
-            all_chats[CHAT_ID] = []
+            all_chats[CHAT_ID] = []  # clear old messages
             online_users[CHAT_ID] = True
             live_typing[CHAT_ID] = ""
             return render_template("user.html")
@@ -64,7 +61,7 @@ def send_message():
     msg = {"sender": sender, "text": text, "seen_by": []}
     all_chats.setdefault(chat_id, []).append(msg)
 
-    # SSE broadcast for new message
+    # Send SSE to all subscribers
     for q in sse_subscribers.get(chat_id, []):
         q.put_nowait(json.dumps({"type": "new_message", "message": msg, "chat_id": chat_id}))
 
@@ -102,8 +99,7 @@ def logout_user():
     chat_id = data.get("chat_id", CHAT_ID)
     online_users[chat_id] = False
     live_typing[chat_id] = ""
-    # clear messages when user leaves
-    all_chats[chat_id] = []
+    all_chats[chat_id] = []  # clear messages
     return jsonify({"status": "ok"})
 
 @app.route("/logout_agent", methods=["POST"])
@@ -133,7 +129,7 @@ def mark_read():
         "type": "read",
         "index": len(msgs) - 1,
         "seen_by": last_msg["seen_by"],
-        "chat_id": chat_id,
+        "chat_id": chat_id
     })
     for q in sse_subscribers.get(chat_id, []):
         q.put_nowait(payload)
