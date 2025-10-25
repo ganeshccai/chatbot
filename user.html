@@ -54,7 +54,6 @@ header {
   padding: 8px 12px;
   border-radius: 12px;
   word-wrap: break-word;
-  /* Preserve user-entered line breaks and spacing */
   white-space: pre-wrap;
 }
 
@@ -125,70 +124,68 @@ header {
 
 <div id="input-container">
   <textarea id="msg" placeholder="Type message..." rows="2" enterkeyhint="enter"></textarea>
-  <!-- make button non-submitting and non-focusable to avoid stealing focus on mobile -->
   <button id="send-btn" type="button" tabindex="-1">Send</button>
 </div>
 
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
+const localRole = 'user';
 
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
-
-const localRole = 'user';
-let lastMessageCount = 0; // track messages to prevent re-render / duplicates
-
 const ticketStatusEl = document.getElementById('ticket-status');
+
+let lastMessageCount = 0;
 let ticketRead = false;
 let _lastObservedMsg = null;
 
-function markTicketRead(reader) {
-  if (ticketRead) return;
-  ticketRead = true;
-  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
-
-  // Notify server that the last message was seen by this reader
-  fetch(`${baseUrl}/mark_read`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, reader })
-  }).catch(() => { /* ignore network errors */ });
-}
-
+// IntersectionObserver to mark last incoming message as read
 const _observer = new IntersectionObserver(entries => {
   for (const entry of entries) {
     if (entry.isIntersecting) {
-      // When the observed (last incoming) message becomes visible mark it read
       markTicketRead('user');
     }
   }
 }, { root: chatContainer, threshold: 0.9 });
 
 function observeLastMessage(shouldObserve) {
-  try {
-    if (_lastObservedMsg) {
-      _observer.unobserve(_lastObservedMsg);
-      _lastObservedMsg = null;
-    }
-    if (!shouldObserve) return;
-    const last = chatContainer.lastElementChild;
-    if (last) {
-      _observer.observe(last);
-      _lastObservedMsg = last;
-    }
-  } catch (e) { /* safe fallback */ }
+  if (_lastObservedMsg) _observer.unobserve(_lastObservedMsg);
+  _lastObservedMsg = null;
+  if (!shouldObserve) return;
+  const last = chatContainer.lastElementChild;
+  if (last) {
+    _observer.observe(last);
+    _lastObservedMsg = last;
+  }
 }
 
-// ---------- Load existing messages ----------
+function markTicketRead(reader) {
+  if (ticketRead) return;
+  ticketRead = true;
+  ticketStatusEl.textContent = 'Ticket: Read ✅';
+  fetch(`${baseUrl}/mark_read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, reader })
+  }).catch(() => {});
+}
+
+function showSeenIndicator(index) {
+  const el = chatContainer.querySelector(`[data-index='${index}']`);
+  if (!el || el.querySelector('.seen-indicator')) return;
+  const span = document.createElement('span');
+  span.className = 'seen-indicator';
+  span.textContent = 'Seen';
+  el.appendChild(span);
+}
+
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
 
-  // Preserve whether the message input currently has focus so we can restore it
   const inputWasFocused = (document.activeElement === msgInput);
 
-  // Append only new messages
   for (let i = lastMessageCount; i < data.length; i++) {
     const msg = data[i];
     const div = document.createElement("div");
@@ -201,32 +198,28 @@ async function loadMessages() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   if (inputWasFocused) {
-    // Re-focus and move caret to end to keep the keyboard visible and the input usable
     msgInput.focus();
     const len = msgInput.value.length;
-    try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
+    try { msgInput.setSelectionRange(len, len); } catch(e){}
   }
-  // Update ticket status if the last message has been seen by the other side
-    if (data.length > 0) {
-      const lastMsg = data[data.length - 1];
-      const other = localRole === 'agent' ? 'user' : 'agent';
-      if (lastMsg.seen_by && Array.isArray(lastMsg.seen_by) && lastMsg.seen_by.includes(other)) {
-        showSeenIndicator(data.length - 1);
-        ticketRead = true;
-        if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
-      } else {
-        if (ticketStatusEl && !ticketRead) ticketStatusEl.textContent = 'Ticket: Unread';
-        const lastEl = chatContainer.querySelector(`[data-index='${data.length - 1}']`);
-        if (lastEl && lastEl.querySelector('.seen-indicator')) lastEl.querySelector('.seen-indicator').remove();
-      }
-    }
 
-    // Observe the last incoming message only if it was sent by the other party
-    const shouldObserve = data.length > 0 && data[data.length - 1].sender !== localRole;
-    observeLastMessage(shouldObserve);
+  // Handle seen indicator
+  if (data.length > 0) {
+    const lastMsg = data[data.length - 1];
+    const other = 'agent';
+    if (lastMsg.seen_by && lastMsg.seen_by.includes(other)) {
+      showSeenIndicator(data.length - 1);
+      ticketRead = true;
+      ticketStatusEl.textContent = 'Ticket: Read ✅';
+    } else if (!ticketRead) {
+      ticketStatusEl.textContent = 'Ticket: Unread';
+    }
+  }
+
+  const shouldObserve = data.length > 0 && data[data.length - 1].sender !== localRole;
+  observeLastMessage(shouldObserve);
 }
 
-// ---------- Send user message ----------
 async function sendMessage() {
   const message = msgInput.value.trim();
   if (!message) return;
@@ -237,7 +230,6 @@ async function sendMessage() {
     body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
   });
 
-  // Append message directly
   const div = document.createElement("div");
   div.className = "message user-msg";
   div.textContent = message;
@@ -245,57 +237,22 @@ async function sendMessage() {
   chatContainer.appendChild(div);
   chatContainer.scrollTop = chatContainer.scrollHeight;
   msgInput.value = "";
-  // increment lastMessageCount because we appended the message locally
   lastMessageCount++;
-  // Small timeout to ensure focus is restored after the button press event finishes.
-  // This helps keep the mobile keyboard open instead of it closing/re-opening.
+  ticketRead = false;
+  ticketStatusEl.textContent = 'Ticket: Unread';
+
   setTimeout(() => {
     msgInput.focus();
     const len = msgInput.value.length;
-    try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
+    try { msgInput.setSelectionRange(len, len); } catch(e){}
   }, 0);
 
-  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
-  // After sending a message locally, observe the last message so that
-  // when it's visible the ticket will be marked read by the recipient view.
-  // We sent a message ourselves so don't observe it for marking read here
   observeLastMessage(false);
-  // Mark ticket unread locally until the other side reads it
-  ticketRead = false;
-  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Unread';
+
+  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
 }
 
-function showSeenIndicator(index) {
-  const el = chatContainer.querySelector(`[data-index='${index}']`);
-  if (!el) return;
-  // avoid duplicate indicator
-  if (el.querySelector('.seen-indicator')) return;
-  const span = document.createElement('span');
-  span.className = 'seen-indicator';
-  span.textContent = 'Seen';
-  el.appendChild(span);
-}
-
-// Subscribe to server-sent events for immediate read notifications (single-instance)
-try {
-  const eventsUrl = `${baseUrl}/events/${chatId}`;
-  const es = new EventSource(eventsUrl);
-  es.onmessage = e => {
-    try {
-      const payload = JSON.parse(e.data);
-      if (payload.type === 'read') {
-        const other = localRole === 'agent' ? 'user' : 'agent';
-        if (payload.seen_by && payload.seen_by.includes(other)) {
-          showSeenIndicator(payload.index);
-          ticketRead = true;
-          if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
-        }
-      }
-    } catch (err) { /* ignore */ }
-  };
-} catch (err) { /* ignore EventSource errors */ }
-
-// ---------- Floating hearts ----------
+// Floating hearts animation
 function createMultipleLoveBubbles() {
   for (let i = 0; i < 5; i++) {
     const bubble = document.createElement("div");
@@ -309,22 +266,18 @@ function createMultipleLoveBubbles() {
   }
 }
 
-// ---------- Event listeners ----------
+// Event listeners
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-
-// Enter key: Shift+Enter for newline, Enter to send
-// Allow Enter to insert a newline. Use Ctrl+Enter or Cmd+Enter to send.
 msgInput.addEventListener("keydown", e => {
   if (e.key === "Enter") {
     if (e.ctrlKey || e.metaKey) {
       e.preventDefault();
       sendMessage();
     }
-    // otherwise allow newline insertion
   }
 });
 
-// ---------- Check agent status ----------
+// Check agent status
 async function checkAgentStatus() {
   const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
@@ -332,7 +285,7 @@ async function checkAgentStatus() {
   statusEl.textContent = data.online ? "Agent Online 🟢" : "Agent Offline 🔴";
 }
 
-// ---------- Live typing ----------
+// Send live typing updates
 async function sendLiveTyping() {
   await fetch(`${baseUrl}/live_typing`, {
     method: "POST",
@@ -341,29 +294,43 @@ async function sendLiveTyping() {
   });
 }
 
-// ---------- Intervals ----------
+// Intervals
 setInterval(loadMessages, 1500);
-// Reduce live-typing frequency slightly to avoid excessive network and DOM churn on mobile
 setInterval(sendLiveTyping, 500);
 setInterval(checkAgentStatus, 2000);
 checkAgentStatus();
 
-// ---------- Mark user offline ----------
+// SSE for seen updates
+try {
+  const es = new EventSource(`${baseUrl}/events/${chatId}`);
+  es.onmessage = e => {
+    try {
+      const payload = JSON.parse(e.data);
+      if (payload.type === 'read') {
+        const other = 'agent';
+        if (payload.seen_by && payload.seen_by.includes(other)) {
+          showSeenIndicator(payload.index);
+          ticketRead = true;
+          ticketStatusEl.textContent = 'Ticket: Read ✅';
+        }
+      }
+    } catch(err){}
+  };
+} catch(err){}
+
+// Mark user offline on unload
 window.addEventListener("beforeunload", () => {
   navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
 });
 
-// Prevent the send button from receiving focus on pointer down (helps mobile keyboards stay open)
+// Prevent mobile keyboard flicker on button tap
 const sendBtn = document.getElementById('send-btn');
 if (sendBtn) {
-  // On touch/pen input, prevent the button from taking focus (which closes mobile
-  // keyboards) and send the message on pointerup. For mouse clicks we keep the
-  // normal click handler.
   sendBtn.addEventListener('pointerdown', e => {
     if (e.pointerType === 'touch' || e.pointerType === 'pen') {
       e.preventDefault();
       const onUp = () => {
-        try { sendMessage(); } catch (err) { /* ignore */ }
+        try { sendMessage(); } catch(err){}
         window.removeEventListener('pointerup', onUp);
       };
       window.addEventListener('pointerup', onUp);
