@@ -44,7 +44,10 @@ const liveTypingEl = document.getElementById('live-typing');
 
 let lastIndex = 0;
 
-// Append message
+// Clear chat on load
+chatContainer.innerHTML='';
+
+// Append message function
 function appendMessage(msg,index){
   if(chatContainer.querySelector(`[data-index='${index}']`)) return;
   const div=document.createElement('div');
@@ -77,7 +80,7 @@ async function sendMessage(){
   ticketStatusEl.textContent='Ticket: Unread';
 }
 
-// SSE connection
+// SSE for real-time updates
 const es=new EventSource(`${baseUrl}/events/${chatId}`);
 es.onmessage=e=>{
   try{
@@ -107,16 +110,12 @@ async function checkOnline(){
   onlineStatusEl.textContent=data.user_online?'User Online 🟢':'User Offline ❌';
 }
 
-// Load live typing (only agent sees)
+// Load live typing (only for agent)
 async function loadLiveTyping(){
   const res=await fetch(`${baseUrl}/get_live_typing/${chatId}`);
   const data=await res.json();
   liveTypingEl.textContent=data.text?`Typing: ${data.text}`:'';
 }
-
-// Clear chat on load
-chatContainer.innerHTML='';
-lastIndex=0;
 
 // Event listeners
 document.getElementById("send-btn").addEventListener("click",sendMessage);
@@ -125,7 +124,9 @@ msgInput.addEventListener("keydown",e=>{
 });
 
 // Logout agent
-window.addEventListener("beforeunload",async()=>{await fetch(`${baseUrl}/logout_agent`,{method:"POST",headers:{"Content-Type":"application/json"}});});
+window.addEventListener("beforeunload",async()=>{
+  await fetch(`${baseUrl}/logout_agent`,{method:"POST",headers:{"Content-Type":"application/json"}});
+});
 
 // Intervals
 setInterval(checkOnline,500);
