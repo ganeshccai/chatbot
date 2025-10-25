@@ -107,7 +107,8 @@ header {
 
 <div id="input-container">
   <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
-  <button id="send-btn">Send</button>
+  <!-- make button non-submitting and non-focusable to avoid stealing focus on mobile -->
+  <button id="send-btn" type="button" tabindex="-1">Send</button>
 </div>
 
 <script>
@@ -124,6 +125,9 @@ async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
 
+  // Preserve whether the message input currently has focus so we can restore it
+  const inputWasFocused = (document.activeElement === msgInput);
+
   // Append only new messages
   for (let i = lastMessageCount; i < data.length; i++) {
     const msg = data[i];
@@ -135,6 +139,13 @@ async function loadMessages() {
 
   lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  if (inputWasFocused) {
+    // Re-focus and move caret to end to keep the keyboard visible and the input usable
+    msgInput.focus();
+    const len = msgInput.value.length;
+    try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
+  }
 }
 
 // ---------- Send user message ----------
@@ -156,7 +167,13 @@ async function sendMessage() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   msgInput.value = "";
-  msgInput.focus(); // keep keyboard open
+  // Small timeout to ensure focus is restored after the button press event finishes.
+  // This helps keep the mobile keyboard open instead of it closing/re-opening.
+  setTimeout(() => {
+    msgInput.focus();
+    const len = msgInput.value.length;
+    try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
+  }, 0);
 
   if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
 }
@@ -205,7 +222,8 @@ async function sendLiveTyping() {
 
 // ---------- Intervals ----------
 setInterval(loadMessages, 1500);
-setInterval(sendLiveTyping, 300);
+// Reduce live-typing frequency slightly to avoid excessive network and DOM churn on mobile
+setInterval(sendLiveTyping, 500);
 setInterval(checkAgentStatus, 2000);
 checkAgentStatus();
 
@@ -213,6 +231,15 @@ checkAgentStatus();
 window.addEventListener("beforeunload", () => {
   navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
 });
+
+// Prevent the send button from receiving focus on pointer down (helps mobile keyboards stay open)
+const sendBtn = document.getElementById('send-btn');
+if (sendBtn) {
+  sendBtn.addEventListener('pointerdown', e => {
+    // prevent button from stealing focus while still allowing click to fire
+    e.preventDefault();
+  });
+}
 </script>
 </body>
 </html>
