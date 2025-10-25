@@ -28,6 +28,13 @@
     border-radius: 0 0 15px 15px;
   }
 
+  #agent-status {
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    margin-top: 6px;
+  }
+
   #chat-container {
     flex: 1;
     display: flex;
@@ -104,9 +111,9 @@
 </style>
 </head>
 <body>
-<div id="agent-status" style="font-weight:bold; color:#333;"></div>
+<div id="agent-status">Checking agent status...</div>
 
-<header></header>
+<header>Heart to Heart 💖</header>
 <div id="chat-container"></div>
 
 <div id="input-container">
@@ -115,6 +122,7 @@
 </div>
 
 <script>
+const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
 
 // ---------- Send user message ----------
@@ -123,7 +131,7 @@ async function sendMessage() {
   const message = msgInput.value.trim();
   if (!message) return;
 
-  await fetch("/send", {
+  await fetch(`${baseUrl}/send`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
@@ -132,13 +140,12 @@ async function sendMessage() {
   msgInput.value = "";
   loadMessages();
 
-  // Floating hearts if "love" is typed
   if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
 }
 
 // ---------- Load chat messages ----------
 async function loadMessages() {
-  const res = await fetch(`/messages/${chatId}`);
+  const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
   const container = document.getElementById("chat-container");
   container.innerHTML = "";
@@ -156,7 +163,7 @@ async function loadMessages() {
 // ---------- Send live typing ----------
 async function sendLiveTyping() {
   const msgInput = document.getElementById("msg");
-  await fetch("/live_typing", {
+  await fetch(`${baseUrl}/live_typing`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ chat_id: chatId, text: msgInput.value })
@@ -165,8 +172,7 @@ async function sendLiveTyping() {
 
 // ---------- Floating hearts ----------
 function createMultipleLoveBubbles() {
-  const count = 5;
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < 5; i++) {
     const bubble = document.createElement("div");
     bubble.className = "love-bubble";
     bubble.textContent = "❤";
@@ -180,47 +186,26 @@ function createMultipleLoveBubbles() {
 
 // ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
+document.getElementById("msg").addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+
+// ---------- Mark user offline ----------
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
 });
+
+// ---------- Check agent status only ----------
+async function checkAgentStatus() {
+  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
+  const data = await res.json();
+  const statusEl = document.getElementById("agent-status");
+  statusEl.textContent = data.online ? "Agent Online 🟢" : "Agent Offline 🔴";
+}
 
 // ---------- Intervals ----------
 setInterval(loadMessages, 1500);
 setInterval(sendLiveTyping, 300);
-
-// ---------- Mark user offline ----------
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon("/logout_user", JSON.stringify({ chat_id: chatId }));
-});
-
-// ---------- Agent + User status ----------
-async function checkStatus() {
-  const res = await fetch(`/is_online/${chatId}`);
-  const data = await res.json();
-  const statusEl = document.getElementById("agent-status");
-
-  let agentText = data.online ? "🟢" : "🔴";
-  let userText = data.user_online ? " | You Online 🟢" : " | You Offline 🔴";
-  statusEl.textContent = agentText + userText;
-}
-
-setInterval(checkStatus, 2000);
-checkStatus();
-
-// ---------- Agent status only ----------
-async function checkStatus() {
-  const res = await fetch(`/is_online/${chatId}`);
-  const data = await res.json();
-  const statusEl = document.getElementById("agent-status");
-
-  // Only show agent online/offline
-  statusEl.textContent = data.online ? "🟢" : "🔴";
-}
-
-setInterval(checkStatus, 2000);
-checkStatus();
-    
-    
+setInterval(checkAgentStatus, 2000);
+checkAgentStatus();
 </script>
 </body>
 </html>
