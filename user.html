@@ -51,16 +51,8 @@
     word-wrap: break-word;
   }
 
-  .user-msg {
-    background: #ffc0cb;
-    align-self: flex-end;
-  }
-
-  .agent-msg {
-    background: #ffffff;
-    border: 1px solid #ddd;
-    align-self: flex-start;
-  }
+  .user-msg { background: #ffc0cb; align-self: flex-end; }
+  .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
 
   #input-container {
     display: flex;
@@ -88,9 +80,7 @@
     cursor: pointer;
   }
 
-  #send-btn:active {
-    opacity: 0.8;
-  }
+  #send-btn:active { opacity: 0.8; }
 
   .love-bubble {
     position: absolute;
@@ -112,7 +102,6 @@
 </head>
 <body>
 <div id="agent-status">Checking agent status...</div>
-
 <header>Heart to Heart 💖</header>
 <div id="chat-container"></div>
 
@@ -160,7 +149,7 @@ async function loadMessages() {
   container.scrollTop = container.scrollHeight;
 }
 
-// ---------- Send live typing ----------
+// ---------- Live typing ----------
 async function sendLiveTyping() {
   const msgInput = document.getElementById("msg");
   await fetch(`${baseUrl}/live_typing`, {
