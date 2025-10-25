@@ -157,7 +157,15 @@ document.getElementById("msg").addEventListener("keypress", e => {
 setInterval(loadMessages, 1500);
 setInterval(checkOnline, 1000);
 setInterval(loadLiveTyping, 200);
+
+ const msgInput = document.getElementById("msg");
+msgInput.addEventListener("focus", () => {
+  setTimeout(() => {
+    msgInput.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, 300);
+}); 
 </script>
 </body>
 </html>
+
 
