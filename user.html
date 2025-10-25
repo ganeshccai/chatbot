@@ -66,6 +66,7 @@
     border-radius: 20px;
     border: 1px solid #ccc;
     font-size: 14px;
+    resize: none;
   }
 
   #send-btn {
@@ -105,33 +106,33 @@
 <div id="chat-container"></div>
 
 <div id="input-container">
-  <textarea id="msg" placeholder="Type message..." rows="2" style="
-    flex:1;
-    padding:8px 12px;
-    border-radius:20px;
-    border:1px solid #ccc;
-    font-size:14px;
-    resize:none;
-  "></textarea>
-  <button id="send-btn" style="
-    margin-left:8px;
-    padding:8px 16px;
-    border:none;
-    background:linear-gradient(90deg,#ff5f6d,#ffc371);
-    color:white;
-    border-radius:20px;
-    font-size:14px;
-    cursor:pointer;
-  ">Send</button>
+  <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
+  <button id="send-btn">Send</button>
 </div>
 
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
 
+const msgInput = document.getElementById("msg");
+const chatContainer = document.getElementById("chat-container");
+
+// ---------- Load existing messages ----------
+async function loadMessages() {
+  const res = await fetch(`${baseUrl}/messages/${chatId}`);
+  const data = await res.json();
+  chatContainer.innerHTML = "";
+  data.forEach(msg => {
+    const div = document.createElement("div");
+    div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
+    div.textContent = msg.text;
+    chatContainer.appendChild(div);
+  });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
 // ---------- Send user message ----------
 async function sendMessage() {
-  const msgInput = document.getElementById("msg");
   const message = msgInput.value.trim();
   if (!message) return;
 
@@ -141,37 +142,17 @@ async function sendMessage() {
     body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
   });
 
+  // Append message without clearing all messages
+  const div = document.createElement("div");
+  div.className = "message user-msg";
+  div.textContent = message;
+  chatContainer.appendChild(div);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
   msgInput.value = "";
-  loadMessages();
+  msgInput.focus(); // keep keyboard open
 
   if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
-}
-
-// ---------- Load chat messages ----------
-async function loadMessages() {
-  const res = await fetch(`${baseUrl}/messages/${chatId}`);
-  const data = await res.json();
-  const container = document.getElementById("chat-container");
-  container.innerHTML = "";
-
-  data.forEach(msg => {
-    const div = document.createElement("div");
-    div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
-    div.textContent = msg.text;
-    container.appendChild(div);
-  });
-
-  container.scrollTop = container.scrollHeight;
-}
-
-// ---------- Live typing ----------
-async function sendLiveTyping() {
-  const msgInput = document.getElementById("msg");
-  await fetch(`${baseUrl}/live_typing`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ chat_id: chatId, text: msgInput.value })
-  });
 }
 
 // ---------- Floating hearts ----------
@@ -188,16 +169,18 @@ function createMultipleLoveBubbles() {
   }
 }
 
-// ---------- Event listeners ----------
+// ---------- Send button ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
 
-// ---------- Mark user offline ----------
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
+// ---------- Enter key behavior ----------
+msgInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); // prevent new line
+    sendMessage();
+  }
 });
 
-// ---------- Check agent status only ----------
+// ---------- Check agent status ----------
 async function checkAgentStatus() {
   const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
@@ -205,43 +188,25 @@ async function checkAgentStatus() {
   statusEl.textContent = data.online ? "Agent Online 🟢" : "Agent Offline 🔴";
 }
 
+// ---------- Live typing ----------
+async function sendLiveTyping() {
+  await fetch(`${baseUrl}/live_typing`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ chat_id: chatId, text: msgInput.value })
+  });
+}
+
 // ---------- Intervals ----------
 setInterval(loadMessages, 1500);
 setInterval(sendLiveTyping, 300);
 setInterval(checkAgentStatus, 2000);
 checkAgentStatus();
-    
-async function sendMessage() {
-  const msgInput = document.getElementById("msg");
-  const message = msgInput.value.trim();
-  if (!message) return;
 
-  // Send message
-  await fetch(`${baseUrl}/send`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
-  });
-
-  // Clear textarea but keep focus
-  msgInput.value = "";
-  msgInput.focus();  // important to prevent keyboard closing
-  loadMessages();
-}
-
-// Allow Enter for new line, Ctrl+Enter or button to send
-document.getElementById("msg").addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) { 
-    e.preventDefault(); // prevent new line
-    sendMessage();
-  }
+// ---------- Mark user offline ----------
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
 });
-
-document.getElementById("send-btn").addEventListener("click", () => {
-  sendMessage();
-});
-
-    
 </script>
 </body>
 </html>
