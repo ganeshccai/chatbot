@@ -1,175 +1,116 @@
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context, session
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-import queue
-import json
-import time
+import json, threading, time
 
-app = Flask(__name__, template_folder="../templates", static_folder="../static")
-app.secret_key = "temp_key"
+app = Flask(__name__)
 CORS(app)
 
-CHAT_ID = "1234"
-CHAT_PASSWORD = "1"
+# store chat messages and active client connections
+all_chats = {}       # {chat_id: [ {sender,text,seen_by}, ... ]}
+clients = {}         # {chat_id: [Condition objects for SSE clients]}
 
-# Stores
-all_chats = {}           # chat_id -> list of messages
-online_users = {}        # chat_id or 'agent' -> True/False
-live_typing = {}         # chat_id -> text
-sse_subscribers = {}     # chat_id -> [queues]
+# ------------------------------
+# Utility: Broadcast message to all clients in a chat
+# ------------------------------
+def broadcast(chat_id, message):
+    for cond in clients.get(chat_id, []):
+        with cond:
+            cond.msg = message
+            cond.notify()
 
-# ---------------- UTIL ----------------
-def broadcast(chat_id, data):
-    """Send event data to all subscribers."""
-    msg = json.dumps(data)
-    for q in list(sse_subscribers.get(chat_id, [])):
-        try:
-            q.put_nowait(msg)
-        except Exception:
-            pass
 
-# ---------------- USER PAGE ----------------
-@app.route("/user", methods=["GET", "POST"])
-def user_page():
-    if request.method == "POST":
-        pwd = request.form.get("password")
-        if pwd == CHAT_PASSWORD:
-            session["chat_id"] = CHAT_ID
-            # clear old chat
-            all_chats[CHAT_ID] = []
-            live_typing[CHAT_ID] = ""
-            online_users[CHAT_ID] = True
-            return render_template("user.html")
-        return "Wrong password"
-    return """<form method="post">
-                <input type="password" name="password" placeholder="Password"/>
-                <input type="submit" value="Login"/>
-              </form>"""
-
-# ---------------- AGENT PAGE ----------------
-@app.route("/agent", methods=["GET", "POST"])
-def agent_page():
-    if request.method == "POST":
-        pwd = request.form.get("password")
-        if pwd == CHAT_PASSWORD:
-            online_users["agent"] = True
-            return render_template("agent.html")
-        return "Wrong password"
-    return """<form method="post">
-                <input type="password" name="password" placeholder="Password"/>
-                <input type="submit" value="Login"/>
-              </form>"""
-
-# ---------------- SEND MESSAGE ----------------
+# ------------------------------
+# API: Send message
+# ------------------------------
 @app.route("/send", methods=["POST"])
 def send_message():
-    data = request.get_json(force=True)
-    chat_id = data.get("chat_id")
-    sender = data.get("sender")
-    text = (data.get("text") or "").strip()
-    if not chat_id or not sender or not text:
-        return jsonify({"status": "error", "message": "chat_id, sender, text required"}), 400
-
-    msgs = all_chats.setdefault(chat_id, [])
-    msg_id = len(msgs)
-    msg = {"id": msg_id, "sender": sender, "text": text, "seen_by": []}
-    msgs.append(msg)
-
+    data = request.json
+    chat_id = data["chat_id"]
+    msg = {"sender": data["sender"], "text": data["text"], "seen_by": []}
+    all_chats.setdefault(chat_id, []).append(msg)
     broadcast(chat_id, {"type": "new_message", "message": msg})
-    return jsonify({"status": "ok", "id": msg_id})
-
-# ---------------- GET MESSAGES ----------------
-@app.route("/messages/<chat_id>")
-def get_messages(chat_id):
-    return jsonify(all_chats.get(chat_id, []))
-
-# ---------------- ONLINE STATUS ----------------
-@app.route("/is_online/<chat_id>")
-def is_online(chat_id):
-    return jsonify({
-        "user_online": online_users.get(chat_id, False),
-        "online": online_users.get("agent", False)
-    })
-
-# ---------------- LIVE TYPING ----------------
-@app.route("/live_typing", methods=["POST"])
-def update_live_typing():
-    data = request.get_json(force=True)
-    chat_id = data.get("chat_id")
-    live_typing[chat_id] = data.get("text", "")
     return jsonify({"status": "ok"})
 
-@app.route("/get_live_typing/<chat_id>")
-def get_live_typing(chat_id):
-    return jsonify({"text": live_typing.get(chat_id, "")})
 
-# ---------------- MARK READ ----------------
-@app.route("/mark_read", methods=["POST"])
+# ------------------------------
+# API: Typing indicator
+# ------------------------------
+@app.route("/typing", methods=["POST"])
+def typing():
+    data = request.json
+    chat_id = data["chat_id"]
+    sender = data["sender"]
+    broadcast(chat_id, {"type": "typing", "sender": sender})
+    return jsonify({"status": "ok"})
+
+
+# ------------------------------
+# API: Mark message as read
+# ------------------------------
+@app.route("/read", methods=["POST"])
 def mark_read():
-    data = request.get_json(force=True)
-    chat_id = data.get("chat_id")
-    reader = data.get("reader")
-    if not chat_id or not reader:
-        return jsonify({"status": "error"}), 400
+    data = request.json
+    chat_id = data["chat_id"]
+    reader = data["reader"]
 
-    msgs = all_chats.get(chat_id, [])
-    if not msgs:
-        return jsonify({"status": "ok"})
+    if chat_id in all_chats:
+        for msg in all_chats[chat_id]:
+            if reader not in msg["seen_by"]:
+                msg["seen_by"].append(reader)
 
-    last_msg = msgs[-1]
-    if reader not in last_msg["seen_by"]:
-        last_msg["seen_by"].append(reader)
-
-    broadcast(chat_id, {
-        "type": "read",
-        "index": len(msgs) - 1,
-        "seen_by": last_msg["seen_by"]
-    })
+    broadcast(chat_id, {"type": "read", "seen_by": [reader]})
     return jsonify({"status": "ok"})
 
-# ---------------- LOGOUT ----------------
-@app.route("/logout_user", methods=["POST"])
-def logout_user():
-    data = request.get_json(force=True, silent=True) or {}
-    cid = data.get("chat_id", CHAT_ID)
-    online_users[cid] = False
-    live_typing[cid] = ""
-    all_chats[cid] = []
-    broadcast(cid, {"type": "cleared"})
-    return jsonify({"status": "ok"})
 
-@app.route("/logout_agent", methods=["POST"])
-def logout_agent():
-    online_users["agent"] = False
-    return jsonify({"status": "ok"})
-
-# ---------------- SSE EVENTS ----------------
+# ------------------------------
+# API: Event Stream (SSE)
+# ------------------------------
 @app.route("/events/<chat_id>")
 def events(chat_id):
-    q = queue.Queue()
-    sse_subscribers.setdefault(chat_id, []).append(q)
-
     def stream():
+        cond = threading.Condition()
+        clients.setdefault(chat_id, []).append(cond)
         try:
             while True:
-                try:
-                    data = q.get(timeout=15)
-                    yield f"data: {data}\n\n"
-                except queue.Empty:
-                    yield "data: {}\n\n"  # heartbeat every 15s
+                with cond:
+                    cond.wait()
+                    if hasattr(cond, "msg"):
+                        yield f"data: {json.dumps(cond.msg)}\n\n"
+                        cond.msg = None
         except GeneratorExit:
-            pass
-        finally:
-            sse_subscribers.get(chat_id, []).remove(q)
+            clients[chat_id].remove(cond)
 
-    headers = {
-        "Cache-Control": "no-cache",
-        "Content-Type": "text/event-stream",
-        "X-Accel-Buffering": "no"
-    }
-    return Response(stream_with_context(stream()), headers=headers)
+    return Response(stream(), mimetype="text/event-stream")
 
-# ---------------- MAIN ----------------
+
+# ------------------------------
+# API: Check if agent online
+# ------------------------------
+@app.route("/is_online/<chat_id>")
+def is_online(chat_id):
+    online = chat_id in clients and len(clients[chat_id]) > 1
+    return jsonify({"online": online})
+
+
+# ------------------------------
+# API: Reset chat (to clear history on refresh)
+# ------------------------------
+@app.route("/reset/<chat_id>", methods=["POST"])
+def reset_chat(chat_id):
+    all_chats[chat_id] = []
+    return jsonify({"status": "cleared"})
+
+
+# ------------------------------
+# Root Test
+# ------------------------------
+@app.route("/")
+def home():
+    return "💬 Chat server running..."
+
+
+# ------------------------------
+# Run
+# ------------------------------
 if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port, threaded=True)
+    app.run(host="0.0.0.0", port=8080, threaded=True)
