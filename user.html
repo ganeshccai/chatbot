@@ -41,7 +41,10 @@ const agentStatusEl = document.getElementById('agent-status');
 
 let lastIndex = 0;
 
-// Append message
+// Clear chat on load
+chatContainer.innerHTML='';
+
+// Append message function
 function appendMessage(msg,index){
   if(chatContainer.querySelector(`[data-index='${index}']`)) return;
   const div=document.createElement('div');
@@ -74,7 +77,7 @@ async function sendMessage(){
   ticketStatusEl.textContent='Ticket: Unread';
 }
 
-// SSE connection
+// SSE for real-time updates
 const es=new EventSource(`${baseUrl}/events/${chatId}`);
 es.onmessage=e=>{
   try{
@@ -103,10 +106,6 @@ async function checkAgent(){
   const data=await res.json();
   agentStatusEl.textContent=data.online?'Agent Online 🟢':'Agent Offline 🔴';
 }
-
-// Clear chat on load
-chatContainer.innerHTML='';
-lastIndex=0;
 
 // Event listeners
 document.getElementById("send-btn").addEventListener("click",sendMessage);
