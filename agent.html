@@ -114,6 +114,8 @@ const chatId = "1234";
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 
+let lastMessageCount = 0; // track messages to prevent duplicate rendering when appending locally
+
 // ---------- Load existing messages ----------
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
@@ -122,15 +124,16 @@ async function loadMessages() {
   // Preserve whether the message input currently has focus so we can restore it
   const inputWasFocused = (document.activeElement === msgInput);
 
-  // Rebuild messages (simple approach). Restore focus afterwards to avoid
-  // mobile keyboard closing/re-opening during periodic updates.
-  chatContainer.innerHTML = "";
-  data.forEach(msg => {
+  // Append only new messages to avoid duplicating messages that we appended locally
+  for (let i = lastMessageCount; i < data.length; i++) {
+    const msg = data[i];
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
     chatContainer.appendChild(div);
-  });
+  }
+
+  lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   if (inputWasFocused) {
@@ -160,7 +163,10 @@ async function sendMessage() {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   msgInput.value = "";
-  msgInput.focus(); // keep keyboard open
+  // increment lastMessageCount because we appended the message locally
+  lastMessageCount++;
+  // keep keyboard open
+  msgInput.focus();
 }
 
 // ---------- Check user online status ----------
