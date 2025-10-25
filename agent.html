@@ -61,7 +61,7 @@
   }
 
   .user-msg {
-    background: #ffc0cb; /* baby pink */
+    background: #ffc0cb;
     align-self: flex-start;
   }
 
@@ -104,7 +104,7 @@
 </head>
 <body>
 
-<header></header>
+<header>Heart to Heart 💖</header>
 <div id="online-status">User Offline ❌</div>
 <div id="live-typing"></div>
 
@@ -116,6 +116,7 @@
 </div>
 
 <script>
+const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
 
 // ---------- Send message ----------
@@ -124,7 +125,7 @@ async function sendMessage() {
   const message = msgInput.value.trim();
   if (!message) return;
 
-  await fetch("/send", {
+  await fetch(`${baseUrl}/send`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify({chat_id: chatId, sender: "agent", text: message})
@@ -136,7 +137,7 @@ async function sendMessage() {
 
 // ---------- Load messages ----------
 async function loadMessages() {
-  const res = await fetch(`/messages/${chatId}`);
+  const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
   const container = document.getElementById("chat-container");
   container.innerHTML = "";
@@ -153,15 +154,15 @@ async function loadMessages() {
 
 // ---------- Check online status ----------
 async function checkOnline() {
-  const res = await fetch(`/is_online/${chatId}`);
+  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
   const status = document.getElementById("online-status");
-  status.textContent = data.user_online ? "🟢" : "❌";
+  status.textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
 }
 
 // ---------- Live typing ----------
 async function loadLiveTyping() {
-  const res = await fetch(`/get_live_typing/${chatId}`);
+  const res = await fetch(`${baseUrl}/get_live_typing/${chatId}`);
   const data = await res.json();
   const typingElem = document.getElementById("live-typing");
   typingElem.textContent = data.text ? `Typing: ${data.text}` : "";
@@ -169,17 +170,12 @@ async function loadLiveTyping() {
 
 // ---------- Logout agent ----------
 window.addEventListener("beforeunload", async () => {
-  await fetch("/logout_agent", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"}
-  });
+  await fetch(`${baseUrl}/logout_agent`, { method: "POST", headers: {"Content-Type": "application/json"} });
 });
 
 // ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
+document.getElementById("msg").addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
 
 // ---------- Intervals ----------
 setInterval(loadMessages, 1500);
