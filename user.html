@@ -1,97 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CCAI User Chatbot</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heart to Heart 💖</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f7f9;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
 
-  <!-- Dialogflow CX Messenger -->
-  <link rel="stylesheet" href="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/themes/df-messenger-default.css">
-  <script src="https://www.gstatic.com/dialogflow-console/fast/df-messenger/prod/v1/df-messenger.js"></script>
+  header {
+    background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 2px solid #ff9a9e;
+    border-radius: 0 0 15px 15px;
+  }
 
-  <!-- Firebase -->
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import { getFirestore, collection, doc, setDoc, onSnapshot, query, orderBy, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+  #chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
+  }
 
-    // ✅ Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyABXXFFamtW5rjBZGqe-2uyR2CoWIyzDG4",
-      authDomain: "project001-474715.firebaseapp.com",
-      projectId: "project001-474715",
-      storageBucket: "project001-474715.firebasestorage.app",
-      messagingSenderId: "788207962975",
-      appId: "1:788207962975:web:f9ff0a07f72df289cc84ea"
-    };
+  .message {
+    max-width: 80%;
+    margin: 4px 0;
+    padding: 8px 12px;
+    border-radius: 12px;
+    word-wrap: break-word;
+  }
 
-    // ✅ Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  .user-msg {
+    background: #ffc0cb;
+    align-self: flex-end;
+  }
 
-    // 🔹 Detect current session (from dfMessenger)
-    window.addEventListener("dfMessengerLoaded", function () {
-      const dfMessenger = document.querySelector("df-messenger");
-      let currentSessionId = null;
+  .agent-msg {
+    background: #ffffff;
+    border: 1px solid #ddd;
+    align-self: flex-start;
+  }
 
-      dfMessenger.addEventListener("df-request-sent", async (event) => {
-        const sessionId = dfMessenger._state?.sessionId;
-        currentSessionId = sessionId;
-        console.log("🆔 Session ID:", sessionId);
+  #input-container {
+    display: flex;
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #ccc;
+  }
 
-        // Create or update session doc deterministically
-        await setDoc(doc(db, "sessions", sessionId), {
-          id: sessionId,
-          timestamp: new Date(),
-          status: "active"
-        }, { merge: true });
+  #msg {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
 
-        // Add user message to Firestore
-        await addDoc(collection(db, "sessions", sessionId, "messages"), {
-          message: event.detail.queryInput.text,
-          sender: "user",
-          timestamp: new Date()
-        });
+  #send-btn {
+    margin-left: 8px;
+    padding: 8px 16px;
+    border: none;
+    background: linear-gradient(90deg, #ff5f6d, #ffc371);
+    color: white;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+  }
 
-        // Start listening to Firestore messages
-        const q = query(collection(db, "sessions", sessionId, "messages"), orderBy("timestamp"));
-        onSnapshot(q, (snapshot) => {
-          snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-              const msg = change.doc.data();
-              console.log("🔥 New message:", msg);
-              // If it's an agent message, display it
-              if (msg.sender === "agent") {
-                dfMessenger.renderCustomText(msg.message);
-              }
-            }
-          });
-        });
-      });
-    });
-  </script>
+  #send-btn:active {
+    opacity: 0.8;
+  }
 
-  <style>
-    df-messenger {
-      z-index: 999;
-      position: fixed;
-      --df-messenger-font-color: #000;
-      --df-messenger-font-family: Google Sans;
-      --df-messenger-chat-background: #f3f6fc;
-      --df-messenger-message-user-background: #d3e3fd;
-      --df-messenger-message-bot-background: #fff;
-      bottom: 16px;
-      right: 16px;
-    }
-  </style>
+  .love-bubble {
+    position: absolute;
+    font-size: 16px;
+    opacity: 0.9;
+    color: red;
+    animation: floatGrowVibe 3s forwards;
+    pointer-events: none;
+  }
+
+  @keyframes floatGrowVibe {
+    0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
+    25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
+    50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
+    75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
+    100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
+  }
+</style>
 </head>
-
 <body>
-  <df-messenger
-    location="us-central1"
-    project-id="project001-474715"
-    agent-id="f82d4b5f-ee2f-402c-8aa6-cb11b0a8e56d"
-    language-code="en"
-    max-query-length="-1">
-    <df-messenger-chat-bubble chat-title="Support Bot"></df-messenger-chat-bubble>
-  </df-messenger>
+<div id="agent-status" style="font-weight:bold; color:#333;"></div>
+
+<header></header>
+<div id="chat-container"></div>
+
+<div id="input-container">
+  <input id="msg" placeholder="Type message..." autocomplete="off">
+  <button id="send-btn">➤</button>
+</div>
+
+<script>
+const chatId = "1234";
+
+// ---------- Send user message ----------
+async function sendMessage() {
+  const msgInput = document.getElementById("msg");
+  const message = msgInput.value.trim();
+  if (!message) return;
+
+  await fetch("/send", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
+  });
+
+  msgInput.value = "";
+  loadMessages();
+
+  // Floating hearts if "love" is typed
+  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
+}
+
+// ---------- Load chat messages ----------
+async function loadMessages() {
+  const res = await fetch(`/messages/${chatId}`);
+  const data = await res.json();
+  const container = document.getElementById("chat-container");
+  container.innerHTML = "";
+
+  data.forEach(msg => {
+    const div = document.createElement("div");
+    div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
+    div.textContent = msg.text;
+    container.appendChild(div);
+  });
+
+  container.scrollTop = container.scrollHeight;
+}
+
+// ---------- Send live typing ----------
+async function sendLiveTyping() {
+  const msgInput = document.getElementById("msg");
+  await fetch("/live_typing", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ chat_id: chatId, text: msgInput.value })
+  });
+}
+
+// ---------- Floating hearts ----------
+function createMultipleLoveBubbles() {
+  const count = 5;
+  for (let i = 0; i < count; i++) {
+    const bubble = document.createElement("div");
+    bubble.className = "love-bubble";
+    bubble.textContent = "❤";
+    bubble.style.left = Math.random() * (window.innerWidth - 50) + "px";
+    bubble.style.bottom = "0px";
+    bubble.style.animationDelay = (Math.random() * 0.5) + "s";
+    document.body.appendChild(bubble);
+    setTimeout(() => document.body.removeChild(bubble), 3000);
+  }
+}
+
+// ---------- Event listeners ----------
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+document.getElementById("msg").addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// ---------- Intervals ----------
+setInterval(loadMessages, 1500);
+setInterval(sendLiveTyping, 300);
+
+// ---------- Mark user offline ----------
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon("/logout_user", JSON.stringify({ chat_id: chatId }));
+});
+
+// ---------- Agent + User status ----------
+async function checkStatus() {
+  const res = await fetch(`/is_online/${chatId}`);
+  const data = await res.json();
+  const statusEl = document.getElementById("agent-status");
+
+  let agentText = data.online ? "🟢" : "🔴";
+  let userText = data.user_online ? " | You Online 🟢" : " | You Offline 🔴";
+  statusEl.textContent = agentText + userText;
+}
+
+setInterval(checkStatus, 2000);
+checkStatus();
+
+// ---------- Agent status only ----------
+async function checkStatus() {
+  const res = await fetch(`/is_online/${chatId}`);
+  const data = await res.json();
+  const statusEl = document.getElementById("agent-status");
+
+  // Only show agent online/offline
+  statusEl.textContent = data.online ? "🟢" : "🔴";
+}
+
+setInterval(checkStatus, 2000);
+checkStatus();
+    
+    
+</script>
 </body>
 </html>
