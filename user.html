@@ -199,7 +199,15 @@ async function checkStatus() {
 
 setInterval(checkStatus, 2000);
 checkStatus();
+
+const msgInput = document.getElementById("msg");
+msgInput.addEventListener("focus", () => {
+  setTimeout(() => {
+    msgInput.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, 300);
+});  
 </script>
 </body>
 </html>
+
 
