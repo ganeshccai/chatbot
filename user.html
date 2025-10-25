@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heart to Heart 💖</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -7,7 +13,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    overflow-y: auto; /* ✅ allow scroll on mobile */
+    overflow-y: auto;
   }
 
   header {
@@ -22,13 +28,15 @@
     flex-shrink: 0;
   }
 
+  #agent-status { font-weight:bold; color:#333; text-align:center; margin:4px 0; }
+
   #chat-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 10px;
     overflow-y: auto;
-    margin-bottom: 60px; /* ✅ ensure chat visible above input bar */
+    margin-bottom: 60px;
   }
 
   .message {
@@ -40,10 +48,10 @@
   }
 
   .user-msg { background: #ffc0cb; align-self: flex-end; }
-  .agent-msg { background: #fff; border: 1px solid #ddd; align-self: flex-start; }
+  .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
 
   #input-container {
-    position: fixed; /* ✅ stays visible on mobile */
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
@@ -85,6 +93,111 @@
 
   @keyframes floatGrowVibe {
     0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
+    25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
+    50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
+    75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
     100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
   }
 </style>
+</head>
+<body>
+
+<div id="agent-status"></div>
+<header>Heart to Heart 💖</header>
+<div id="chat-container"></div>
+
+<div id="input-container">
+  <input id="msg" placeholder="Type message..." autocomplete="off">
+  <button id="send-btn">➤</button>
+</div>
+
+<script>
+const chatId = "1234";
+
+// Send user message
+async function sendMessage() {
+  const msgInput = document.getElementById("msg");
+  const message = msgInput.value.trim();
+  if (!message) return;
+
+  await fetch("/send", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
+  });
+
+  msgInput.value = "";
+  loadMessages();
+
+  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
+}
+
+// Load chat messages
+async function loadMessages() {
+  const res = await fetch(`/messages/${chatId}`);
+  const data = await res.json();
+  const container = document.getElementById("chat-container");
+  container.innerHTML = "";
+
+  data.forEach(msg => {
+    const div = document.createElement("div");
+    div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
+    div.textContent = msg.text;
+    container.appendChild(div);
+  });
+
+  container.scrollTop = container.scrollHeight;
+}
+
+// Live typing
+async function sendLiveTyping() {
+  const msgInput = document.getElementById("msg");
+  await fetch("/live_typing", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ chat_id: chatId, text: msgInput.value })
+  });
+}
+
+// Floating hearts
+function createMultipleLoveBubbles() {
+  const count = 5;
+  for (let i = 0; i < count; i++) {
+    const bubble = document.createElement("div");
+    bubble.className = "love-bubble";
+    bubble.textContent = "❤";
+    bubble.style.left = Math.random() * (window.innerWidth - 50) + "px";
+    bubble.style.bottom = "0px";
+    bubble.style.animationDelay = (Math.random() * 0.5) + "s";
+    document.body.appendChild(bubble);
+    setTimeout(() => document.body.removeChild(bubble), 3000);
+  }
+}
+
+// Event listeners
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+document.getElementById("msg").addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// Intervals
+setInterval(loadMessages, 1500);
+setInterval(sendLiveTyping, 300);
+
+// Mark user offline
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon("/logout_user", JSON.stringify({ chat_id: chatId }));
+});
+
+// Agent status only
+async function checkStatus() {
+  const res = await fetch(`/is_online/${chatId}`);
+  const data = await res.json();
+  document.getElementById("agent-status").textContent = data.online ? "🟢 Agent Online" : "🔴 Agent Offline";
+}
+
+setInterval(checkStatus, 2000);
+checkStatus();
+</script>
+</body>
+</html>
