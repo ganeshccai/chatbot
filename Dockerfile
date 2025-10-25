@@ -10,4 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Cloud Run uses PORT env variable
-CMD ["python", "app.py"]
+CMD ["python", "main.py"]
+
