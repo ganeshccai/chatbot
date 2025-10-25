@@ -106,6 +106,29 @@ def logout_agent():
     return jsonify({"status": "ok"})
 
 
+@app.route("/mark_read", methods=["POST"])
+def mark_read():
+    data = request.get_json(force=True, silent=True) or {}
+    chat_id = data.get("chat_id")
+    reader = data.get("reader")
+    if not chat_id or not reader:
+        return (
+            jsonify({"status": "error", "message": "chat_id and reader required"}),
+            400,
+        )
+
+    msgs = all_chats.get(chat_id)
+    if not msgs:
+        return jsonify({"status": "error", "message": "no messages"}), 404
+
+    last = msgs[-1]
+    seen = last.get("seen_by", [])
+    if reader not in seen:
+        seen.append(reader)
+    last["seen_by"] = seen
+    return jsonify({"status": "ok", "seen_by": seen})
+
+
 if __name__ == "__main__":
     import os
 
