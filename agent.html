@@ -244,6 +244,8 @@ async function sendMessage() {
   const div = document.createElement("div");
   div.className = "message agent-msg";
   div.textContent = message;
+  // set data-index to the next index (current length)
+  div.dataset.index = lastMessageCount;
   chatContainer.appendChild(div);
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
