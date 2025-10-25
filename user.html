@@ -120,7 +120,7 @@ const chatId = "1234";
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 
-let lastMessageCount = 0; // track messages to prevent re-render
+let lastMessageCount = 0; // track messages to prevent re-render / duplicates
 
 // ---------- Load existing messages ----------
 async function loadMessages() {
@@ -138,7 +138,6 @@ async function loadMessages() {
     div.textContent = msg.text;
     chatContainer.appendChild(div);
   }
-
   lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -167,8 +166,9 @@ async function sendMessage() {
   div.textContent = message;
   chatContainer.appendChild(div);
   chatContainer.scrollTop = chatContainer.scrollHeight;
-
   msgInput.value = "";
+  // increment lastMessageCount because we appended the message locally
+  lastMessageCount++;
   // Small timeout to ensure focus is restored after the button press event finishes.
   // This helps keep the mobile keyboard open instead of it closing/re-opening.
   setTimeout(() => {
