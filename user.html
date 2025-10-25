@@ -106,7 +106,7 @@ header {
 <div id="chat-container"></div>
 
 <div id="input-container">
-  <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
+  <textarea id="msg" placeholder="Type message..." rows="2" enterkeyhint="enter"></textarea>
   <!-- make button non-submitting and non-focusable to avoid stealing focus on mobile -->
   <button id="send-btn" type="button" tabindex="-1">Send</button>
 </div>
@@ -196,10 +196,14 @@ function createMultipleLoveBubbles() {
 document.getElementById("send-btn").addEventListener("click", sendMessage);
 
 // Enter key: Shift+Enter for newline, Enter to send
+// Allow Enter to insert a newline. Use Ctrl+Enter or Cmd+Enter to send.
 msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault(); 
-    sendMessage();
+  if (e.key === "Enter") {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+    // otherwise allow newline insertion
   }
 });
 
