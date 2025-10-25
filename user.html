@@ -58,6 +58,14 @@ header {
   white-space: pre-wrap;
 }
 
+.seen-indicator {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  text-align: right;
+}
+
 .user-msg { background: #ffc0cb; align-self: flex-end; }
 .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
 
@@ -186,6 +194,7 @@ async function loadMessages() {
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
+    div.dataset.index = i;
     chatContainer.appendChild(div);
   }
   lastMessageCount = data.length;
@@ -198,21 +207,23 @@ async function loadMessages() {
     try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
   }
   // Update ticket status if the last message has been seen by the other side
-  if (data.length > 0) {
-    const lastMsg = data[data.length - 1];
-    const other = localRole === 'agent' ? 'user' : 'agent';
-    if (lastMsg.seen_by && Array.isArray(lastMsg.seen_by) && lastMsg.seen_by.includes(other)) {
-      if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
-      ticketRead = true;
-    } else {
-      if (ticketStatusEl && !ticketRead) ticketStatusEl.textContent = 'Ticket: Unread';
+    if (data.length > 0) {
+      const lastMsg = data[data.length - 1];
+      const other = localRole === 'agent' ? 'user' : 'agent';
+      if (lastMsg.seen_by && Array.isArray(lastMsg.seen_by) && lastMsg.seen_by.includes(other)) {
+        showSeenIndicator(data.length - 1);
+        ticketRead = true;
+        if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+      } else {
+        if (ticketStatusEl && !ticketRead) ticketStatusEl.textContent = 'Ticket: Unread';
+        const lastEl = chatContainer.querySelector(`[data-index='${data.length - 1}']`);
+        if (lastEl && lastEl.querySelector('.seen-indicator')) lastEl.querySelector('.seen-indicator').remove();
+      }
     }
-    // Observe the last message only if the last message was sent by the other party
-    const shouldObserve = lastMsg.sender !== localRole;
+
+    // Observe the last incoming message only if it was sent by the other party
+    const shouldObserve = data.length > 0 && data[data.length - 1].sender !== localRole;
     observeLastMessage(shouldObserve);
-  } else {
-    observeLastMessage(false);
-  }
 }
 
 // ---------- Send user message ----------
@@ -230,6 +241,7 @@ async function sendMessage() {
   const div = document.createElement("div");
   div.className = "message user-msg";
   div.textContent = message;
+  div.dataset.index = lastMessageCount;
   chatContainer.appendChild(div);
   chatContainer.scrollTop = chatContainer.scrollHeight;
   msgInput.value = "";
@@ -252,6 +264,36 @@ async function sendMessage() {
   ticketRead = false;
   if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Unread';
 }
+
+function showSeenIndicator(index) {
+  const el = chatContainer.querySelector(`[data-index='${index}']`);
+  if (!el) return;
+  // avoid duplicate indicator
+  if (el.querySelector('.seen-indicator')) return;
+  const span = document.createElement('span');
+  span.className = 'seen-indicator';
+  span.textContent = 'Seen';
+  el.appendChild(span);
+}
+
+// Subscribe to server-sent events for immediate read notifications (single-instance)
+try {
+  const eventsUrl = `${baseUrl}/events/${chatId}`;
+  const es = new EventSource(eventsUrl);
+  es.onmessage = e => {
+    try {
+      const payload = JSON.parse(e.data);
+      if (payload.type === 'read') {
+        const other = localRole === 'agent' ? 'user' : 'agent';
+        if (payload.seen_by && payload.seen_by.includes(other)) {
+          showSeenIndicator(payload.index);
+          ticketRead = true;
+          if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+        }
+      }
+    } catch (err) { /* ignore */ }
+  };
+} catch (err) { /* ignore EventSource errors */ }
 
 // ---------- Floating hearts ----------
 function createMultipleLoveBubbles() {
