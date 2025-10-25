@@ -30,6 +30,7 @@ header {background:linear-gradient(90deg,#ff5f6d,#ffc371,#ff9a9e,#f77062); color
   <textarea id="msg" placeholder="Type message..." rows="2"></textarea>
   <button id="send-btn" type="button">Send</button>
 </div>
+
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
@@ -41,80 +42,81 @@ const agentStatusEl = document.getElementById('agent-status');
 
 let lastIndex = 0;
 
-// Clear chat on load
-chatContainer.innerHTML='';
-
-// Append message function
-function appendMessage(msg,index){
+// append message to chat
+function appendMessage(msg, index){
   if(chatContainer.querySelector(`[data-index='${index}']`)) return;
-  const div=document.createElement('div');
-  div.className='message '+(msg.sender==='user'?'user-msg':'agent-msg');
-  div.textContent=msg.text;
-  div.dataset.index=index;
+  const div = document.createElement('div');
+  div.className = 'message ' + (msg.sender==='user'?'user-msg':'agent-msg');
+  div.textContent = msg.text;
+  div.dataset.index = index;
   if(msg.seen_by && msg.seen_by.includes('agent')){
-    const span=document.createElement('span');
-    span.className='seen-indicator';
-    span.textContent='Seen';
+    const span = document.createElement('span');
+    span.className = 'seen-indicator';
+    span.textContent = 'Seen';
     div.appendChild(span);
-    ticketStatusEl.textContent='Ticket: Read ✅';
+    ticketStatusEl.textContent = 'Ticket: Read ✅';
   }
   chatContainer.appendChild(div);
-  chatContainer.scrollTop=chatContainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// Send message
+// send message
 async function sendMessage(){
-  const text=msgInput.value.trim();
+  const text = msgInput.value.trim();
   if(!text) return;
-  await fetch(`${baseUrl}/send`,{
+  await fetch(`${baseUrl}/send`, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,sender:'user',text})
+    body:JSON.stringify({chat_id: chatId, sender:'user', text})
   });
-  appendMessage({sender:'user',text,seen_by:[]},lastIndex);
+  appendMessage({sender:'user', text, seen_by:[]}, lastIndex);
   lastIndex++;
-  msgInput.value='';
-  ticketStatusEl.textContent='Ticket: Unread';
+  msgInput.value = '';
+  ticketStatusEl.textContent = 'Ticket: Unread';
 }
 
-// SSE for real-time updates
-const es=new EventSource(`${baseUrl}/events/${chatId}`);
-es.onmessage=e=>{
+// SSE connection for live messages
+const es = new EventSource(`${baseUrl}/events/${chatId}`);
+es.onmessage = e => {
   try{
-    const data=JSON.parse(e.data);
+    const data = JSON.parse(e.data);
     if(data.type==='new_message'){
-      appendMessage(data.message,lastIndex);
+      appendMessage(data.message, lastIndex);
       lastIndex++;
     }else if(data.type==='read'){
       if(data.seen_by.includes('agent')){
-        const el=chatContainer.querySelector(`[data-index='${data.index}']`);
+        const el = chatContainer.querySelector(`[data-index='${data.index}']`);
         if(el && !el.querySelector('.seen-indicator')){
-          const span=document.createElement('span');
-          span.className='seen-indicator';
-          span.textContent='Seen';
+          const span = document.createElement('span');
+          span.className = 'seen-indicator';
+          span.textContent = 'Seen';
           el.appendChild(span);
         }
-        ticketStatusEl.textContent='Ticket: Read ✅';
+        ticketStatusEl.textContent = 'Ticket: Read ✅';
       }
     }
-  }catch(err){}
+  } catch(err){}
 };
 
-// Check agent online
+// check agent online
 async function checkAgent(){
-  const res=await fetch(`${baseUrl}/is_online/${chatId}`);
-  const data=await res.json();
-  agentStatusEl.textContent=data.online?'Agent Online 🟢':'Agent Offline 🔴';
+  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
+  const data = await res.json();
+  agentStatusEl.textContent = data.online ? 'Agent Online 🟢' : 'Agent Offline 🔴';
 }
 
-// Event listeners
-document.getElementById("send-btn").addEventListener("click",sendMessage);
-msgInput.addEventListener("keydown",e=>{
+// clear chat on load
+chatContainer.innerHTML='';
+lastIndex = 0;
+
+// event listeners
+document.getElementById("send-btn").addEventListener("click", sendMessage);
+msgInput.addEventListener("keydown", e=>{
   if(e.key==='Enter' && !e.shiftKey){e.preventDefault(); sendMessage();}
 });
 
-// Intervals
-setInterval(checkAgent,500);
+// intervals
+setInterval(checkAgent, 1000);
 checkAgent();
 </script>
 </body>
