@@ -109,10 +109,26 @@ html, body {
 <div id="chat-container"></div>
 
 <div id="input-container">
-<textarea id="msg" placeholder="Type message..." rows="2" style="flex:1; padding:8px 12px; border-radius:20px; border:1px solid #ccc; font-size:14px;"></textarea>
-<button id="send-btn">Send</button>
-
+  <textarea id="msg" placeholder="Type message..." rows="2" style="
+    flex:1;
+    padding:8px 12px;
+    border-radius:20px;
+    border:1px solid #ccc;
+    font-size:14px;
+    resize:none;
+  "></textarea>
+  <button id="send-btn" style="
+    margin-left:8px;
+    padding:8px 16px;
+    border:none;
+    background:linear-gradient(90deg,#ff5f6d,#ffc371);
+    color:white;
+    border-radius:20px;
+    font-size:14px;
+    cursor:pointer;
+  ">Send</button>
 </div>
+
 
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
@@ -180,6 +196,37 @@ document.getElementById("msg").addEventListener("keypress", e => { if(e.key==="E
 setInterval(loadMessages, 1500);
 setInterval(checkOnline, 1000);
 setInterval(loadLiveTyping, 200);
+    
+async function sendMessage() {
+  const msgInput = document.getElementById("msg");
+  const message = msgInput.value.trim();
+  if (!message) return;
+
+  // Send message
+  await fetch(`${baseUrl}/send`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
+  });
+
+  // Clear textarea but keep focus
+  msgInput.value = "";
+  msgInput.focus();  // important to prevent keyboard closing
+  loadMessages();
+}
+
+// Allow Enter for new line, Ctrl+Enter or button to send
+document.getElementById("msg").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { 
+    e.preventDefault(); // prevent new line
+    sendMessage();
+  }
+});
+
+document.getElementById("send-btn").addEventListener("click", () => {
+  sendMessage();
+});
+    
 </script>
 
 </body>
