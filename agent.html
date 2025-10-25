@@ -122,6 +122,7 @@ const chatId = "1234";
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 
+const localRole = 'agent';
 let lastMessageCount = 0; // track messages to prevent duplicate rendering when appending locally
 
 const ticketStatusEl = document.getElementById('ticket-status');
@@ -152,9 +153,13 @@ const _observer = new IntersectionObserver(entries => {
   }
 }, { root: chatContainer, threshold: 0.9 });
 
-function observeLastMessage() {
+function observeLastMessage(shouldObserve) {
   try {
-    if (_lastObservedMsg) _observer.unobserve(_lastObservedMsg);
+    if (_lastObservedMsg) {
+      _observer.unobserve(_lastObservedMsg);
+      _lastObservedMsg = null;
+    }
+    if (!shouldObserve) return;
     const last = chatContainer.lastElementChild;
     if (last) {
       _observer.observe(last);
@@ -189,8 +194,22 @@ async function loadMessages() {
     const len = msgInput.value.length;
     try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
   }
-  // Observe the last message so viewing it will mark ticket as read
-  observeLastMessage();
+  // Update ticket status if the last message has been seen by the other side
+  if (data.length > 0) {
+    const lastMsg = data[data.length - 1];
+    const other = localRole === 'agent' ? 'user' : 'agent';
+    if (lastMsg.seen_by && Array.isArray(lastMsg.seen_by) && lastMsg.seen_by.includes(other)) {
+      if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+      ticketRead = true;
+    } else {
+      if (ticketStatusEl && !ticketRead) ticketStatusEl.textContent = 'Ticket: Unread';
+    }
+    // Observe the last message only if the last message was sent by the other party
+    const shouldObserve = lastMsg.sender !== localRole;
+    observeLastMessage(shouldObserve);
+  } else {
+    observeLastMessage(false);
+  }
 }
 
 // ---------- Send agent message ----------
@@ -216,8 +235,11 @@ async function sendMessage() {
   lastMessageCount++;
   // keep keyboard open
   msgInput.focus();
-  // After sending, observe the last message so reading it will mark ticket read
-  observeLastMessage();
+  // After sending our own message we should not observe it for read by this client
+  observeLastMessage(false);
+  // Mark ticket unread locally until the other side reads it
+  ticketRead = false;
+  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Unread';
 }
 
 // ---------- Check user online status ----------
