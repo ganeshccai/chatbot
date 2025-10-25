@@ -10,6 +10,7 @@ from flask import (
 from flask_cors import CORS
 import queue
 import json
+import time
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 app.secret_key = "temp_key"
@@ -19,11 +20,10 @@ CHAT_ID = "1234"
 CHAT_PASSWORD = "1"
 
 # In-memory stores
-all_chats = {}
-online_users = {}
-live_typing = {}
-# SSE subscribers per chat_id: mapping chat_id -> list of Queue
-sse_subscribers = {}
+all_chats = {}  # chat_id -> list of messages
+online_users = {}  # chat_id -> True/False
+live_typing = {}  # chat_id -> text
+sse_subscribers = {}  # chat_id -> list of Queues
 
 
 # ---------------- User Page ----------------
@@ -33,8 +33,8 @@ def user_page():
         password = request.form.get("password")
         if password == CHAT_PASSWORD:
             session["chat_id"] = CHAT_ID
-            all_chats[CHAT_ID] = []
-            online_users[CHAT_ID] = True  # user online
+            all_chats.setdefault(CHAT_ID, [])
+            online_users[CHAT_ID] = True
             live_typing[CHAT_ID] = ""
             return render_template("user.html")
         return "Wrong password"
@@ -50,7 +50,7 @@ def agent_page():
     if request.method == "POST":
         password = request.form.get("password")
         if password == CHAT_PASSWORD:
-            online_users["agent"] = True  # mark agent online
+            online_users["agent"] = True
             return render_template("agent.html")
         return "Wrong password"
     return """<form method="post">
@@ -64,7 +64,26 @@ def agent_page():
 def send_message():
     data = request.get_json()
     chat_id = data.get("chat_id")
-    all_chats.setdefault(chat_id, []).append(data)
+    sender = data.get("sender")
+    text = data.get("text", "").strip()
+    if not chat_id or not sender or not text:
+        return (
+            jsonify({"status": "error", "message": "chat_id, sender, text required"}),
+            400,
+        )
+
+    msg = {"sender": sender, "text": text, "seen_by": []}
+    all_chats.setdefault(chat_id, []).append(msg)
+
+    # SSE broadcast for new message
+    try:
+        for q in sse_subscribers.get(chat_id, []):
+            q.put_nowait(
+                json.dumps({"type": "new_message", "message": msg, "chat_id": chat_id})
+            )
+    except Exception:
+        pass
+
     return jsonify({"status": "ok"})
 
 
@@ -77,12 +96,10 @@ def get_messages(chat_id):
 # ---------------- Online Status ----------------
 @app.route("/is_online/<chat_id>")
 def is_online(chat_id):
-    user_online = online_users.get(chat_id, False)
-    agent_online = online_users.get("agent", False)
     return jsonify(
         {
-            "user_online": user_online,
-            "online": agent_online,  # keep 'online' for backward compatibility
+            "user_online": online_users.get(chat_id, False),
+            "online": online_users.get("agent", False),
         }
     )
 
@@ -92,8 +109,7 @@ def is_online(chat_id):
 def update_live_typing():
     data = request.get_json()
     chat_id = data.get("chat_id")
-    text = data.get("text", "")
-    live_typing[chat_id] = text.strip()
+    live_typing[chat_id] = data.get("text", "").strip()
     return jsonify({"status": "ok"})
 
 
@@ -102,7 +118,7 @@ def get_live_typing(chat_id):
     return jsonify({"text": live_typing.get(chat_id, "")})
 
 
-# ---------------- Logout Handlers ----------------
+# ---------------- Logout ----------------
 @app.route("/logout_user", methods=["POST"])
 def logout_user():
     data = request.get_json(force=True, silent=True) or {}
@@ -118,6 +134,7 @@ def logout_agent():
     return jsonify({"status": "ok"})
 
 
+# ---------------- Mark Read ----------------
 @app.route("/mark_read", methods=["POST"])
 def mark_read():
     data = request.get_json(force=True, silent=True) or {}
@@ -129,42 +146,35 @@ def mark_read():
             400,
         )
 
-    msgs = all_chats.get(chat_id)
+    msgs = all_chats.get(chat_id, [])
     if not msgs:
         return jsonify({"status": "error", "message": "no messages"}), 404
 
-    last = msgs[-1]
-    seen = last.get("seen_by", [])
-    if reader not in seen:
-        seen.append(reader)
-    last["seen_by"] = seen
-    # publish SSE event to subscribers in this instance so other connected clients
-    # (same Cloud Run instance) can react immediately
+    last_msg = msgs[-1]
+    if reader not in last_msg.get("seen_by", []):
+        last_msg.setdefault("seen_by", []).append(reader)
+
+    # SSE notify
     try:
-        subscribers = sse_subscribers.get(chat_id, [])
         payload = json.dumps(
             {
                 "type": "read",
                 "index": len(msgs) - 1,
-                "seen_by": seen,
+                "seen_by": last_msg["seen_by"],
                 "chat_id": chat_id,
             }
         )
-        for q in list(subscribers):
-            try:
-                q.put_nowait(payload)
-            except Exception:
-                # ignore failing subscribers
-                pass
+        for q in sse_subscribers.get(chat_id, []):
+            q.put_nowait(payload)
     except Exception:
         pass
 
-    return jsonify({"status": "ok", "seen_by": seen})
+    return jsonify({"status": "ok", "seen_by": last_msg["seen_by"]})
 
 
+# ---------------- SSE Events ----------------
 @app.route("/events/<chat_id>")
 def events(chat_id):
-    # Simple in-memory SSE stream (only works reliably for single-instance deployments)
     q = queue.Queue()
     sse_subscribers.setdefault(chat_id, []).append(q)
 
@@ -178,7 +188,6 @@ def events(chat_id):
         except GeneratorExit:
             pass
         finally:
-            # cleanup subscriber
             try:
                 sse_subscribers.get(chat_id, []).remove(q)
             except Exception:
