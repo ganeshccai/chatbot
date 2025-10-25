@@ -1,5 +1,13 @@
-FROM python:3.10
+# Use Python official image
+FROM python:3.12-slim
+
 WORKDIR /app
+
+# Copy files
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
-RUN pip install -r requirements.txt
-CMD ["gunicorn", "-b", ":8080", "main:app"]
+
+# Cloud Run uses PORT env variable
+CMD ["python", "app.py"]
