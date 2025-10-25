@@ -12,9 +12,8 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
+    min-height: 100vh;
+    overflow-y: auto;
   }
 
   header {
@@ -26,23 +25,11 @@
     font-weight: bold;
     border-bottom: 2px solid #ff9a9e;
     border-radius: 0 0 15px 15px;
+    flex-shrink: 0;
   }
 
-  #online-status {
-    text-align: center;
-    font-size: 15px;
-    color: #28a745;
-    margin-top: 6px;
-    font-weight: bold;
-  }
-
-  #live-typing {
-    text-align: center;
-    font-size: 14px;
-    color: #ff69b4;
-    margin: 4px 0;
-    font-style: italic;
-  }
+  #online-status { text-align: center; font-size: 15px; margin: 4px 0; }
+  #live-typing { text-align: center; font-size: 14px; color: #ff69b4; margin: 4px 0; font-style: italic; }
 
   #chat-container {
     flex: 1;
@@ -50,28 +37,18 @@
     flex-direction: column;
     padding: 10px;
     overflow-y: auto;
+    margin-bottom: 60px;
   }
 
-  .message {
-    max-width: 80%;
-    margin: 4px 0;
-    padding: 8px 12px;
-    border-radius: 12px;
-    word-wrap: break-word;
-  }
-
-  .user-msg {
-    background: #ffc0cb; /* baby pink */
-    align-self: flex-start;
-  }
-
-  .agent-msg {
-    background: #ffffff;
-    border: 1px solid #ddd;
-    align-self: flex-end;
-  }
+  .message { max-width: 80%; margin: 4px 0; padding: 8px 12px; border-radius: 12px; word-wrap: break-word; }
+  .user-msg { background: #ffc0cb; align-self: flex-start; }
+  .agent-msg { background: #fff; border: 1px solid #ddd; align-self: flex-end; }
 
   #input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     padding: 10px;
     background: #fff;
@@ -97,14 +74,12 @@
     cursor: pointer;
   }
 
-  #send-btn:active {
-    opacity: 0.8;
-  }
+  #send-btn:active { opacity: 0.8; }
 </style>
 </head>
 <body>
 
-<header></header>
+<header>Agent Chat</header>
 <div id="online-status">User Offline ❌</div>
 <div id="live-typing"></div>
 
@@ -118,7 +93,7 @@
 <script>
 const chatId = "1234";
 
-// ---------- Send message ----------
+// Send message
 async function sendMessage() {
   const msgInput = document.getElementById("msg");
   const message = msgInput.value.trim();
@@ -134,7 +109,7 @@ async function sendMessage() {
   loadMessages();
 }
 
-// ---------- Load messages ----------
+// Load messages
 async function loadMessages() {
   const res = await fetch(`/messages/${chatId}`);
   const data = await res.json();
@@ -151,41 +126,35 @@ async function loadMessages() {
   container.scrollTop = container.scrollHeight;
 }
 
-// ---------- Check online status ----------
+// Check online status
 async function checkOnline() {
   const res = await fetch(`/is_online/${chatId}`);
   const data = await res.json();
-  const status = document.getElementById("online-status");
-  status.textContent = data.user_online ? "🟢" : "❌";
+  document.getElementById("online-status").textContent = data.user_online ? "🟢 User Online" : "❌ User Offline";
 }
 
-// ---------- Live typing ----------
+// Live typing
 async function loadLiveTyping() {
   const res = await fetch(`/get_live_typing/${chatId}`);
   const data = await res.json();
-  const typingElem = document.getElementById("live-typing");
-  typingElem.textContent = data.text ? `Typing: ${data.text}` : "";
+  document.getElementById("live-typing").textContent = data.text ? `Typing: ${data.text}` : "";
 }
 
-// ---------- Logout agent ----------
+// Logout agent
 window.addEventListener("beforeunload", async () => {
-  await fetch("/logout_agent", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"}
-  });
+  await fetch("/logout_agent", { method: "POST", headers: {"Content-Type": "application/json"} });
 });
 
-// ---------- Event listeners ----------
+// Event listeners
 document.getElementById("send-btn").addEventListener("click", sendMessage);
 document.getElementById("msg").addEventListener("keypress", e => {
   if (e.key === "Enter") sendMessage();
 });
 
-// ---------- Intervals ----------
+// Intervals
 setInterval(loadMessages, 1500);
 setInterval(checkOnline, 1000);
 setInterval(loadLiveTyping, 200);
 </script>
-
 </body>
 </html>
