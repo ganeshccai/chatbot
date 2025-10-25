@@ -60,16 +60,8 @@
     word-wrap: break-word;
   }
 
-  .user-msg {
-    background: #ffc0cb;
-    align-self: flex-start;
-  }
-
-  .agent-msg {
-    background: #ffffff;
-    border: 1px solid #ddd;
-    align-self: flex-end;
-  }
+  .user-msg { background: #ffc0cb; align-self: flex-start; }
+  .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-end; }
 
   #input-container {
     display: flex;
@@ -97,14 +89,12 @@
     cursor: pointer;
   }
 
-  #send-btn:active {
-    opacity: 0.8;
-  }
+  #send-btn:active { opacity: 0.8; }
 </style>
 </head>
 <body>
 
-<header>Heart to Heart 💖</header>
+<header>Agent Panel</header>
 <div id="online-status">User Offline ❌</div>
 <div id="live-typing"></div>
 
@@ -119,7 +109,7 @@
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
 
-// ---------- Send message ----------
+// ---------- Send agent message ----------
 async function sendMessage() {
   const msgInput = document.getElementById("msg");
   const message = msgInput.value.trim();
@@ -135,7 +125,7 @@ async function sendMessage() {
   loadMessages();
 }
 
-// ---------- Load messages ----------
+// ---------- Load chat messages ----------
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
@@ -152,7 +142,7 @@ async function loadMessages() {
   container.scrollTop = container.scrollHeight;
 }
 
-// ---------- Check online status ----------
+// ---------- Check user online status ----------
 async function checkOnline() {
   const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
@@ -160,7 +150,7 @@ async function checkOnline() {
   status.textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
 }
 
-// ---------- Live typing ----------
+// ---------- Load live typing ----------
 async function loadLiveTyping() {
   const res = await fetch(`${baseUrl}/get_live_typing/${chatId}`);
   const data = await res.json();
@@ -175,7 +165,7 @@ window.addEventListener("beforeunload", async () => {
 
 // ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keypress", e => { if (e.key === "Enter") sendMessage(); });
+document.getElementById("msg").addEventListener("keypress", e => { if(e.key==="Enter") sendMessage(); });
 
 // ---------- Intervals ----------
 setInterval(loadMessages, 1500);
