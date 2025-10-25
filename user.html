@@ -5,18 +5,97 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heart to Heart 💖</title>
 <style>
-html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f4f7f9; display: flex; flex-direction: column; }
-header { background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062); color: white; padding: 12px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 2px solid #ff9a9e; border-radius: 0 0 15px 15px; }
-#agent-status { font-weight: bold; color: #333; text-align: center; margin-top: 6px; }
-#ticket-status { text-align: center; font-size: 14px; color: #333; margin-top: 6px; }
-#chat-container { flex: 1 1 auto; display: flex; flex-direction: column; padding: 10px; overflow-y: auto; }
-.message { max-width: 80%; margin: 4px 0; padding: 8px 12px; border-radius: 12px; word-wrap: break-word; white-space: pre-wrap; }
-.seen-indicator { display: block; font-size: 12px; color: #666; margin-top: 4px; text-align: right; }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f7f9;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
+  color: white;
+  padding: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  border-bottom: 2px solid #ff9a9e;
+  border-radius: 0 0 15px 15px;
+}
+
+#agent-status {
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-top: 6px;
+}
+
+#ticket-status {
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  margin-top: 6px;
+}
+
+#chat-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.message {
+  max-width: 80%;
+  margin: 4px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.seen-indicator {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  text-align: right;
+}
+
 .user-msg { background: #ffc0cb; align-self: flex-end; }
 .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
-#input-container { flex-shrink: 0; display: flex; padding: 10px; background: #fff; border-top: 1px solid #ccc; }
-#msg { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid #ccc; font-size: 14px; resize: none; }
-#send-btn { margin-left: 8px; padding: 8px 16px; border: none; background: linear-gradient(90deg, #ff5f6d, #ffc371); color: white; border-radius: 20px; font-size: 14px; cursor: pointer; }
+
+#input-container {
+  flex-shrink: 0;
+  display: flex;
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ccc;
+}
+
+#msg {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  resize: none;
+}
+
+#send-btn {
+  margin-left: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: linear-gradient(90deg, #ff5f6d, #ffc371);
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
 #send-btn:active { opacity: 0.8; }
 </style>
 </head>
@@ -34,91 +113,124 @@ header { background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
-const chatContainer = document.getElementById("chat-container");
-const msgInput = document.getElementById("msg");
-const ticketStatusEl = document.getElementById("ticket-status");
-let lastMessageCount = 0;
-let ticketRead = false;
-let _lastObservedMsg = null;
 const localRole = 'user';
 
-function markTicketRead(reader){
-    if(ticketRead) return;
-    ticketRead = true;
-    if(ticketStatusEl) ticketStatusEl.textContent='Ticket: Read ✅';
-    fetch(`${baseUrl}/mark_read`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({chat_id:chatId, reader})}).catch(()=>{});
+const msgInput = document.getElementById("msg");
+const chatContainer = document.getElementById("chat-container");
+const ticketStatusEl = document.getElementById('ticket-status');
+
+let lastMessageCount = 0;
+
+// ---------- Append message ----------
+function appendMessage(msg, index) {
+  // Avoid duplicate messages
+  if (chatContainer.querySelector(`[data-index='${index}']`)) return;
+
+  const div = document.createElement("div");
+  div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
+  div.textContent = msg.text;
+  div.dataset.index = index;
+
+  // Seen indicator
+  if (msg.seen_by && msg.seen_by.includes('agent')) {
+    const span = document.createElement('span');
+    span.className = 'seen-indicator';
+    span.textContent = 'Seen';
+    div.appendChild(span);
+  }
+
+  chatContainer.appendChild(div);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-const _observer = new IntersectionObserver(entries=>{
-    for(const entry of entries){
-        if(entry.isIntersecting) markTicketRead('user');
+// ---------- Load messages ----------
+async function loadMessages() {
+  const res = await fetch(`${baseUrl}/messages/${chatId}`);
+  const data = await res.json();
+
+  for (let i = 0; i < data.length; i++) {
+    appendMessage(data[i], i);
+  }
+  lastMessageCount = data.length;
+}
+
+// ---------- Send message ----------
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  await fetch(`${baseUrl}/send`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
+  });
+
+  appendMessage({ sender: "user", text, seen_by: [] }, lastMessageCount);
+  lastMessageCount++;
+  msgInput.value = "";
+
+  ticketStatusEl.textContent = 'Ticket: Unread';
+  msgInput.focus();
+}
+
+// ---------- Show Seen ----------
+function showSeen(index) {
+  const el = chatContainer.querySelector(`[data-index='${index}']`);
+  if (!el) return;
+  if (!el.querySelector('.seen-indicator')) {
+    const span = document.createElement('span');
+    span.className = 'seen-indicator';
+    span.textContent = 'Seen';
+    el.appendChild(span);
+  }
+  ticketStatusEl.textContent = 'Ticket: Read ✅';
+}
+
+// ---------- SSE for new messages and seen ----------
+const es = new EventSource(`${baseUrl}/events/${chatId}`);
+es.onmessage = e => {
+  try {
+    const data = JSON.parse(e.data);
+    if (data.type === 'new_message') {
+      appendMessage(data.message, lastMessageCount);
+      lastMessageCount++;
+    } else if (data.type === 'read') {
+      const other = 'agent';
+      if (data.seen_by.includes(other)) {
+        showSeen(data.index);
+      }
     }
-},{root:chatContainer, threshold:0.9});
+  } catch(err) {}
+};
 
-function observeLastMessage(shouldObserve){
-    if(_lastObservedMsg) _observer.unobserve(_lastObservedMsg);
-    _lastObservedMsg = null;
-    if(!shouldObserve) return;
-    const last = chatContainer.lastElementChild;
-    if(last){ _observer.observe(last); _lastObservedMsg=last;}
+// ---------- Check agent online ----------
+async function checkAgent() {
+  const res = await fetch(`${baseUrl}/is_online/${chatId}`);
+  const data = await res.json();
+  document.getElementById("agent-status").textContent =
+    data.online ? "Agent Online 🟢" : "Agent Offline 🔴";
 }
 
-async function loadMessages(){
-    const res = await fetch(`${baseUrl}/messages/${chatId}`);
-    const data = await res.json();
-    const inputFocused = (document.activeElement===msgInput);
-    for(let i=lastMessageCount;i<data.length;i++){
-        const msg=data[i];
-        const div=document.createElement("div");
-        div.className="message "+(msg.sender==='user'?'user-msg':'agent-msg');
-        div.textContent=msg.text;
-        div.dataset.index=i;
-        chatContainer.appendChild(div);
-    }
-    lastMessageCount=data.length;
-    chatContainer.scrollTop=chatContainer.scrollHeight;
-    if(inputFocused){msgInput.focus(); const len=msgInput.value.length; try{msgInput.setSelectionRange(len,len);}catch(e){}}
-    if(data.length>0){
-        const lastMsg=data[data.length-1];
-        const other='agent';
-        if(lastMsg.seen_by && lastMsg.seen_by.includes(other)){ticketRead=true;if(ticketStatusEl)ticketStatusEl.textContent='Ticket: Read ✅'; showSeenIndicator(data.length-1);}
-        else{if(ticketStatusEl && !ticketRead)ticketStatusEl.textContent='Ticket: Unread'; const lastEl=chatContainer.querySelector(`[data-index='${data.length-1}']`); if(lastEl && lastEl.querySelector('.seen-indicator')) lastEl.querySelector('.seen-indicator').remove();}
-        observeLastMessage(lastMsg.sender!==localRole);
-    } else observeLastMessage(false);
-}
-
-async function sendMessage(){
-    const message=msgInput.value.trim(); if(!message) return;
-    await fetch(`${baseUrl}/send`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({chat_id:chatId, sender:'user', text:message})});
-    const div=document.createElement("div"); div.className="message user-msg"; div.textContent=message; div.dataset.index=lastMessageCount; chatContainer.appendChild(div); chatContainer.scrollTop=chatContainer.scrollHeight;
-    msgInput.value=""; lastMessageCount++; msgInput.focus(); observeLastMessage(false); ticketRead=false; if(ticketStatusEl) ticketStatusEl.textContent='Ticket: Unread';
-}
-
-function showSeenIndicator(index){
-    const el=chatContainer.querySelector(`[data-index='${index}']`);
-    if(!el) return; if(el.querySelector('.seen-indicator')) return; const span=document.createElement('span'); span.className='seen-indicator'; span.textContent='Seen'; el.appendChild(span);
-}
-
-// Event listeners
+// ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-msgInput.addEventListener("keydown", e=>{
-    if(e.key==="Enter" && !(e.ctrlKey||e.metaKey)){e.preventDefault(); sendMessage();}
+msgInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
 
-async function checkAgentStatus(){
-    const res = await fetch(`${baseUrl}/is_online/${chatId}`);
-    const data = await res.json();
-    const statusEl = document.getElementById("agent-status");
-    statusEl.textContent = data.online ? "Agent Online 🟢" : "Agent Offline 🔴";
-}
+// ---------- Intervals ----------
+setInterval(checkAgent, 2000);
 
-setInterval(loadMessages,1500);
-setInterval(checkAgentStatus,2000);
-checkAgentStatus();
-
-window.addEventListener("beforeunload", ()=>{
-    navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({chat_id:chatId}));
+// ---------- Logout ----------
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon(`${baseUrl}/logout_user`, JSON.stringify({ chat_id: chatId }));
 });
+
+// ---------- Initial load ----------
+loadMessages();
+checkAgent();
 </script>
 </body>
 </html>
