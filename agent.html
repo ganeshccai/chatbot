@@ -5,17 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agent</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f7f9;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-  }
+html, body {
+  height: 100%;
+}
+    
+ body {
+  font-family: Arial, sans-serif;
+  background: #f4f7f9;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#chat-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  overflow-y: auto;
+  margin-bottom: 0; /* ensure input is visible */
+}
+
+#input-container {
+  flex-shrink: 0;  /* keep input at bottom */
+  display: flex;
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ccc;
+}
 
   header {
     background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
@@ -44,13 +63,7 @@
     font-style: italic;
   }
 
-  #chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    overflow-y: auto;
-  }
+
 
   .message {
     max-width: 80%;
@@ -63,12 +76,7 @@
   .user-msg { background: #ffc0cb; align-self: flex-start; }
   .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-end; }
 
-  #input-container {
-    display: flex;
-    padding: 10px;
-    background: #fff;
-    border-top: 1px solid #ccc;
-  }
+ 
 
   #msg {
     flex: 1;
