@@ -5,99 +5,99 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Heart to Heart 💖</title>
 <style>
-  html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f7f9;
-    display: flex;
-    flex-direction: column;
-  }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f7f9;
+  display: flex;
+  flex-direction: column;
+}
 
-  header {
-    background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
-    color: white;
-    padding: 12px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    border-bottom: 2px solid #ff9a9e;
-    border-radius: 0 0 15px 15px;
-  }
+header {
+  background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
+  color: white;
+  padding: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  border-bottom: 2px solid #ff9a9e;
+  border-radius: 0 0 15px 15px;
+}
 
-  #agent-status {
-    font-weight: bold;
-    color: #333;
-    text-align: center;
-    margin-top: 6px;
-  }
+#agent-status {
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-top: 6px;
+}
 
-  #chat-container {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    overflow-y: auto;
-  }
+#chat-container {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  overflow-y: auto;
+}
 
-  .message {
-    max-width: 80%;
-    margin: 4px 0;
-    padding: 8px 12px;
-    border-radius: 12px;
-    word-wrap: break-word;
-  }
+.message {
+  max-width: 80%;
+  margin: 4px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  word-wrap: break-word;
+}
 
-  .user-msg { background: #ffc0cb; align-self: flex-end; }
-  .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
+.user-msg { background: #ffc0cb; align-self: flex-end; }
+.agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
 
-  #input-container {
-    flex-shrink: 0;
-    display: flex;
-    padding: 10px;
-    background: #fff;
-    border-top: 1px solid #ccc;
-  }
+#input-container {
+  flex-shrink: 0;
+  display: flex;
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ccc;
+}
 
-  #msg {
-    flex: 1;
-    padding: 8px 12px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    resize: none;
-  }
+#msg {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  resize: none;
+}
 
-  #send-btn {
-    margin-left: 8px;
-    padding: 8px 16px;
-    border: none;
-    background: linear-gradient(90deg, #ff5f6d, #ffc371);
-    color: white;
-    border-radius: 20px;
-    font-size: 14px;
-    cursor: pointer;
-  }
+#send-btn {
+  margin-left: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: linear-gradient(90deg, #ff5f6d, #ffc371);
+  color: white;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-  #send-btn:active { opacity: 0.8; }
+#send-btn:active { opacity: 0.8; }
 
-  .love-bubble {
-    position: absolute;
-    font-size: 16px;
-    opacity: 0.9;
-    color: red;
-    animation: floatGrowVibe 3s forwards;
-    pointer-events: none;
-  }
+.love-bubble {
+  position: absolute;
+  font-size: 16px;
+  opacity: 0.9;
+  color: red;
+  animation: floatGrowVibe 3s forwards;
+  pointer-events: none;
+}
 
-  @keyframes floatGrowVibe {
-    0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
-    25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
-    50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
-    75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
-    100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
-  }
+@keyframes floatGrowVibe {
+  0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
+  25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
+  50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
+  75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
+  100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
+}
 </style>
 </head>
 <body>
@@ -117,17 +117,23 @@ const chatId = "1234";
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 
+let lastMessageCount = 0; // track messages to prevent re-render
+
 // ---------- Load existing messages ----------
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
-  chatContainer.innerHTML = "";
-  data.forEach(msg => {
+
+  // Append only new messages
+  for (let i = lastMessageCount; i < data.length; i++) {
+    const msg = data[i];
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
     chatContainer.appendChild(div);
-  });
+  }
+
+  lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
@@ -142,7 +148,7 @@ async function sendMessage() {
     body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
   });
 
-  // Append message without clearing all messages
+  // Append message directly
   const div = document.createElement("div");
   div.className = "message user-msg";
   div.textContent = message;
@@ -169,13 +175,13 @@ function createMultipleLoveBubbles() {
   }
 }
 
-// ---------- Send button ----------
+// ---------- Event listeners ----------
 document.getElementById("send-btn").addEventListener("click", sendMessage);
 
-// ---------- Enter key behavior ----------
+// Enter key: Shift+Enter for newline, Enter to send
 msgInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault(); // prevent new line
+    e.preventDefault(); 
     sendMessage();
   }
 });
