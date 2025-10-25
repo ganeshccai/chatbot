@@ -34,6 +34,13 @@ header {
   font-weight: bold;
 }
 
+#ticket-status {
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  margin-top: 6px;
+}
+
 #live-typing {
   text-align: center;
   font-size: 14px;
@@ -98,6 +105,7 @@ header {
 
 <header>Agent Panel</header>
 <div id="online-status">User Offline ❌</div>
+<div id="ticket-status">Ticket: Unread</div>
 <div id="live-typing"></div>
 
 <div id="chat-container"></div>
@@ -115,6 +123,45 @@ const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
 
 let lastMessageCount = 0; // track messages to prevent duplicate rendering when appending locally
+
+const ticketStatusEl = document.getElementById('ticket-status');
+let ticketRead = false;
+let _lastObservedMsg = null;
+
+function markTicketRead(reader) {
+  if (ticketRead) return;
+  ticketRead = true;
+  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+
+  // NOTE: Assumes a server endpoint exists to mark the ticket/message as read.
+  // Sending { chat_id, reader } to `${baseUrl}/mark_read`.
+  // Update the endpoint/payload if your server expects a different format.
+  fetch(`${baseUrl}/mark_read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, reader })
+  }).catch(() => { /* ignore network errors */ });
+}
+
+const _observer = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) {
+      // Agent viewing the messages; mark ticket read by agent
+      markTicketRead('agent');
+    }
+  }
+}, { root: chatContainer, threshold: 0.9 });
+
+function observeLastMessage() {
+  try {
+    if (_lastObservedMsg) _observer.unobserve(_lastObservedMsg);
+    const last = chatContainer.lastElementChild;
+    if (last) {
+      _observer.observe(last);
+      _lastObservedMsg = last;
+    }
+  } catch (e) { /* safe fallback */ }
+}
 
 // ---------- Load existing messages ----------
 async function loadMessages() {
@@ -142,6 +189,8 @@ async function loadMessages() {
     const len = msgInput.value.length;
     try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
   }
+  // Observe the last message so viewing it will mark ticket as read
+  observeLastMessage();
 }
 
 // ---------- Send agent message ----------
@@ -167,6 +216,8 @@ async function sendMessage() {
   lastMessageCount++;
   // keep keyboard open
   msgInput.focus();
+  // After sending, observe the last message so reading it will mark ticket read
+  observeLastMessage();
 }
 
 // ---------- Check user online status ----------
