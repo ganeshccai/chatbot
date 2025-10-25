@@ -63,7 +63,6 @@ header {
   padding: 8px 12px;
   border-radius: 12px;
   word-wrap: break-word;
-  /* Preserve user-entered line breaks and spacing */
   white-space: pre-wrap;
 }
 
@@ -126,110 +125,96 @@ header {
 <script>
 const baseUrl = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = "1234";
+const localRole = 'agent';
 
 const msgInput = document.getElementById("msg");
 const chatContainer = document.getElementById("chat-container");
-
-const localRole = 'agent';
-let lastMessageCount = 0; // track messages to prevent duplicate rendering when appending locally
-
 const ticketStatusEl = document.getElementById('ticket-status');
+
+let lastMessageCount = 0;
 let ticketRead = false;
 let _lastObservedMsg = null;
 
-function markTicketRead(reader) {
-  if (ticketRead) return;
-  ticketRead = true;
-  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
-
-  // NOTE: Assumes a server endpoint exists to mark the ticket/message as read.
-  // Sending { chat_id, reader } to `${baseUrl}/mark_read`.
-  // Update the endpoint/payload if your server expects a different format.
-  fetch(`${baseUrl}/mark_read`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, reader })
-  }).catch(() => { /* ignore network errors */ });
-}
-
+// IntersectionObserver to mark last incoming message as read
 const _observer = new IntersectionObserver(entries => {
   for (const entry of entries) {
     if (entry.isIntersecting) {
-      // Agent viewing the messages; mark ticket read by agent
       markTicketRead('agent');
     }
   }
 }, { root: chatContainer, threshold: 0.9 });
 
 function observeLastMessage(shouldObserve) {
-  try {
-    if (_lastObservedMsg) {
-      _observer.unobserve(_lastObservedMsg);
-      _lastObservedMsg = null;
-    }
-    if (!shouldObserve) return;
-    const last = chatContainer.lastElementChild;
-    if (last) {
-      _observer.observe(last);
-      _lastObservedMsg = last;
-    }
-  } catch (e) { /* safe fallback */ }
+  if (_lastObservedMsg) _observer.unobserve(_lastObservedMsg);
+  _lastObservedMsg = null;
+  if (!shouldObserve) return;
+  const last = chatContainer.lastElementChild;
+  if (last) {
+    _observer.observe(last);
+    _lastObservedMsg = last;
+  }
 }
 
-// ---------- Load existing messages ----------
+function markTicketRead(reader) {
+  if (ticketRead) return;
+  ticketRead = true;
+  ticketStatusEl.textContent = 'Ticket: Read ✅';
+  fetch(`${baseUrl}/mark_read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, reader })
+  }).catch(() => {});
+}
+
+function showSeenIndicator(index) {
+  const el = chatContainer.querySelector(`[data-index='${index}']`);
+  if (!el || el.querySelector('.seen-indicator')) return;
+  const span = document.createElement('span');
+  span.className = 'seen-indicator';
+  span.textContent = 'Seen';
+  el.appendChild(span);
+}
+
+// Load existing messages
 async function loadMessages() {
   const res = await fetch(`${baseUrl}/messages/${chatId}`);
   const data = await res.json();
-
-  // Preserve whether the message input currently has focus so we can restore it
   const inputWasFocused = (document.activeElement === msgInput);
 
-  // Append only new messages to avoid duplicating messages that we appended locally
   for (let i = lastMessageCount; i < data.length; i++) {
     const msg = data[i];
     const div = document.createElement("div");
     div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
     div.textContent = msg.text;
-    // set data-index so we can reference this element later for seen indicator
     div.dataset.index = i;
     chatContainer.appendChild(div);
   }
-
   lastMessageCount = data.length;
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   if (inputWasFocused) {
-    // Re-focus and move caret to end to keep the keyboard visible and the input usable
     msgInput.focus();
     const len = msgInput.value.length;
-    try { msgInput.setSelectionRange(len, len); } catch (e) { /* ignore on unsupported */ }
+    try { msgInput.setSelectionRange(len, len); } catch(e){}
   }
-  // Update ticket status if the last message has been seen by the other side
+
   if (data.length > 0) {
     const lastMsg = data[data.length - 1];
-    const other = localRole === 'agent' ? 'user' : 'agent';
-    if (lastMsg.seen_by && Array.isArray(lastMsg.seen_by) && lastMsg.seen_by.includes(other)) {
-      if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
+    const other = 'user';
+    if (lastMsg.seen_by && lastMsg.seen_by.includes(other)) {
       ticketRead = true;
-      // show seen indicator under the last message
+      ticketStatusEl.textContent = 'Ticket: Read ✅';
       showSeenIndicator(data.length - 1);
-    } else {
-      if (ticketStatusEl && !ticketRead) ticketStatusEl.textContent = 'Ticket: Unread';
-      // remove any seen indicator if present
+    } else if (!ticketRead) {
+      ticketStatusEl.textContent = 'Ticket: Unread';
       const lastEl = chatContainer.querySelector(`[data-index='${data.length - 1}']`);
-      if (lastEl && lastEl.querySelector('.seen-indicator')) {
-        lastEl.querySelector('.seen-indicator').remove();
-      }
+      if (lastEl && lastEl.querySelector('.seen-indicator')) lastEl.querySelector('.seen-indicator').remove();
     }
-    // Observe the last message only if the last message was sent by the other party
-    const shouldObserve = lastMsg.sender !== localRole;
-    observeLastMessage(shouldObserve);
-  } else {
-    observeLastMessage(false);
-  }
+    observeLastMessage(lastMsg.sender !== localRole);
+  } else observeLastMessage(false);
 }
 
-// ---------- Send agent message ----------
+// Send agent message
 async function sendMessage() {
   const message = msgInput.value.trim();
   if (!message) return;
@@ -240,96 +225,67 @@ async function sendMessage() {
     body: JSON.stringify({chat_id: chatId, sender: "agent", text: message})
   });
 
-  // Append message directly to avoid keyboard flicker
   const div = document.createElement("div");
   div.className = "message agent-msg";
   div.textContent = message;
-  // set data-index to the next index (current length)
   div.dataset.index = lastMessageCount;
   chatContainer.appendChild(div);
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   msgInput.value = "";
-  // increment lastMessageCount because we appended the message locally
   lastMessageCount++;
-  // keep keyboard open
   msgInput.focus();
-  // After sending our own message we should not observe it for read by this client
   observeLastMessage(false);
-  // Mark ticket unread locally until the other side reads it
   ticketRead = false;
-  if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Unread';
+  ticketStatusEl.textContent = 'Ticket: Unread';
 }
 
-function showSeenIndicator(index) {
-  const el = chatContainer.querySelector(`[data-index='${index}']`);
-  if (!el) return;
-  // avoid duplicate indicator
-  if (el.querySelector('.seen-indicator')) return;
-  const span = document.createElement('span');
-  span.className = 'seen-indicator';
-  span.textContent = 'Seen';
-  el.appendChild(span);
-}
-
-// Subscribe to server-sent events for immediate read notifications (single-instance)
+// SSE for read notifications
 try {
-  const eventsUrl = `${baseUrl}/events/${chatId}`;
-  const es = new EventSource(eventsUrl);
+  const es = new EventSource(`${baseUrl}/events/${chatId}`);
   es.onmessage = e => {
     try {
       const payload = JSON.parse(e.data);
-      if (payload.type === 'read') {
-        const other = localRole === 'agent' ? 'user' : 'agent';
-        if (payload.seen_by && payload.seen_by.includes(other)) {
-          showSeenIndicator(payload.index);
-          ticketRead = true;
-          if (ticketStatusEl) ticketStatusEl.textContent = 'Ticket: Read ✅';
-        }
+      const other = 'user';
+      if (payload.type === 'read' && payload.seen_by && payload.seen_by.includes(other)) {
+        showSeenIndicator(payload.index);
+        ticketRead = true;
+        ticketStatusEl.textContent = 'Ticket: Read ✅';
       }
-    } catch (err) { /* ignore */ }
+    } catch(err){}
   };
-} catch (err) { /* ignore EventSource errors */ }
+} catch(err){}
 
-// ---------- Check user online status ----------
+// Check user online status
 async function checkOnline() {
   const res = await fetch(`${baseUrl}/is_online/${chatId}`);
   const data = await res.json();
-  const status = document.getElementById("online-status");
-  status.textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
+  document.getElementById("online-status").textContent = data.user_online ? "User Online 🟢" : "User Offline ❌";
 }
 
-// ---------- Load live typing ----------
+// Load live typing
 async function loadLiveTyping() {
   const res = await fetch(`${baseUrl}/get_live_typing/${chatId}`);
   const data = await res.json();
-  const typingElem = document.getElementById("live-typing");
-  typingElem.textContent = data.text ? `Typing: ${data.text}` : "";
+  document.getElementById("live-typing").textContent = data.text ? `Typing: ${data.text}` : "";
 }
 
-// ---------- Event listeners ----------
+// Event listeners
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-
-// Allow Enter to insert a newline. Use Ctrl+Enter or Cmd+Enter to send.
 msgInput.addEventListener("keydown", e => {
   if (e.key === "Enter") {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault(); // prevent inserting newline when sending
-      sendMessage();
-    }
-    // otherwise allow newline to be inserted by the textarea
+    if (e.ctrlKey || e.metaKey) { e.preventDefault(); sendMessage(); }
   }
 });
 
-// ---------- Logout agent ----------
+// Logout agent
 window.addEventListener("beforeunload", async () => {
   await fetch(`${baseUrl}/logout_agent`, { method: "POST", headers: {"Content-Type": "application/json"} });
 });
 
-// ---------- Intervals ----------
+// Intervals
 setInterval(loadMessages, 1500);
 setInterval(checkOnline, 1000);
-// Poll live-typing at a slightly lower frequency to reduce frequent DOM updates
 setInterval(loadLiveTyping, 500);
 
 loadMessages();
