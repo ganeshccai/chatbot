@@ -34,18 +34,20 @@ def login():
     data = request.get_json(silent=True) or {}
     chat_id = data.get("chat_id")
     password = data.get("password")
+    sender = data.get("sender")
 
     if password != "1":
         return jsonify({"success": False, "error": "Wrong password"}), 403
 
     with _store_lock:
-        if chat_id in active_sessions:
+        key = f"{chat_id}:{sender}"
+        if key in active_sessions:
             return jsonify({"success": False, "error": "Session already active"}), 403
 
         token = str(uuid4())
-        active_sessions[chat_id] = token
-        online_users[chat_id] = True
-        last_seen[chat_id] = datetime.utcnow()
+        active_sessions[key] = token
+        online_users[sender] = True
+        last_seen[sender] = datetime.utcnow()
 
     return jsonify({"success": True, "session_token": token})
 
