@@ -26,9 +26,19 @@
     #msg:focus { border-color: var(--accent); }
     button { padding:10px 16px; background:var(--accent); color:white; border:none; border-radius:14px; cursor:pointer; font-size:16px; }
     button:active { opacity:0.9; }
+    #login-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#f4f7f9; display:flex; justify-content:center; align-items:center; z-index:999; }
+    #login-box { background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body data-chat-id="1234">
+
+<div id="login-overlay">
+  <div id="login-box">
+    <input type="password" id="pwd" placeholder="Enter password" />
+    <button onclick="checkPwd()">Login</button>
+    <div id="login-msg" style="color:red;margin-top:10px;"></div>
+  </div>
+</div>
 
 <header>User 💬 <span id="agent-status">🔴</span></header>
 <div id="chat-container"></div>
@@ -48,10 +58,19 @@ const clearBtn = document.getElementById("clear-btn");
 const chatContainer = document.getElementById("chat-container");
 const agentStatus = document.getElementById("agent-status");
 
-let isLoggedIn = true;
+let isLoggedIn = false;
 let typingDots = 0;
 
-startPolling();
+function checkPwd() {
+  const pwd = document.getElementById("pwd").value;
+  if (pwd === "1") {
+    document.getElementById("login-overlay").style.display = "none";
+    isLoggedIn = true;
+    startPolling();
+  } else {
+    document.getElementById("login-msg").textContent = "Wrong password!";
+  }
+}
 
 function startPolling() {
   markOnline();
