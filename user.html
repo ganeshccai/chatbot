@@ -73,18 +73,16 @@ async function clearChat(){
   chat.innerHTML="";
 }
 
+async function markOnline(){
+  await fetch(`${BACKEND_URL}/mark_online`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({chat_id:chatId,sender:"user"})});
+}
+
 msgInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}});
 msgInput.addEventListener("input",e=>sendTyping(e.target.value));
 document.getElementById("send-btn").onclick=sendMessage;
 document.getElementById("clear-btn").onclick=clearChat;
 
-// Polling faster for near real-time feel
 setInterval(loadMessages,1000);
 setInterval(checkStatus,1000);
-setInterval(checkTyping,500);
-
-// Initial
-checkStatus(); loadMessages(); checkTyping();
-</script>
-</body>
-</html>
+setInterval(checkTyping,500
