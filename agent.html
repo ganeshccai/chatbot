@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport"
       content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Agent Interface 💬</title>
+<title></title>
 <style>
   :root {
     --accent: #3b82f6;
@@ -164,6 +164,13 @@ window.addEventListener("beforeunload", () => {
     navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob);
   } catch (e) {}
 });
+
+async function checkStatus() {
+  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}`);
+  const d = await res.json();
+  userStatus.textContent = d.user_online ? "🟢" : "🔴";
+}                          
 </script>
 </body>
 </html>
+
