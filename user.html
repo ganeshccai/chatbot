@@ -156,6 +156,16 @@ sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
 msgInput.addEventListener("input", e => sendTyping(e.target.value));
+
+window.addEventListener("beforeunload", () => {
+  try {
+    const data = JSON.stringify({chat_id: chatId});
+    const blob = new Blob([data], {type: "application/json"});
+    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
+  } catch (e) {}
+});
+      
 </script>
 </body>
 </html>
+
