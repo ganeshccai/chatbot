@@ -14,12 +14,13 @@ all_chats = {}
 online_users = {}
 live_typing = {}
 last_seen = {}
-active_sessions = {}  # chat_id → session_token
+active_sessions = {}  # key = f"{chat_id}:{sender}" → token
 _store_lock = Lock()
 
-def is_valid_session(chat_id):
+def is_valid_session(chat_id, sender):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    return active_sessions.get(chat_id) == token
+    key = f"{chat_id}:{sender}"
+    return active_sessions.get(key) == token
 
 @app.route("/", methods=["GET"])
 def index():
@@ -34,7 +35,7 @@ def login():
     data = request.get_json(silent=True) or {}
     chat_id = data.get("chat_id")
     password = data.get("password")
-    sender = data.get("sender")
+    sender = data.get("sender", "user")
 
     if password != "1":
         return jsonify({"success": False, "error": "Wrong password"}), 403
@@ -54,8 +55,11 @@ def login():
 @app.route("/send", methods=["POST"])
 def send_message():
     data = request.get_json(silent=True)
-    chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text")
-    if not is_valid_session(chat_id):
+    chat_id = data.get("chat_id")
+    sender = data.get("sender")
+    text = data.get("text")
+
+    if not is_valid_session(chat_id, sender):
         return jsonify({"error": "Invalid session"}), 403
 
     timestamp = datetime.utcnow().isoformat() + "Z"
@@ -105,25 +109,26 @@ def is_online(chat_id):
 @app.route("/mark_online", methods=["POST"])
 def mark_online():
     data = request.get_json(silent=True) or {}
-    chat_id, sender = data.get("chat_id"), data.get("sender")
-    if not is_valid_session(chat_id):
+    chat_id = data.get("chat_id")
+    sender = data.get("sender")
+
+    if not is_valid_session(chat_id, sender):
         return jsonify({"error": "Invalid session"}), 403
 
     now = datetime.utcnow()
     with _store_lock:
-        if sender == "user":
-            online_users[chat_id] = True
-            last_seen[chat_id] = now
-        elif sender == "agent":
-            online_users["agent"] = True
-            last_seen["agent"] = now
+        online_users[sender] = True
+        last_seen[sender] = now
     return jsonify({"status": "ok"})
 
 @app.route("/live_typing", methods=["POST"])
 def update_live_typing():
     data = request.get_json(silent=True)
-    chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text", "")
-    if not is_valid_session(chat_id):
+    chat_id = data.get("chat_id")
+    sender = data.get("sender")
+    text = data.get("text", "")
+
+    if not is_valid_session(chat_id, sender):
         return jsonify({"error": "Invalid session"}), 403
 
     with _store_lock:
@@ -144,7 +149,9 @@ def get_live_typing(chat_id):
 
 @app.route("/clear_chat/<chat_id>", methods=["POST"])
 def clear_chat(chat_id):
-    if not is_valid_session(chat_id):
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    sender = "agent" if f"{chat_id}:agent" in active_sessions and active_sessions[f"{chat_id}:agent"] == token else "user"
+    if not is_valid_session(chat_id, sender):
         return jsonify({"error": "Invalid session"}), 403
 
     with _store_lock:
@@ -155,16 +162,21 @@ def clear_chat(chat_id):
 def logout_user():
     data = request.get_json(silent=True) or {}
     chat_id = data.get("chat_id") or CHAT_ID
+    key = f"{chat_id}:user"
     with _store_lock:
         online_users[chat_id] = False
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
-        active_sessions.pop(chat_id, None)
+        active_sessions.pop(key, None)
     return jsonify({"status": "ok"})
 
 @app.route("/logout_agent", methods=["POST"])
 def logout_agent():
+    data = request.get_json(silent=True) or {}
+    chat_id = data.get("chat_id") or CHAT_ID
+    key = f"{chat_id}:agent"
     with _store_lock:
         online_users["agent"] = False
+        active_sessions.pop(key, None)
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
