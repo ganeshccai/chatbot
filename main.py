@@ -10,14 +10,14 @@ app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
 CORS(app, origins=["https://ganeshccai.github.io"], supports_credentials=True)
 
 CHAT_ID = "1234"
+SESSION_TIMEOUT = timedelta(seconds=2)
+
 all_chats = {}
 online_users = {}
 live_typing = {}
 last_seen = {}
 active_sessions = {}  # key = f"{chat_id}:{sender}" → token
 _store_lock = Lock()
-
-SESSION_TIMEOUT = timedelta(seconds=2)
 
 def is_valid_session(chat_id, sender):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
