@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from threading import Lock
 from flask import Flask, request, jsonify, redirect, url_for
@@ -7,12 +7,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
 
-# Allow calls from your GitHub Pages domain
 CORS(app, origins=["https://ganeshccai.github.io"], supports_credentials=True)
 
 CHAT_ID = "1234"
-
-# In-memory stores
 all_chats = {}
 online_users = {}
 live_typing = {}
@@ -45,15 +42,20 @@ def send_message():
             "text": text,
             "timestamp": timestamp
         })
-        if len(chat) > 100:
-            chat.pop(0)
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
 
 @app.route("/messages/<chat_id>", methods=["GET"])
 def get_messages(chat_id):
+    cutoff = datetime.utcnow() - timedelta(minutes=1)
     with _store_lock:
-        return jsonify(list(all_chats.get(chat_id, [])))
+        messages = all_chats.get(chat_id, [])
+        filtered = [
+            m for m in messages
+            if datetime.fromisoformat(m["timestamp"].replace("Z", "")) > cutoff
+        ]
+        all_chats[chat_id] = filtered  # prune old messages
+        return jsonify(filtered)
 
 @app.route("/is_online/<chat_id>", methods=["GET"])
 def is_online(chat_id):
@@ -71,17 +73,17 @@ def mark_online():
     if not chat_id or not sender:
         return jsonify({"error": "missing"}), 400
     with _store_lock:
-        # Mark online
+        already_online = (
+            online_users.get(chat_id) if sender == "user"
+            else online_users.get("agent")
+        )
         if sender == "user":
             online_users[chat_id] = True
         elif sender == "agent":
             online_users["agent"] = True
-
-        # Clear chat and typing state on refresh/login
-        all_chats[chat_id] = []
-        live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
+        if not already_online:
+            live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
-
 
 @app.route("/live_typing", methods=["POST"])
 def update_live_typing():
