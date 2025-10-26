@@ -21,30 +21,13 @@ _store_lock = Lock()
 def index():
     return redirect(url_for("user_page"))
 
-@app.route("/user", methods=["GET", "POST"])
+@app.route("/user", methods=["GET"])
 def user_page():
-    if request.method == "POST":
-        if request.form.get("password") == CHAT_PASSWORD:
-            session["chat_id"] = CHAT_ID
-            with _store_lock:
-                all_chats.setdefault(CHAT_ID, [])
-                online_users[CHAT_ID] = True
-                live_typing.setdefault(CHAT_ID, {"sender": "", "text": ""})
-            return render_template("user.html")
-        return "Wrong password", 401
-    return render_template("login.html", role="User")
+    return render_template("user.html")
 
-@app.route("/agent", methods=["GET", "POST"])
+@app.route("/agent", methods=["GET"])
 def agent_page():
-    if request.method == "POST":
-        if request.form.get("password") == CHAT_PASSWORD:
-            with _store_lock:
-                online_users["agent"] = True
-                all_chats.setdefault(CHAT_ID, [])
-                live_typing.setdefault(CHAT_ID, {"sender": "", "text": ""})
-            return render_template("agent.html")
-        return "Wrong password", 401
-    return render_template("login.html", role="Agent")
+    return render_template("agent.html")
 
 @app.route("/send", methods=["POST"])
 def send_message():
@@ -76,6 +59,20 @@ def is_online(chat_id):
             "agent_online": online_users.get("agent", False)
         })
 
+@app.route("/mark_online", methods=["POST"])
+def mark_online():
+    data = request.get_json(silent=True) or {}
+    chat_id = data.get("chat_id")
+    sender = data.get("sender")
+    if not chat_id or not sender:
+        return jsonify({"error": "missing"}), 400
+    with _store_lock:
+        if sender == "user":
+            online_users[chat_id] = True
+        elif sender == "agent":
+            online_users["agent"] = True
+    return jsonify({"status": "ok"})
+
 @app.route("/live_typing", methods=["POST"])
 def update_live_typing():
     data = request.get_json(silent=True)
@@ -100,11 +97,10 @@ def clear_chat(chat_id):
 @app.route("/logout_user", methods=["POST"])
 def logout_user():
     data = request.get_json(silent=True) or {}
-    chat_id = data.get("chat_id") or session.get("chat_id") or CHAT_ID
+    chat_id = data.get("chat_id") or CHAT_ID
     with _store_lock:
         online_users[chat_id] = False
         live_typing[chat_id] = {"sender": "", "text": ""}
-    session.pop("chat_id", None)
     return jsonify({"status": "ok"})
 
 @app.route("/logout_agent", methods=["POST"])
