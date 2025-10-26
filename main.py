@@ -42,9 +42,10 @@ def send_message():
 @app.route("/messages/<chat_id>", methods=["GET"])
 def get_messages(chat_id):
     viewer = request.args.get("viewer")
+    active = request.args.get("active") == "true"
     with _store_lock:
         messages = all_chats.get(chat_id, [])
-        if messages:
+        if messages and active:
             last_msg = messages[-1]
             if last_msg["sender"] != viewer:
                 last_msg["seen_by"] = viewer
