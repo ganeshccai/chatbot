@@ -175,7 +175,5 @@ def logout_agent():
         online_users["agent"] = False
     return jsonify({"status": "ok"})
 
-
 if __name__ == "__main__":
-    # For development only. In production use a proper WSGI server.
-    app.run(host="0.0.0.0", port=8080, debug=false)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
