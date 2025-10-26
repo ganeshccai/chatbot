@@ -71,11 +71,17 @@ def mark_online():
     if not chat_id or not sender:
         return jsonify({"error": "missing"}), 400
     with _store_lock:
+        # Mark online
         if sender == "user":
             online_users[chat_id] = True
         elif sender == "agent":
             online_users["agent"] = True
+
+        # Clear chat and typing state on refresh/login
+        all_chats[chat_id] = []
+        live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
+
 
 @app.route("/live_typing", methods=["POST"])
 def update_live_typing():
