@@ -2,110 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
   <title>User Chat</title>
   <style>
     :root {
-      --accent: #e1306c;
-      --accent2: #fd1d1d;
-      --bg-gradient: linear-gradient(to right, #fcb045, #fd1d1d, #833ab4);
-      --bubble-user: #ffe4e1;
+      --accent: #feda75;
+      --accent2: #d62976;
+      --bg: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+      --bubble-user: #ffcce0;
       --bubble-agent: #ffffff;
-      --agent-border: #dcdcdc;
+      --agent-border: #e0e0e0;
     }
-    html, body { height:100%; margin:0; padding:0; overflow:hidden; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
     body {
-      font-family: system-ui, -apple-system, sans-serif;
-      display:flex; flex-direction:column;
-      background:var(--bg-gradient);
-      color:#333;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      background-size: cover;
+      background-repeat: no-repeat;
+      color: #333;
     }
+
     header {
-      background:rgba(255,255,255,0.9);
-      color:#e1306c;
-      padding:12px;
-      text-align:center;
-      font-weight:bold;
-      font-size:18px;
-      position:relative;
-      box-shadow:0 2px 4px rgba(0,0,0,0.1);
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: white;
+      padding: 14px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+
     #agent-status {
-      position:absolute;
-      right:12px;
-      top:12px;
-      font-weight:bold;
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      font-weight: bold;
     }
+
     #chat-container {
-      flex:1;
-      overflow-y:auto;
-      padding:12px;
-      display:flex;
-      flex-direction:column;
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
     }
+
     .message {
-      margin:6px 0;
-      padding:10px 14px;
-      border-radius:18px;
-      max-width:80%;
-      word-wrap:break-word;
-      box-shadow:0 1px 3px rgba(0,0,0,0.1);
+      margin: 8px 0;
+      padding: 12px 16px;
+      border-radius: 16px;
+      max-width: 80%;
+      word-wrap: break-word;
+      font-size: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
+
     .user-msg {
-      background:var(--bubble-user);
-      align-self:flex-end;
+      background: var(--bubble-user);
+      align-self: flex-end;
     }
+
     .agent-msg {
-      background:var(--bubble-agent);
-      border:1px solid var(--agent-border);
-      align-self:flex-start;
+      background: var(--bubble-agent);
+      border: 1px solid var(--agent-border);
+      align-self: flex-start;
     }
+
     #input-container {
-      display:flex;
-      gap:8px;
-      padding:10px;
-      background:#fff;
-      border-top:1px solid #ccc;
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,0.9);
+      border-top: 1px solid #ccc;
     }
+
     #msg {
-      flex:1;
-      resize:none;
-      border-radius:18px;
-      padding:10px 12px;
-      border:1px solid #ccc;
-      font-size:16px;
-      outline:none;
-      max-height:120px;
+      flex: 1;
+      resize: none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      outline: none;
+      max-height: 120px;
     }
+
     #msg:focus {
-      border-color: var(--accent);
+      border-color: var(--accent2);
     }
+
     button {
-      padding:10px 16px;
-      background:var(--accent);
-      color:white;
-      border:none;
-      border-radius:18px;
-      cursor:pointer;
-      font-size:18px;
+      padding: 12px 18px;
+      background: var(--accent2);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
     }
+
+    button:hover {
+      background: #c2185b;
+    }
+
     button:active {
-      opacity:0.9;
+      opacity: 0.9;
     }
+
     #login-overlay {
-      position:fixed;
-      top:0; left:0; right:0; bottom:0;
-      background:#f4f7f9;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      z-index:999;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
     }
+
     #login-box {
-      background:#fff;
-      padding:20px;
-      border-radius:10px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.15);
     }
   </style>
 </head>
@@ -123,12 +152,158 @@
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
-  <button id="send-btn">✈️</button>
-  <button id="clear-btn">🧹</button>
+  <button id="send-btn">Send</button>
+  <button id="clear-btn">Clear</button>
 </div>
 
 <script>
-// Your existing JS logic remains unchanged
+const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
+const chatId = document.body.dataset.chatId || "1234";
+
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send-btn");
+const clearBtn = document.getElementById("clear-btn");
+const chatContainer = document.getElementById("chat-container");
+const agentStatus = document.getElementById("agent-status");
+
+let isLoggedIn = false;
+let typingDots = 0;
+
+function checkPwd() {
+  const pwd = document.getElementById("pwd").value;
+  if (pwd === "1") {
+    document.getElementById("login-overlay").style.display = "none";
+    isLoggedIn = true;
+    startPolling();
+  } else {
+    document.getElementById("login-msg").textContent = "Wrong password!";
+  }
+}
+
+function startPolling() {
+  markOnline();
+  checkStatus();
+  loadMessages();
+  loadTyping();
+  setInterval(loadMessages, 1000);
+  setInterval(checkStatus, 1000);
+  setInterval(loadTyping, 500);
+  setInterval(() => {
+    if (document.visibilityState === "visible") markOnline();
+  }, 10000);
+}
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+  await fetch(`${BACKEND_URL}/send`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text})
+  });
+  msgInput.value = "";
+  await sendTyping("");
+  loadMessages();
+}
+
+async function loadMessages() {
+  if (!isLoggedIn) return;
+  const isTabActive = document.visibilityState === "visible";
+  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
+  const data = await res.json();
+  chatContainer.innerHTML = "";
+
+  data.forEach((m, i) => {
+    const d = document.createElement("div");
+    d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
+    d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
+
+    const isLast = i === data.length - 1;
+    if (m.sender === "user" && m.seen_by === "agent" && isLast) {
+      const seenTag = document.createElement("div");
+      seenTag.style.fontSize = "12px";
+      seenTag.style.color = "#888";
+      seenTag.style.marginTop = "4px";
+      seenTag.textContent = "Seen ✅";
+      d.appendChild(seenTag);
+    }
+
+    chatContainer.appendChild(d);
+  });
+
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+async function loadTyping() {
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
+  const d = await res.json();
+
+  const oldTyping = document.getElementById("agent-typing-indicator");
+  if (oldTyping) oldTyping.remove();
+
+  if (d.sender === "agent" && d.text) {
+    typingDots = (typingDots + 1) % 4;
+    const dots = ".".repeat(typingDots);
+    const typingMsg = document.createElement("div");
+    typingMsg.id = "agent-typing-indicator";
+    typingMsg.className = "message agent-msg";
+    typingMsg.textContent = `Typing${dots}`;
+    chatContainer.appendChild(typingMsg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+}
+
+async function sendTyping(text) {
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/live_typing`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text})
+  });
+}
+
+async function checkStatus() {
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
+  const d = await res.json();
+  agentStatus.textContent = d.agent_online ? "🟢" : "🔴";
+}
+
+async function clearChat() {
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, { method: "POST" });
+  chatContainer.innerHTML = "";
+}
+
+async function markOnline() {
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/mark_online`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, sender: "user" })
+  });
+}
+
+sendBtn.addEventListener("mousedown", e => e.preventDefault());
+sendBtn.addEventListener("click", sendMessage);
+clearBtn.addEventListener("click", clearChat);
+msgInput.addEventListener("input", e => sendTyping(e.target.value));
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    markOnline();
+    loadMessages();
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  try {
+    const data = JSON.stringify({ chat_id: chatId });
+    const blob = new Blob([data], { type: "application/json" });
+    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
+  } catch (e) {}
+});
 </script>
 </body>
 </html>
