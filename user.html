@@ -5,306 +5,168 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Heart to Heart 💖</title>
 <style>
-  * {
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f7f9;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-  }
-
-  header {
-    background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
-    color: white;
-    padding: 12px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    border-bottom: 2px solid #ff9a9e;
-    border-radius: 0 0 15px 15px;
-    position: relative;
-    z-index: 10;
-  }
-
-  #agent-status {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    font-weight: bold;
-    font-size: 24px;
-  }
-
-  #typing-indicator {
-    text-align: center;
-    font-size: 14px;
-    color: #ff69b4;
-    font-style: italic;
-    padding: 4px;
-    min-height: 24px;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-  }
-
-  #chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    padding-bottom: 80px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .message {
-    max-width: 80%;
-    margin: 4px 0;
-    padding: 8px 12px;
-    border-radius: 12px;
-    word-wrap: break-word;
-  }
-
-  .user-msg {
-    background: #ffc0cb;
-    align-self: flex-end;
-  }
-
-  .agent-msg {
-    background: #ffffff;
-    border: 1px solid #ddd;
-    align-self: flex-start;
-  }
-
-  #input-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    padding: 10px;
-    background: #fff;
-    border-top: 1px solid #ccc;
-    z-index: 1000;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  }
-
-  #msg {
-    flex: 1;
-    padding: 10px 14px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    outline: none;
-  }
-
-  #msg:focus {
-    border-color: #ff5f6d;
-  }
-
-  #send-btn {
-    margin-left: 8px;
-    padding: 10px 20px;
-    border: none;
-    background: linear-gradient(90deg, #ff5f6d, #ffc371);
-    color: white;
-    border-radius: 20px;
-    font-size: 16px;
-    cursor: pointer;
-    min-width: 60px;
-  }
-
-  #send-btn:active {
-    opacity: 0.8;
-  }
-
-  .love-bubble {
-    position: absolute;
-    font-size: 16px;
-    opacity: 0.9;
-    color: red;
-    animation: floatGrowVibe 3s forwards;
-    pointer-events: none;
-    z-index: 999;
-  }
-
-  @keyframes floatGrowVibe {
-    0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
-    25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
-    50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
-    75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
-    100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
-  }
-
-  @media (max-width: 600px) {
-    #msg {
-      font-size: 16px;
-    }
-    #send-btn {
-      font-size: 16px;
-      padding: 10px 16px;
-    }
-  }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f4f7f9; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
+  header { background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062); color: white; padding: 12px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 2px solid #ff9a9e; border-radius: 0 0 15px 15px; position: relative; z-index: 10; }
+  #agent-status { position: absolute; top: 12px; right: 12px; font-weight: bold; font-size: 18px; }
+  #typing-indicator { text-align: center; font-size: 14px; color: #ff69b4; font-style: italic; padding: 4px; min-height: 24px; background: #fff; border-bottom: 1px solid #eee; }
+  #chat-container { flex: 1; display: flex; flex-direction: column; padding: 10px; padding-bottom: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .message { max-width: 80%; margin: 4px 0; padding: 8px 12px; border-radius: 12px; word-wrap: break-word; }
+  .user-msg { background: #ffc0cb; align-self: flex-end; }
+  .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-start; }
+  #input-container { position: fixed; bottom: 0; left: 0; right: 0; display: flex; padding: 10px; background: #fff; border-top: 1px solid #ccc; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+  #msg { flex: 1; padding: 10px 14px; border-radius: 20px; border: 1px solid #ccc; font-size: 16px; outline: none; }
+  #msg:focus { border-color: #ff5f6d; }
+  #send-btn { margin-left: 8px; padding: 10px 20px; border: none; background: linear-gradient(90deg, #ff5f6d, #ffc371); color: white; border-radius: 20px; font-size: 16px; cursor: pointer; min-width: 60px; }
+  #send-btn:active { opacity: 0.8; }
+  .love-bubble { position: absolute; font-size: 16px; opacity: 0.9; color: red; animation: floatGrowVibe 3s forwards; pointer-events: none; z-index: 999; }
+  @keyframes floatGrowVibe { 0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; } 25% { transform: translateY(-50px) scale(1.2) translateX(-8px); } 50% { transform: translateY(-120px) scale(2.0) translateX(8px); } 75% { transform: translateY(-180px) scale(2.5) translateX(-6px); } 100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; } }
+  @media (max-width: 600px) { #msg { font-size: 16px; } #send-btn { font-size: 16px; padding: 10px 16px; } }
 </style>
 </head>
-<body>
+<body data-chat-id="1234">
 
 <header>
   Heart to Heart 💖
   <div id="agent-status"></div>
 </header>
 
-<div id="typing-indicator"></div>
+<div id="typing-indicator" aria-live="polite"></div>
 <div id="chat-container"></div>
 
 <div id="input-container">
-  <input id="msg" placeholder="Type message..." autocomplete="off">
+  <textarea id="msg" placeholder="Type message..." rows="1" autocomplete="off" style="resize:none"></textarea>
   <button id="send-btn">➤</button>
 </div>
 
 <script>
-const chatId = "1234";
+// BACKEND_URL placeholder (set this in production to your Cloud Run URL, no trailing slash)
+const BACKEND_URL = window.__BACKEND_URL__ || ""; // e.g. "https://my-service-xxxxx.a.run.app"
+const chatId = document.body.dataset.chatId || '1234';
 
-async function sendMessage() {
-  const msgInput = document.getElementById("msg");
-  const message = msgInput.value.trim();
-  if (!message) return;
+function withBackend(path){ return BACKEND_URL ? `${BACKEND_URL}${path}` : path; }
+function debounce(fn, wait){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); }; }
 
-  await fetch("/send", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
-  });
+const msgInput = document.getElementById('msg');
+const sendBtn = document.getElementById('send-btn');
+const chatContainer = document.getElementById('chat-container');
+const agentStatus = document.getElementById('agent-status');
+const typingIndicator = document.getElementById('typing-indicator');
 
-  msgInput.value = "";
-  lastTypingText = "";
-  loadMessages();
-
-  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
+async function sendMessage(){
+  const text = msgInput.value.trim();
+  if(!text) return;
+  try{
+    const res = await fetch(withBackend('/send'), {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chatId, sender: 'user', text })
+    });
+    if(!res.ok) throw new Error('Send failed '+res.status);
+    msgInput.value = '';
+    lastTypingText = '';
+    await sendLiveTyping('');
+    await loadMessages();
+    if (text.toLowerCase().includes('love')) createMultipleLoveBubbles();
+  }catch(err){ console.error('sendMessage error:', err); }
 }
 
-async function loadMessages() {
-  try {
-    const res = await fetch(`/messages/${chatId}`);
+async function loadMessages(){
+  try{
+    const res = await fetch(withBackend(`/messages/${chatId}`));
+    if(!res.ok) return;
     const data = await res.json();
-    const container = document.getElementById("chat-container");
-    container.innerHTML = "";
-
+    chatContainer.innerHTML = '';
     data.forEach(msg => {
-      const div = document.createElement("div");
-      div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
-      div.textContent = msg.text;
-      container.appendChild(div);
+      const div = document.createElement('div');
+      div.className = 'message ' + (msg.sender === 'user' ? 'user-msg' : 'agent-msg');
+      div.textContent = msg.text || '';
+      chatContainer.appendChild(div);
     });
-
-    container.scrollTop = container.scrollHeight;
-  } catch (error) {
-    console.error("Error loading messages:", error);
-  }
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }catch(err){ console.error('loadMessages error:', err); }
 }
 
-let lastTypingText = "";
-async function sendLiveTyping() {
-  const msgInput = document.getElementById("msg");
-  const currentText = msgInput.value;
-  
-  if (currentText === lastTypingText) return;
-  lastTypingText = currentText;
-  
-  try {
-    await fetch("/live_typing", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ 
-        chat_id: chatId, 
-        sender: "user",
-        text: currentText
-      })
+let lastTypingText = '';
+const sendLiveTypingDebounced = debounce(async (text)=>{ await sendLiveTyping(text); }, 300);
+
+async function sendLiveTyping(text){
+  try{
+    await fetch(withBackend('/live_typing'), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chatId, sender: 'user', text })
     });
-  } catch (error) {
-    console.error("Error sending typing:", error);
-  }
+  }catch(err){ console.error('sendLiveTyping error:', err); }
 }
 
-async function checkAgentTyping() {
-  try {
-    const res = await fetch(`/get_live_typing/${chatId}`);
+async function checkAgentTyping(){
+  try{
+    const res = await fetch(withBackend(`/get_live_typing/${chatId}`));
+    if(!res.ok) return;
     const data = await res.json();
-    const typingElem = document.getElementById("typing-indicator");
-    
-    if (data.sender === "agent" && data.text) {
-      typingElem.textContent = "Agent is typing...";
+    if(data && data.sender === 'agent' && data.text){
+      typingIndicator.textContent = 'Agent is typing...';
     } else {
-      typingElem.textContent = "";
+      typingIndicator.textContent = '';
     }
-  } catch (error) {
-    console.error("Error checking typing:", error);
-  }
+  }catch(err){ console.error('checkAgentTyping error:', err); }
 }
 
-function createMultipleLoveBubbles() {
+function createMultipleLoveBubbles(){
   const count = 5;
-  for (let i = 0; i < count; i++) {
-    const bubble = document.createElement("div");
-    bubble.className = "love-bubble";
-    bubble.textContent = "❤";
-    bubble.style.left = Math.random() * (window.innerWidth - 50) + "px";
-    bubble.style.bottom = "0px";
-    bubble.style.animationDelay = (Math.random() * 0.5) + "s";
+  for(let i=0;i<count;i++){
+    const bubble = document.createElement('div');
+    bubble.className = 'love-bubble';
+    bubble.textContent = '❤';
+    bubble.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+    bubble.style.bottom = '0px';
+    bubble.style.animationDelay = (Math.random()*0.5)+'s';
     document.body.appendChild(bubble);
-    setTimeout(() => document.body.removeChild(bubble), 3000);
+    setTimeout(()=>{ if(bubble.parentNode) bubble.parentNode.removeChild(bubble); }, 3000);
   }
 }
 
-async function checkStatus() {
-  try {
-    const res = await fetch(`/is_online/${chatId}`);
+async function checkStatus(){
+  try{
+    const res = await fetch(withBackend(`/is_online/${chatId}`));
+    if(!res.ok) return;
     const data = await res.json();
-    const statusEl = document.getElementById("agent-status");
-    statusEl.textContent = data.agent_online ? "🟢" : "🔴";
-  } catch (error) {
-    console.error("Error checking status:", error);
-  }
+    agentStatus.textContent = data.agent_online ? '🟢' : '🔴';
+  }catch(err){ console.error('checkStatus error:', err); }
 }
 
-document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keypress", e => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
-  }
-});
-
-document.getElementById("msg").addEventListener("input", () => {
-  sendLiveTyping();
-});
-
-async function markOnline() {
-  try {
-    await fetch("/is_online/" + chatId);
-  } catch (error) {
-    console.error("Error marking online:", error);
-  }
+// mark user online properly (use POST to mark_online endpoint)
+async function markOnline(){
+  try{
+    await fetch(withBackend('/mark_online'), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chatId, sender: 'user' })
+    });
+  }catch(err){ console.error('markOnline error:', err); }
 }
 
-setInterval(loadMessages, 1500);
-setInterval(checkStatus, 500);
-setInterval(checkAgentTyping, 300);
-setInterval(markOnline, 5000);
-
-markOnline();
-checkStatus();
-loadMessages();
-
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon("/logout_user", JSON.stringify({ chat_id: chatId }));
+// sendBeacon on unload with JSON blob
+window.addEventListener('beforeunload', ()=>{
+  try{
+    const data = JSON.stringify({ chat_id: chatId });
+    const blob = new Blob([data], { type: 'application/json' });
+    navigator.sendBeacon(withBackend('/logout_user'), blob);
+  }catch(err){ /* ignore */ }
 });
+
+// events
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+msgInput.addEventListener('input', e=>{ if(e.target.value !== lastTypingText){ lastTypingText = e.target.value; sendLiveTypingDebounced(e.target.value); } });
+
+// polling (throttled)
+setInterval(loadMessages, 2000);
+setInterval(checkStatus, 3000);
+setInterval(checkAgentTyping, 500);
+setInterval(markOnline, 10000);
+
+// initial
+markOnline(); checkStatus(); loadMessages();
+
 </script>
 </body>
 </html>
