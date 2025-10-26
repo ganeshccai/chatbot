@@ -13,14 +13,7 @@
       --bubble-agent: #ffffff;
       --agent-border: #e0e0e0;
     }
-
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
     body {
       font-family: 'Segoe UI', sans-serif;
       display: flex;
@@ -30,7 +23,6 @@
       background-repeat: no-repeat;
       color: #333;
     }
-
     header {
       background: linear-gradient(90deg, var(--accent), var(--accent2));
       color: white;
@@ -41,14 +33,12 @@
       position: relative;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-
     #agent-status {
       position: absolute;
       right: 12px;
       top: 12px;
       font-weight: bold;
     }
-
     #chat-container {
       flex: 1;
       overflow-y: auto;
@@ -57,7 +47,6 @@
       flex-direction: column;
       background-color: #f8f8f8;
     }
-
     .message {
       margin: 4px 0;
       padding: 8px 12px;
@@ -67,18 +56,15 @@
       font-size: 15px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08);
     }
-
     .user-msg {
       background: var(--bubble-user);
       align-self: flex-end;
     }
-
     .agent-msg {
       background: var(--bubble-agent);
       border: 1px solid var(--agent-border);
       align-self: flex-start;
     }
-
     #input-container {
       display: flex;
       gap: 10px;
@@ -86,7 +72,6 @@
       background: rgba(255,255,255,0.9);
       border-top: 1px solid #ccc;
     }
-
     #msg {
       flex: 1;
       resize: none;
@@ -97,11 +82,7 @@
       outline: none;
       max-height: 120px;
     }
-
-    #msg:focus {
-      border-color: var(--accent2);
-    }
-
+    #msg:focus { border-color: var(--accent2); }
     button {
       padding: 12px 18px;
       background: var(--accent2);
@@ -112,15 +93,8 @@
       font-size: 16px;
       transition: background 0.3s ease;
     }
-
-    button:hover {
-      background: #c2185b;
-    }
-
-    button:active {
-      opacity: 0.9;
-    }
-
+    button:hover { background: #c2185b; }
+    button:active { opacity: 0.9; }
     #login-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -130,7 +104,6 @@
       align-items: center;
       z-index: 999;
     }
-
     #login-box {
       background: #fff;
       padding: 24px;
@@ -149,14 +122,13 @@
   </div>
 </div>
 
-<header> 𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
+<header>𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
   <button id="send-btn">➤</button>
   <button id="clear-btn">❌</button>
 </div>
-
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = document.body.dataset.chatId || "1234";
@@ -189,6 +161,7 @@ async function checkPwd() {
     document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
 }
+
 function startPolling() {
   markOnline();
   checkStatus();
@@ -217,35 +190,6 @@ async function sendMessage() {
   await sendTyping("");
   loadMessages();
 }
-
-async function loadMessages() {
-  if (!isLoggedIn) return;
-  const isTabActive = document.visibilityState === "visible";
-  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
-  const data = await res.json();
-  chatContainer.innerHTML = "";
-
-  data.forEach((m, i) => {
-    const d = document.createElement("div");
-    d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
-    d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
-
-    const isLast = i === data.length - 1;
-    if (m.sender === "user" && m.seen_by === "agent" && isLast) {
-      const seenTag = document.createElement("div");
-      seenTag.style.fontSize = "12px";
-      seenTag.style.color = "#888";
-      seenTag.style.marginTop = "4px";
-      seenTag.textContent = "✅";
-      d.appendChild(seenTag);
-    }
-
-    chatContainer.appendChild(d);
-  });
-
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
 async function loadTyping() {
   if (!isLoggedIn) return;
   const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
@@ -333,7 +277,6 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
-
-
+  
 
   
