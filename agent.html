@@ -165,12 +165,9 @@ window.addEventListener("beforeunload", () => {
   } catch (e) {}
 });
 
-async function checkStatus() {
-  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}`);
-  const d = await res.json();
-  userStatus.textContent = d.user_online ? "🟢" : "🔴";
-}                          
+const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);                 
 </script>
 </body>
 </html>
+
 
