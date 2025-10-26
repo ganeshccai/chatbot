@@ -76,7 +76,11 @@ def update_live_typing():
     data = request.get_json(silent=True)
     chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text", "")
     with _store_lock:
-        live_typing[chat_id] = {"sender": sender, "text": text, "timestamp": datetime.utcnow().timestamp()}
+        live_typing[chat_id] = {
+            "sender": sender,
+            "text": text,
+            "timestamp": datetime.utcnow().timestamp()
+        }
     return jsonify({"status": "ok"})
 
 @app.route("/get_live_typing/<chat_id>", methods=["GET"])
