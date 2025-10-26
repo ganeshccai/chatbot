@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-  <title></title>
+  <title>Chat</title>
   <style>
     :root {
       --accent: #feda75;
@@ -50,24 +50,23 @@
     }
 
     #chat-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  background-color: #f8f8f8; /* Silver white */
-}
-
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      background-color: #f8f8f8;
+    }
 
     .message {
-  margin: 4px 0;              /* Reduced vertical spacing */
-  padding: 8px 12px;          /* Less padding inside the bubble */
-  border-radius: 12px;        /* Slightly tighter corners */
-  max-width: 80%;
-  word-wrap: break-word;
-  font-size: 15px;            /* Slightly smaller font */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08); /* Softer shadow */
-}
+      margin: 4px 0;
+      padding: 8px 12px;
+      border-radius: 12px;
+      max-width: 80%;
+      word-wrap: break-word;
+      font-size: 15px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
 
     .user-msg {
       background: var(--bubble-user);
@@ -169,16 +168,25 @@ const chatContainer = document.getElementById("chat-container");
 const agentStatus = document.getElementById("agent-status");
 
 let isLoggedIn = false;
+let sessionToken = null;
 let typingDots = 0;
 
-function checkPwd() {
+async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
-  if (pwd === "1") {
+  const res = await fetch(`${BACKEND_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, password: pwd })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    sessionToken = data.session_token;
     document.getElementById("login-overlay").style.display = "none";
     isLoggedIn = true;
     startPolling();
   } else {
-    document.getElementById("login-msg").textContent = "😂";
+    document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
 }
 
@@ -200,8 +208,11 @@ async function sendMessage() {
   if (!text) return;
   await fetch(`${BACKEND_URL}/send`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "user", text})
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
   });
   msgInput.value = "";
   await sendTyping("");
@@ -259,9 +270,12 @@ async function loadTyping() {
 async function sendTyping(text) {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/live_typing`, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "user", text})
+    method:    "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
   });
 }
 
@@ -274,7 +288,13 @@ async function checkStatus() {
 
 async function clearChat() {
   if (!isLoggedIn) return;
-  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, { method: "POST" });
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    }
+  });
   chatContainer.innerHTML = "";
 }
 
@@ -282,7 +302,10 @@ async function markOnline() {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/mark_online`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
     body: JSON.stringify({ chat_id: chatId, sender: "user" })
   });
 }
@@ -309,13 +332,3 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
