@@ -64,11 +64,10 @@ let sessionToken = null;
 async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
   const res = await fetch(`${BACKEND_URL}/login`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "agent" })
-});
-
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "agent" })
+  });
 
   const data = await res.json();
   if (data.success) {
@@ -80,7 +79,6 @@ async function checkPwd() {
     document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
 }
-
 function startPolling() {
   markOnline();
   checkStatus();
@@ -213,9 +211,9 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("beforeunload", () => {
   try {
-    const data = JSON.stringify({ chat_id: chatId, sender: "agent" }); // or "agent" depending on context
+    const data = JSON.stringify({ chat_id: chatId, sender: "agent" });
     const blob = new Blob([data], { type: "application/json" });
-    navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob); // or logout_agent for agent.html
+    navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob);
   } catch (e) {
     console.warn("Logout beacon failed:", e);
   }
@@ -225,26 +223,4 @@ window.addEventListener("beforeunload", () => {
 </html>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
+  
