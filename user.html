@@ -176,7 +176,7 @@ async function checkPwd() {
   const res = await fetch(`${BACKEND_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, password: pwd })
+    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "user" })
   });
 
   const data = await res.json();
@@ -189,7 +189,6 @@ async function checkPwd() {
     document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
 }
-
 function startPolling() {
   markOnline();
   checkStatus();
@@ -270,7 +269,7 @@ async function loadTyping() {
 async function sendTyping(text) {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/live_typing`, {
-    method:    "POST",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${sessionToken}`
@@ -324,9 +323,9 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("beforeunload", () => {
   try {
-    const data = JSON.stringify({ chat_id: chatId, sender: "user" }); // or "agent" depending on context
+    const data = JSON.stringify({ chat_id: chatId, sender: "user" });
     const blob = new Blob([data], { type: "application/json" });
-    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob); // or logout_agent for agent.html
+    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
   } catch (e) {
     console.warn("Logout beacon failed:", e);
   }
@@ -336,3 +335,5 @@ window.addEventListener("beforeunload", () => {
 </html>
 
 
+
+  
