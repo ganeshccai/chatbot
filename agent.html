@@ -64,10 +64,11 @@ let sessionToken = null;
 async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
   const res = await fetch(`${BACKEND_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, password: pwd })
-  });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "agent" })
+});
+
 
   const data = await res.json();
   if (data.success) {
@@ -240,3 +241,4 @@ window.addEventListener("beforeunload", () => {
 
 
     
+
