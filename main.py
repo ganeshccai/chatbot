@@ -89,7 +89,7 @@ def get_messages(chat_id):
 @app.route("/is_online/<chat_id>", methods=["GET"])
 def is_online(chat_id):
     now = datetime.utcnow()
-    timeout = timedelta(seconds=15)
+    timeout = timedelta(seconds=2)
     with _store_lock:
         user_active = (
             online_users.get(chat_id, False) and
