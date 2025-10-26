@@ -1,117 +1,129 @@
-# app.py
-from datetime import datetime
-import os
-from threading import Lock
-from flask import Flask, request, jsonify, redirect, url_for
-from flask_cors import CORS
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Agent Interface 💬</title>
+<style>
+  :root {
+    --accent: #3b82f6;
+    --accent2: #2563eb;
+    --bg: #f3f6fb;
+    --bubble-user: #ffffff;
+    --bubble-agent: #dbeafe;
+    --user-border: #dcdcdc;
+  }
+  html,body { height:100%; width:100%; margin:0; padding:0; overflow:hidden; }
+  body { font-family: Arial,sans-serif; display:flex; flex-direction:column; background:var(--bg); }
+  header { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:white; padding:12px; text-align:center; font-weight:bold; position:relative; }
+  #user-status { position:absolute; right:12px; top:12px; font-weight:bold; }
+  #typing-indicator { font-style:italic; text-align:center; min-height:24px; color:#2563eb; background:#fff; padding:6px 8px; border-bottom:1px solid #eee; }
+  #chat-container { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; display:flex; flex-direction:column; }
+  .message { margin:6px 0; padding:10px 14px; border-radius:14px; max-width:80%; word-wrap:break-word; }
+  /* Agent window: user LEFT, agent RIGHT */
+  .user-msg { background:var(--bubble-user); border:1px solid var(--user-border); align-self:flex-start; }
+  .agent-msg { background:var(--bubble-agent); align-self:flex-end; }
+  #input-container { display:flex; gap:8px; padding:10px; background:#fff; border-top:1px solid #ccc; }
+  #msg { flex:1; resize:none; border-radius:14px; padding:10px 12px; border:1px solid #ccc; font-size:16px; outline:none; max-height:120px; }
+  #msg:focus { border-color: var(--accent); }
+  button { padding:10px 16px; background:var(--accent); color:white; border:none; border-radius:14px; cursor:pointer; font-size:16px; }
+  button:active { opacity:0.9; }
+  #login-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#f4f7f9; display:flex; justify-content:center; align-items:center; z-index:999; }
+  #login-box { background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body data-chat-id="1234">
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
+<div id="login-overlay">
+  <div id="login-box">
+    <input type="password" id="pwd" placeholder="Enter password">
+    <button onclick="checkPwd()">Login</button>
+    <div id="msg" style="color:red;margin-top:10px;"></div>
+  </div>
+</div>
 
-# Allow calls from your GitHub Pages domain
-CORS(app, origins=["https://ganeshccai.github.io"], supports_credentials=True)
+<header>Agent 💬 <span id="user-status">🔴</span></header>
+<div id="typing-indicator"></div>
+<div id="chat-container"></div>
+<div id="input-container">
+  <textarea id="msg" rows="2" placeholder="Type reply..." autocomplete="off"></textarea>
+  <button id="send-btn">Send</button>
+  <button id="clear-btn">Clear</button>
+</div>
 
-CHAT_ID = "1234"
+<script>
+const BACKEND_URL="https://chatbot-788207962975.us-central1.run.app";
+const chatId=document.body.dataset.chatId||"1234";
 
-# In‑memory stores
-all_chats = {}
-online_users = {}
-live_typing = {}
-_store_lock = Lock()
+const msgInput=document.getElementById("msg");
+const sendBtn=document.getElementById("send-btn");
+const clearBtn=document.getElementById("clear-btn");
+const chatContainer=document.getElementById("chat-container");
+const typingIndicator=document.getElementById("typing-indicator");
+const userStatus=document.getElementById("user-status");
 
-@app.route("/", methods=["GET"])
-def index():
-    return redirect(url_for("status"))
+function checkPwd(){
+  const pwd=document.getElementById("pwd").value;
+  if(pwd==="1"){ document.getElementById("login-overlay").style.display="none"; }
+  else{ document.getElementById("msg").textContent="Wrong password!"; }
+}
 
-@app.route("/status", methods=["GET"])
-def status():
-    return jsonify({"status": "running"})
+async function sendMessage(){
+  const text=msgInput.value.trim(); if(!text) return;
+  await fetch(`${BACKEND_URL}/send`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({chat_id:chatId,sender:"agent",text})});
+  msgInput.value=""; await sendTyping(""); loadMessages();
+}
+async function loadMessages(){
+  const res=await fetch(`${BACKEND_URL}/messages/${chatId}`); const data=await res.json();
+  chatContainer.innerHTML=""; data.forEach(m=>{
+    const d=document.createElement("div");
+    d.className="message "+(m.sender==="user"?"user-msg":"agent-msg");
+    d.textContent=m.text||""; chatContainer.appendChild(d);
+  }); chatContainer.scrollTop=chatContainer.scrollHeight;
+}
+async function sendTyping(text){
+  await fetch(`${BACKEND_URL}/live_typing`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({chat_id:chatId,sender:"agent",text})});
+}
+async function loadTyping(){
+  const res=await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`); const d=await res.json();
+  typingIndicator.textContent=(d.sender==="user"&&d.text)?`User typing: ${d.text}`:"";
+}
+async function checkStatus(){
+  const res=await fetch(`${BACKEND_URL}/is_online/${chatId}`); const d=await res.json();
+  userStatus.textContent=d.user_online?"🟢":"🔴";
+}
+async function clearChat(){
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`,{method:"POST"}); chatContainer.innerHTML="";
+}
+async function markOnline(){
+  await fetch(`${BACKEND_URL}/mark_online`,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({chat_id:chatId,sender:"agent"})});
+}
 
-@app.route("/send", methods=["POST"])
-def send_message():
-    data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error": "Invalid JSON"}), 400
-    chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text")
-    if not chat_id or not sender or text is None:
-        return jsonify({"error": "Missing fields"}), 400
-    timestamp = datetime.utcnow().isoformat() + "Z"
-    with _store_lock:
-        all_chats.setdefault(chat_id, []).append({
-            "chat_id": chat_id,
-            "sender": sender,
-            "text": text,
-            "timestamp": timestamp
-        })
-        # Clear typing once a message is sent
-        live_typing[chat_id] = {"sender": "", "text": ""}
-    return jsonify({"status": "ok"})
+sendBtn.addEventListener("mousedown",e=>e.preventDefault());
+sendBtn.addEventListener("click",sendMessage);
+clearBtn.addEventListener("click",clearChat);
+msgInput.addEventListener("input",e=>sendTyping(e.target.value));
 
-@app.route("/messages/<chat_id>", methods=["GET"])
-def get_messages(chat_id):
-    with _store_lock:
-        return jsonify(list(all_chats.get(chat_id, [])))
+// Polling and heartbeat
+setInterval(loadMessages,1000);
+setInterval(checkStatus,1000);
+setInterval(loadTyping,500);
+setInterval(markOnline,10000);
 
-@app.route("/is_online/<chat_id>", methods=["GET"])
-def is_online(chat_id):
-    with _store_lock:
-        return jsonify({
-            "user_online": online_users.get(chat_id, False),
-            "agent_online": online_users.get("agent", False)
-        })
+markOnline(); checkStatus(); loadMessages(); loadTyping();
 
-@app.route("/mark_online", methods=["POST"])
-def mark_online():
-    data = request.get_json(silent=True) or {}
-    chat_id = data.get("chat_id")
-    sender = data.get("sender")
-    if not chat_id or not sender:
-        return jsonify({"error": "missing"}), 400
-    with _store_lock:
-        if sender == "user":
-            online_users[chat_id] = True
-        elif sender == "agent":
-            online_users["agent"] = True
-    return jsonify({"status": "ok"})
-
-@app.route("/live_typing", methods=["POST"])
-def update_live_typing():
-    data = request.get_json(silent=True)
-    if not data:
-        return jsonify({"error": "Invalid JSON"}), 400
-    chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text", "")
-    if not chat_id or not sender:
-        return jsonify({"error": "Missing fields"}), 400
-    with _store_lock:
-        live_typing[chat_id] = {"sender": sender, "text": text}
-    return jsonify({"status": "ok"})
-
-@app.route("/get_live_typing/<chat_id>", methods=["GET"])
-def get_live_typing(chat_id):
-    with _store_lock:
-        return jsonify(live_typing.get(chat_id, {"sender": "", "text": ""}))
-
-@app.route("/clear_chat/<chat_id>", methods=["POST"])
-def clear_chat(chat_id):
-    with _store_lock:
-        all_chats[chat_id] = []
-    return jsonify({"status": "cleared"})
-
-@app.route("/logout_user", methods=["POST"])
-def logout_user():
-    data = request.get_json(silent=True) or {}
-    chat_id = data.get("chat_id") or CHAT_ID
-    with _store_lock:
-        online_users[chat_id] = False
-        live_typing[chat_id] = {"sender": "", "text": ""}
-    return jsonify({"status": "ok"})
-
-@app.route("/logout_agent", methods=["POST"])
-def logout_agent():
-    with _store_lock:
-        online_users["agent"] = False
-    return jsonify({"status": "ok"})
-
-if __name__ == "__main__":
-    # Run locally on port 8080
-    app.run(host="0.0.0.0", port=8080)
+// Logout on close
+window.addEventListener("beforeunload", ()=>{
+  try{
+    const data=JSON.stringify({chat_id:chatId,sender:"agent"});
+    const blob=new Blob([data],{type:"application/json"});
+    navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob);
+  }catch(e){}
+});
+</script>
+</body>
+</html>
