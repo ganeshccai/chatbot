@@ -1,36 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>Agent Chat 💬</title>
-<style>
-  :root {
-    --accent: #3b82f6;
-    --accent2: #2563eb;
-    --bg: #f3f6fb;
-    --bubble-user: #ffffff;
-    --bubble-agent: #dbeafe;
-    --user-border: #dcdcdc;
-  }
-  html,body { height:100%; width:100%; margin:0; padding:0; overflow:hidden; }
-  body { font-family: Arial,sans-serif; display:flex; flex-direction:column; background:var(--bg); }
-  header { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:white; padding:12px; text-align:center; font-weight:bold; position:relative; }
-  #user-status { position:absolute; right:12px; top:12px; font-weight:bold; }
-  #typing-indicator { font-style:italic; text-align:center; min-height:24px; color:#2563eb; background:#fff; padding:6px 8px; border-bottom:1px solid #eee; }
-  #chat-container { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; display:flex; flex-direction:column; }
-  .message { margin:6px 0; padding:10px 14px; border-radius:14px; max-width:80%; word-wrap:break-word; }
-  .user-msg { background:var(--bubble-user); border:1px solid var(--user-border); align-self:flex-start; }
-  .agent-msg { background:var(--bubble-agent); align-self:flex-end; }
-  #input-container { display:flex; gap:8px; padding:10px; background:#fff; border-top:1px solid #ccc; }
-  #msg { flex:1; resize:none; border-radius:14px; padding:10px 12px; border:1px solid #ccc; font-size:16px; outline:none; max-height:120px; }
-  #msg:focus { border-color: var(--accent); }
-  button { padding:10px 16px; background:var(--accent); color:white; border:none; border-radius:14px; cursor:pointer; font-size:16px; }
-  button:active { opacity:0.9; }
-  #login-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#f4f7f9; display:flex; justify-content:center; align-items:center; z-index:999; }
-  #login-box { background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>Agent Chat</title>
+  <style>
+    :root {
+      --accent: #3b82f6;
+      --accent2: #2563eb;
+      --bg: #f3f6fb;
+      --bubble-user: #ffffff;
+      --bubble-agent: #dbeafe;
+      --user-border: #dcdcdc;
+    }
+    html, body { height:100%; margin:0; padding:0; overflow:hidden; }
+    body { font-family: Arial, sans-serif; display:flex; flex-direction:column; background:var(--bg); }
+    header { background:linear-gradient(90deg,var(--accent),var(--accent2)); color:white; padding:12px; text-align:center; font-weight:bold; position:relative; }
+    #user-status { position:absolute; right:12px; top:12px; font-weight:bold; }
+    #typing-indicator { font-style:italic; text-align:center; min-height:24px; color:#2563eb; background:#fff; padding:6px 8px; border-bottom:1px solid #eee; }
+    #chat-container { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; }
+    .message { margin:6px 0; padding:10px 14px; border-radius:14px; max-width:80%; word-wrap:break-word; }
+    .user-msg { background:var(--bubble-user); border:1px solid var(--user-border); align-self:flex-start; }
+    .agent-msg { background:var(--bubble-agent); align-self:flex-end; }
+    #input-container { display:flex; gap:8px; padding:10px; background:#fff; border-top:1px solid #ccc; }
+    #msg { flex:1; resize:none; border-radius:14px; padding:10px 12px; border:1px solid #ccc; font-size:16px; outline:none; max-height:120px; }
+    #msg:focus { border-color: var(--accent); }
+    button { padding:10px 16px; background:var(--accent); color:white; border:none; border-radius:14px; cursor:pointer; font-size:16px; }
+    button:active { opacity:0.9; }
+    #login-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:#f4f7f9; display:flex; justify-content:center; align-items:center; z-index:999; }
+    #login-box { background:#fff; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+  </style>
 </head>
 <body data-chat-id="1234">
 
@@ -108,11 +107,10 @@ async function loadMessages() {
   data.forEach((m, i) => {
     const d = document.createElement("div");
     d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
-    d.textContent = m.text || "";
+    d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
 
-    // ✅ Show "Seen ✅" only on the last agent message if marked as seen
     const isLast = i === data.length - 1;
-    if (m.sender === "agent" && m.seen && isLast) {
+    if (m.sender === "agent" && m.seen_by === "user" && isLast) {
       const seenTag = document.createElement("div");
       seenTag.style.fontSize = "12px";
       seenTag.style.color = "#888";
@@ -180,4 +178,3 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
-
