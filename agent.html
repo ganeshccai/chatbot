@@ -21,7 +21,6 @@
   #typing-indicator { font-style:italic; text-align:center; min-height:24px; color:#2563eb; background:#fff; padding:6px 8px; border-bottom:1px solid #eee; }
   #chat-container { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; display:flex; flex-direction:column; }
   .message { margin:6px 0; padding:10px 14px; border-radius:14px; max-width:80%; word-wrap:break-word; }
-  /* Agent window: user LEFT, agent RIGHT */
   .user-msg { background:var(--bubble-user); border:1px solid var(--user-border); align-self:flex-start; }
   .agent-msg { background:var(--bubble-agent); align-self:flex-end; }
   #input-container { display:flex; gap:8px; padding:10px; background:#fff; border-top:1px solid #ccc; }
@@ -39,7 +38,7 @@
   <div id="login-box">
     <input type="password" id="pwd" placeholder="Enter password">
     <button onclick="checkPwd()">Login</button>
-    <div id="msg" style="color:red;margin-top:10px;"></div>
+    <div id="login-msg" style="color:red;margin-top:10px;"></div>
   </div>
 </div>
 
@@ -53,76 +52,117 @@
 </div>
 
 <script>
-const BACKEND_URL="https://chatbot-788207962975.us-central1.run.app";
-const chatId=document.body.dataset.chatId||"1234";
+const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
+const chatId = document.body.dataset.chatId || "1234";
 
-const msgInput=document.getElementById("msg");
-const sendBtn=document.getElementById("send-btn");
-const clearBtn=document.getElementById("clear-btn");
-const chatContainer=document.getElementById("chat-container");
-const typingIndicator=document.getElementById("typing-indicator");
-const userStatus=document.getElementById("user-status");
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send-btn");
+const clearBtn = document.getElementById("clear-btn");
+const chatContainer = document.getElementById("chat-container");
+const typingIndicator = document.getElementById("typing-indicator");
+const userStatus = document.getElementById("user-status");
 
-function checkPwd(){
-  const pwd=document.getElementById("pwd").value;
-  if(pwd==="1"){ document.getElementById("login-overlay").style.display="none"; }
-  else{ document.getElementById("msg").textContent="Wrong password!"; }
-}
+let isLoggedIn = false;
 
-async function sendMessage(){
-  const text=msgInput.value.trim(); if(!text) return;
-  await fetch(`${BACKEND_URL}/send`,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,sender:"agent",text})});
-  msgInput.value=""; await sendTyping(""); loadMessages();
-}
-async function loadMessages(){
-  const res=await fetch(`${BACKEND_URL}/messages/${chatId}`); const data=await res.json();
-  chatContainer.innerHTML=""; data.forEach(m=>{
-    const d=document.createElement("div");
-    d.className="message "+(m.sender==="user"?"user-msg":"agent-msg");
-    d.textContent=m.text||""; chatContainer.appendChild(d);
-  }); chatContainer.scrollTop=chatContainer.scrollHeight;
-}
-async function sendTyping(text){
-  await fetch(`${BACKEND_URL}/live_typing`,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,sender:"agent",text})});
-}
-async function loadTyping(){
-  const res=await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`); const d=await res.json();
-  typingIndicator.textContent=(d.sender==="user"&&d.text)?`User typing: ${d.text}`:"";
-}
-async function checkStatus(){
-  const res=await fetch(`${BACKEND_URL}/is_online/${chatId}`); const d=await res.json();
-  userStatus.textContent=d.user_online?"🟢":"🔴";
-}
-async function clearChat(){
-  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`,{method:"POST"}); chatContainer.innerHTML="";
-}
-async function markOnline(){
-  await fetch(`${BACKEND_URL}/mark_online`,{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({chat_id:chatId,sender:"agent"})});
+function checkPwd() {
+  const pwd = document.getElementById("pwd").value;
+  if (pwd === "1") {
+    document.getElementById("login-overlay").style.display = "none";
+    isLoggedIn = true;
+    startPolling();
+  } else {
+    document.getElementById("login-msg").textContent = "Wrong password!";
+  }
 }
 
-sendBtn.addEventListener("mousedown",e=>e.preventDefault());
-sendBtn.addEventListener("click",sendMessage);
-clearBtn.addEventListener("click",clearChat);
-msgInput.addEventListener("input",e=>sendTyping(e.target.value));
+function startPolling() {
+  markOnline();
+  checkStatus();
+  loadMessages();
+  loadTyping();
+  setInterval(loadMessages, 1000);
+  setInterval(checkStatus, 1000);
+  setInterval(loadTyping, 500);
+  setInterval(markOnline, 10000);
+}
 
-// Polling and heartbeat
-setInterval(loadMessages,1000);
-setInterval(checkStatus,1000);
-setInterval(loadTyping,500);
-setInterval(markOnline,10000);
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+  await fetch(`${BACKEND_URL}/send`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "agent", text})
+  });
+  msgInput.value = "";
+  await sendTyping("");
+  loadMessages();
+}
 
-markOnline(); checkStatus(); loadMessages(); loadTyping();
+async function loadMessages() {
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/messages/${chatId}`);
+  const data = await res.json();
+  chatContainer.innerHTML = "";
+  data.forEach(m => {
+    const d = document.createElement("div");
+    d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
+    d.textContent = m.text || "";
+    chatContainer.appendChild(d);
+  });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+async function sendTyping(text) {
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/live_typing`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "agent", text})
+  });
+}
+
+async function loadTyping() {
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
+  const d = await res.json();
+  typingIndicator.textContent = (d.sender === "user" && d.text) ? `User typing: ${d.text}` : "";
+}
+
+async function checkStatus() {
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}`);
+  const d = await res.json();
+  userStatus.textContent = d.user_online ? "🟢" : "🔴";
+}
+
+async function clearChat() {
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {method: "POST"});
+  chatContainer.innerHTML = "";
+}
+
+async function markOnline() {
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/mark_online`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "agent"})
+  });
+}
+
+sendBtn.addEventListener("mousedown", e => e.preventDefault());
+sendBtn.addEventListener("click", sendMessage);
+clearBtn.addEventListener("click", clearChat);
+msgInput.addEventListener("input", e => sendTyping(e.target.value));
 
 // Logout on close
-window.addEventListener("beforeunload", ()=>{
-  try{
-    const data=JSON.stringify({chat_id:chatId,sender:"agent"});
-    const blob=new Blob([data],{type:"application/json"});
+window.addEventListener("beforeunload", () => {
+  try {
+    const data = JSON.stringify({chat_id: chatId, sender: "agent"});
+    const blob = new Blob([data], {type: "application/json"});
     navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob);
-  }catch(e){}
+  } catch (e) {}
 });
 </script>
 </body>
