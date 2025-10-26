@@ -91,7 +91,7 @@ function startPolling() {
   setInterval(loadTyping, 500);
   setInterval(() => {
     if (document.visibilityState === "visible") markOnline();
-  }, 10000);
+  }, 2000);
 }
 
 async function sendMessage() {
@@ -241,4 +241,5 @@ window.addEventListener("beforeunload", () => {
 
 
     
+
 
