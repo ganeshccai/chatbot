@@ -12,7 +12,6 @@ CHAT_ID = "1234"
 all_chats = {}
 online_users = {}
 live_typing = {}
-last_seen = {}
 _store_lock = Lock()
 
 @app.route("/", methods=["GET"])
