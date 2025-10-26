@@ -1,355 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>User Chat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Heart to Heart 💖</title>
 <style>
-  :root {
-    --bg: #f7fbff;
-    --accent1: #4a90e2;
-    --muted: #666;
-    --input-height: 48px;
+  * {
+    box-sizing: border-box;
   }
-
-  html, body { height: 100%; margin: 0; }
+  
   body {
     font-family: Arial, sans-serif;
-    background: var(--bg);
+    background: #f4f7f9;
+    margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
     height: 100vh;
-    -webkit-font-smoothing: antialiased;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
+    position: relative;
   }
 
   header {
-    background: linear-gradient(90deg, #6dd5ed, #2193b0);
+    background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
     color: white;
     padding: 12px;
     text-align: center;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
+    border-bottom: 2px solid #ff9a9e;
+    border-radius: 0 0 15px 15px;
+    position: relative;
+    z-index: 10;
   }
 
-  #status-row {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    padding: 8px 12px;
-    align-items: center;
+  #agent-status {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-weight: bold;
+    font-size: 24px;
   }
 
-  .status {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .status.green { color: #28a745; }
-  .status.red   { color: #dc3545; }
-
-  #live-typing {
+  #typing-indicator {
     text-align: center;
     font-size: 14px;
     color: #ff69b4;
-    margin: 4px 12px;
-    min-height: 1.2em;
     font-style: italic;
+    padding: 4px;
+    min-height: 24px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
   }
 
   #chat-container {
     flex: 1;
-    overflow-y: auto;
-    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    padding: 10px;
+    padding-bottom: 80px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .message {
     max-width: 80%;
-    padding: 10px 12px;
+    margin: 4px 0;
+    padding: 8px 12px;
     border-radius: 12px;
     word-wrap: break-word;
-    box-sizing: border-box;
   }
 
   .user-msg {
-    background: #fff;
-    border: 1px solid #ddd;
+    background: #ffc0cb;
     align-self: flex-end;
   }
 
   .agent-msg {
-    background: #e6f0ff;
+    background: #ffffff;
+    border: 1px solid #ddd;
     align-self: flex-start;
   }
 
-  .meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
-
   #input-container {
-    position: sticky;
-    bottom: env(safe-area-inset-bottom);
-    z-index: 10;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
-    gap: 8px;
     padding: 10px;
     background: #fff;
-    border-top: 1px solid #ddd;
-    align-items: center;
+    border-top: 1px solid #ccc;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
   }
 
   #msg {
     flex: 1;
-    height: var(--input-height);
     padding: 10px 14px;
-    border-radius: 24px;
+    border-radius: 20px;
     border: 1px solid #ccc;
     font-size: 16px;
-    box-sizing: border-box;
+    outline: none;
+  }
+
+  #msg:focus {
+    border-color: #ff5f6d;
   }
 
   #send-btn {
-    padding: 10px 14px;
+    margin-left: 8px;
+    padding: 10px 20px;
     border: none;
-    background: linear-gradient(90deg, #6dd5ed, #2193b0);
-    color: #fff;
+    background: linear-gradient(90deg, #ff5f6d, #ffc371);
+    color: white;
     border-radius: 20px;
-    font-size: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    min-width: 60px;
   }
 
-  @media (max-width: 480px) {
-    header { font-size: 16px; }
-    #msg { font-size: 16px; height: 44px; }
-    #send-btn { padding: 10px 12px; font-size: 14px; }
+  #send-btn:active {
+    opacity: 0.8;
+  }
+
+  .love-bubble {
+    position: absolute;
+    font-size: 16px;
+    opacity: 0.9;
+    color: red;
+    animation: floatGrowVibe 3s forwards;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes floatGrowVibe {
+    0% { transform: translateY(0) scale(0.5) translateX(0); opacity: 0.8; }
+    25% { transform: translateY(-50px) scale(1.2) translateX(-8px); }
+    50% { transform: translateY(-120px) scale(2.0) translateX(8px); }
+    75% { transform: translateY(-180px) scale(2.5) translateX(-6px); }
+    100% { transform: translateY(-250px) scale(3) translateX(0); opacity: 0; }
+  }
+
+  @media (max-width: 600px) {
+    #msg {
+      font-size: 16px;
+    }
+    #send-btn {
+      font-size: 16px;
+      padding: 10px 16px;
+    }
   }
 </style>
 </head>
 <body>
 
-<header>Chat</header>
+<header>
+  Heart to Heart 💖
+  <div id="agent-status"></div>
+</header>
 
-<div id="status-row">
-  <div id="agent-status" class="status red">Agent Offline ❌</div>
-</div>
-
-<div id="live-typing" aria-live="polite"></div>
-<div id="chat-container" role="log" aria-live="polite" aria-atomic="false"></div>
+<div id="typing-indicator"></div>
+<div id="chat-container"></div>
 
 <div id="input-container">
-  <input id="msg" placeholder="Type a message..." autocomplete="off" inputmode="text" />
-  <button id="send-btn">Send</button>
+  <input id="msg" placeholder="Type message..." autocomplete="off">
+  <button id="send-btn">➤</button>
 </div>
 
 <script>
 const chatId = "1234";
 
-/* Helpers */
-function setStatusElem(elem, online, prefix) {
-  if (online) {
-    elem.classList.remove("red");
-    elem.classList.add("green");
-    elem.textContent = `${prefix}: Online ✅`;
-  } else {
-    elem.classList.remove("green");
-    elem.classList.add("red");
-    elem.textContent = `${prefix}: Offline ❌`;
-  }
-}
-
-function formatTimestamp(ts) {
-  try {
-    const d = new Date(ts);
-    if (!isNaN(d)) return d.toLocaleString();
-  } catch (e) {}
-  return "";
-}
-
-/* Message rendering */
-function appendMessage(msg) {
-  const container = document.getElementById("chat-container");
-  const div = document.createElement("div");
-  div.className = "message " + (msg.sender === "agent" ? "agent-msg" : "user-msg");
-
-  const textDiv = document.createElement("div");
-  textDiv.textContent = msg.text;
-  div.appendChild(textDiv);
-
-  if (msg.timestamp) {
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.textContent = formatTimestamp(msg.timestamp);
-    div.appendChild(meta);
-  }
-
-  container.appendChild(div);
-}
-
-function scrollToBottom() {
-  const container = document.getElementById("chat-container");
-  container.scrollTop = container.scrollHeight;
-}
-
-/* Polling and actions */
-let lastLoadedLength = 0;
-
-async function loadMessages() {
-  try {
-    const res = await fetch(`/messages/${chatId}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!Array.isArray(data)) return;
-    if (data.length === lastLoadedLength) return;
-    const container = document.getElementById("chat-container");
-    container.innerHTML = "";
-    if (data.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "meta";
-      empty.textContent = "No messages yet";
-      container.appendChild(empty);
-    } else {
-      data.forEach(msg => appendMessage(msg));
-    }
-    lastLoadedLength = data.length;
-    scrollToBottom();
-  } catch (err) {
-    console.error("loadMessages error:", err);
-  }
-}
-
-async function checkOnline() {
-  try {
-    const res = await fetch(`/is_online/${chatId}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    const agentStatus = document.getElementById("agent-status");
-    const agentOnline = (typeof data.agent_online !== "undefined") ? data.agent_online : data.online;
-    setStatusElem(agentStatus, Boolean(agentOnline), "Agent");
-  } catch (err) {
-    console.error("checkOnline error:", err);
-  }
-}
-
-/* Live typing:
-   - When agent is typing (sender="agent"), the user sees "Typing..."
-   - When user is typing (sender="user"), the agent will see the actual text (agent page handles it)
-*/
-async function loadLiveTyping() {
-  try {
-    const res = await fetch(`/get_live_typing/${chatId}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    const typingElem = document.getElementById("live-typing");
-    if (!data || !data.sender) {
-      typingElem.textContent = "";
-      return;
-    }
-    if (data.sender === "agent") {
-      typingElem.textContent = `Typing...`;
-    } else {
-      // if another user (should be local user) typed, we don't show it here
-      typingElem.textContent = "";
-    }
-  } catch (err) {
-    console.error("loadLiveTyping error:", err);
-  }
-}
-
-/* Actions */
 async function sendMessage() {
   const msgInput = document.getElementById("msg");
   const message = msgInput.value.trim();
   if (!message) return;
 
-  const payload = { chat_id: chatId, sender: "user", text: message };
+  await fetch("/send", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text: message})
+  });
+
+  msgInput.value = "";
+  lastTypingText = "";
+  loadMessages();
+
+  if (message.toLowerCase().includes("love")) createMultipleLoveBubbles();
+}
+
+async function loadMessages() {
   try {
-    await fetch("/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const res = await fetch(`/messages/${chatId}`);
+    const data = await res.json();
+    const container = document.getElementById("chat-container");
+    container.innerHTML = "";
+
+    data.forEach(msg => {
+      const div = document.createElement("div");
+      div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
+      div.textContent = msg.text;
+      container.appendChild(div);
     });
-    // optimistic UI
-    appendMessage({ sender: "user", text: message, timestamp: new Date().toISOString() });
-    msgInput.value = "";
-    // clear typing state
-    await fetch("/live_typing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, sender: "user", text: "" })
-    });
-    // immediate refresh
-    checkOnline();
-    loadMessages();
-    loadLiveTyping();
-  } catch (err) {
-    console.error("sendMessage error:", err);
+
+    container.scrollTop = container.scrollHeight;
+  } catch (error) {
+    console.error("Error loading messages:", error);
   }
 }
 
-/* Typing handler for user: send actual text so agent sees it */
-let typingTimer = null;
-function notifyUserTyping(text) {
-  fetch("/live_typing", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, sender: "user", text: text }),
-  }).catch(()=>{});
-  // immediate checks so agent will see updated status and typing quickly
-  checkOnline();
-  loadLiveTyping();
+let lastTypingText = "";
+async function sendLiveTyping() {
+  const msgInput = document.getElementById("msg");
+  const currentText = msgInput.value;
+  
+  if (currentText === lastTypingText) return;
+  lastTypingText = currentText;
+  
+  try {
+    await fetch("/live_typing", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ 
+        chat_id: chatId, 
+        sender: "user",
+        text: currentText
+      })
+    });
+  } catch (error) {
+    console.error("Error sending typing:", error);
+  }
 }
 
-document.getElementById("msg").addEventListener("input", (e) => {
-  const val = e.target.value || "";
-  notifyUserTyping(val);
-  if (typingTimer) clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => {
-    // clear typing after 1s idle
-    notifyUserTyping("");
-  }, 1000);
-});
-
-document.getElementById("msg").addEventListener("blur", () => {
-  if (typingTimer) clearTimeout(typingTimer);
-  notifyUserTyping("");
-});
-
-/* Logout/close handling using sendBeacon or keepalive fetch */
-function logoutUser() {
+async function checkAgentTyping() {
   try {
-    const url = "/logout_user";
-    const blob = new Blob([JSON.stringify({ chat_id: chatId })], { type: "application/json" });
-    if (navigator.sendBeacon && navigator.sendBeacon(url, blob)) {
-      return;
+    const res = await fetch(`/get_live_typing/${chatId}`);
+    const data = await res.json();
+    const typingElem = document.getElementById("typing-indicator");
+    
+    if (data.sender === "agent" && data.text) {
+      typingElem.textContent = "Agent is typing...";
+    } else {
+      typingElem.textContent = "";
     }
-  } catch (e) {}
-  try {
-    fetch("/logout_user", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId }), keepalive: true }).catch(()=>{});
-  } catch (e) {}
+  } catch (error) {
+    console.error("Error checking typing:", error);
+  }
 }
 
-window.addEventListener("unload", logoutUser);
+function createMultipleLoveBubbles() {
+  const count = 5;
+  for (let i = 0; i < count; i++) {
+    const bubble = document.createElement("div");
+    bubble.className = "love-bubble";
+    bubble.textContent = "❤";
+    bubble.style.left = Math.random() * (window.innerWidth - 50) + "px";
+    bubble.style.bottom = "0px";
+    bubble.style.animationDelay = (Math.random() * 0.5) + "s";
+    document.body.appendChild(bubble);
+    setTimeout(() => document.body.removeChild(bubble), 3000);
+  }
+}
 
-/* Event listeners */
+async function checkStatus() {
+  try {
+    const res = await fetch(`/is_online/${chatId}`);
+    const data = await res.json();
+    const statusEl = document.getElementById("agent-status");
+    statusEl.textContent = data.agent_online ? "🟢" : "🔴";
+  } catch (error) {
+    console.error("Error checking status:", error);
+  }
+}
+
 document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
+document.getElementById("msg").addEventListener("keypress", e => {
+  if (e.key === "Enter") {
     e.preventDefault();
     sendMessage();
   }
 });
 
-/* Initial load & polling */
-document.addEventListener("DOMContentLoaded", () => {
-  loadMessages();
-  checkOnline();
-  loadLiveTyping();
+document.getElementById("msg").addEventListener("input", () => {
+  sendLiveTyping();
+});
 
-  setInterval(loadMessages, 1500);
-  setInterval(checkOnline, 1000);
-  setInterval(loadLiveTyping, 300);
+async function markOnline() {
+  try {
+    await fetch("/is_online/" + chatId);
+  } catch (error) {
+    console.error("Error marking online:", error);
+  }
+}
+
+setInterval(loadMessages, 1500);
+setInterval(checkStatus, 500);
+setInterval(checkAgentTyping, 300);
+setInterval(markOnline, 5000);
+
+markOnline();
+checkStatus();
+loadMessages();
+
+window.addEventListener("beforeunload", () => {
+  navigator.sendBeacon("/logout_user", JSON.stringify({ chat_id: chatId }));
 });
 </script>
-
 </body>
 </html>
