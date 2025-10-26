@@ -12,6 +12,7 @@ CHAT_ID = "1234"
 all_chats = {}
 online_users = {}
 live_typing = {}
+last_seen = {}
 _store_lock = Lock()
 
 @app.route("/", methods=["GET"])
@@ -41,34 +42,46 @@ def send_message():
 @app.route("/messages/<chat_id>", methods=["GET"])
 def get_messages(chat_id):
     viewer = request.args.get("viewer")
-    cutoff = datetime.utcnow() - timedelta(minutes=1)
     with _store_lock:
         messages = all_chats.get(chat_id, [])
-        filtered = [m for m in messages if datetime.fromisoformat(m["timestamp"].replace("Z", "")) > cutoff]
-        all_chats[chat_id] = filtered
-        if filtered:
-            last_msg = filtered[-1]
+        if messages:
+            last_msg = messages[-1]
             if last_msg["sender"] != viewer:
                 last_msg["seen_by"] = viewer
-        return jsonify(filtered)
+        return jsonify(messages)
 
 @app.route("/is_online/<chat_id>", methods=["GET"])
 def is_online(chat_id):
+    now = datetime.utcnow()
+    timeout = timedelta(seconds=15)
     with _store_lock:
+        user_active = (
+            online_users.get(chat_id, False) and
+            last_seen.get(chat_id) and
+            now - last_seen[chat_id] < timeout
+        )
+        agent_active = (
+            online_users.get("agent", False) and
+            last_seen.get("agent") and
+            now - last_seen["agent"] < timeout
+        )
         return jsonify({
-            "user_online": online_users.get(chat_id, False),
-            "agent_online": online_users.get("agent", False)
+            "user_online": user_active,
+            "agent_online": agent_active
         })
 
 @app.route("/mark_online", methods=["POST"])
 def mark_online():
     data = request.get_json(silent=True) or {}
     chat_id, sender = data.get("chat_id"), data.get("sender")
+    now = datetime.utcnow()
     with _store_lock:
         if sender == "user":
             online_users[chat_id] = True
+            last_seen[chat_id] = now
         elif sender == "agent":
             online_users["agent"] = True
+            last_seen["agent"] = now
     return jsonify({"status": "ok"})
 
 @app.route("/live_typing", methods=["POST"])
