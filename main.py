@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 from threading import Lock
+from uuid import uuid4
 from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
 
@@ -13,7 +14,12 @@ all_chats = {}
 online_users = {}
 live_typing = {}
 last_seen = {}
+active_sessions = {}  # chat_id → session_token
 _store_lock = Lock()
+
+def is_valid_session(chat_id):
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    return active_sessions.get(chat_id) == token
 
 @app.route("/", methods=["GET"])
 def index():
@@ -23,10 +29,33 @@ def index():
 def status():
     return jsonify({"status": "running"})
 
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json(silent=True) or {}
+    chat_id = data.get("chat_id")
+    password = data.get("password")
+
+    if password != "1":
+        return jsonify({"success": False, "error": "Wrong password"}), 403
+
+    with _store_lock:
+        if chat_id in active_sessions:
+            return jsonify({"success": False, "error": "Session already active"}), 403
+
+        token = str(uuid4())
+        active_sessions[chat_id] = token
+        online_users[chat_id] = True
+        last_seen[chat_id] = datetime.utcnow()
+
+    return jsonify({"success": True, "session_token": token})
+
 @app.route("/send", methods=["POST"])
 def send_message():
     data = request.get_json(silent=True)
     chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text")
+    if not is_valid_session(chat_id):
+        return jsonify({"error": "Invalid session"}), 403
+
     timestamp = datetime.utcnow().isoformat() + "Z"
     with _store_lock:
         all_chats.setdefault(chat_id, []).append({
@@ -75,6 +104,9 @@ def is_online(chat_id):
 def mark_online():
     data = request.get_json(silent=True) or {}
     chat_id, sender = data.get("chat_id"), data.get("sender")
+    if not is_valid_session(chat_id):
+        return jsonify({"error": "Invalid session"}), 403
+
     now = datetime.utcnow()
     with _store_lock:
         if sender == "user":
@@ -89,6 +121,9 @@ def mark_online():
 def update_live_typing():
     data = request.get_json(silent=True)
     chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text", "")
+    if not is_valid_session(chat_id):
+        return jsonify({"error": "Invalid session"}), 403
+
     with _store_lock:
         live_typing[chat_id] = {
             "sender": sender,
@@ -107,6 +142,9 @@ def get_live_typing(chat_id):
 
 @app.route("/clear_chat/<chat_id>", methods=["POST"])
 def clear_chat(chat_id):
+    if not is_valid_session(chat_id):
+        return jsonify({"error": "Invalid session"}), 403
+
     with _store_lock:
         all_chats[chat_id] = []
     return jsonify({"status": "cleared"})
@@ -118,6 +156,7 @@ def logout_user():
     with _store_lock:
         online_users[chat_id] = False
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
+        active_sessions.pop(chat_id, None)
     return jsonify({"status": "ok"})
 
 @app.route("/logout_agent", methods=["POST"])
