@@ -102,15 +102,29 @@ async function sendMessage() {
 
 async function loadMessages() {
   if (!isLoggedIn) return;
-  const res = await fetch(`${BACKEND_URL}/messages/${chatId}`);
+  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=agent`);
   const data = await res.json();
   chatContainer.innerHTML = "";
-  data.forEach(m => {
+
+  data.forEach((m, i) => {
     const d = document.createElement("div");
     d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
     d.textContent = m.text || "";
+
+    // ✅ Show "Seen ✅" only on the last agent message if marked as seen
+    const isLast = i === data.length - 1;
+    if (m.sender === "agent" && m.seen && isLast) {
+      const seenTag = document.createElement("div");
+      seenTag.style.fontSize = "12px";
+      seenTag.style.color = "#888";
+      seenTag.style.marginTop = "4px";
+      seenTag.textContent = "Seen ✅";
+      d.appendChild(seenTag);
+    }
+
     chatContainer.appendChild(d);
   });
+
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
@@ -176,5 +190,6 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
+
 
 
