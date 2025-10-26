@@ -92,23 +92,7 @@ function startPolling() {
     if (document.visibilityState === "visible") markOnline();
   }, 2000);
 }
-
-async function sendMessage() {
-  const text = msgInput.value.trim();
-  if (!text) return;
-  await fetch(`${BACKEND_URL}/send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({ chat_id: chatId, sender: "agent", text })
-  });
-  msgInput.value = "";
-  await sendTyping("");
-  loadMessages();
-}
-  async function loadMessages() {
+async function loadMessages() {
   if (!isLoggedIn) return;
   const isTabActive = document.visibilityState === "visible";
   const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=agent&active=${isTabActive}`);
@@ -180,7 +164,8 @@ async function clearChat() {
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${sessionToken}`
-    }
+    },
+    body: JSON.stringify({ sender: "agent" })
   });
   chatContainer.innerHTML = "";
 }
@@ -221,4 +206,4 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
-
+  
