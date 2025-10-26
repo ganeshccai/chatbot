@@ -155,7 +155,9 @@ def get_live_typing(chat_id):
 @app.route("/clear_chat/<chat_id>", methods=["POST"])
 def clear_chat(chat_id):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    sender = "agent" if f"{chat_id}:agent" in active_sessions and active_sessions[f"{chat_id}:agent"] == token else "user"
+    data = request.get_json(silent=True) or {}
+    sender = data.get("sender")
+
     if not is_valid_session(chat_id, sender):
         return jsonify({"error": "Invalid session"}), 403
 
