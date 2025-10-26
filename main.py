@@ -7,7 +7,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
-CORS(app, supports_credentials=True)
+CORS(app, origins=["https://ganeshccai.github.io"])
 
 CHAT_ID = "1234"
 CHAT_PASSWORD = "1"
