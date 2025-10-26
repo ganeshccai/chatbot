@@ -182,6 +182,26 @@ async function markOnline() {
   });
 }
 
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text || !isLoggedIn || !sessionToken) return;
+
+  console.log("Sending as agent:", text);
+  await fetch(`${BACKEND_URL}/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "agent", text })
+  });
+
+  msgInput.value = "";
+  await sendTyping("");
+  loadMessages();
+}
+  
 sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
@@ -207,3 +227,4 @@ window.addEventListener("beforeunload", () => {
 </body>
 </html>
   
+
