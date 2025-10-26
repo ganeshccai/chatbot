@@ -40,7 +40,7 @@
   </div>
 </div>
 
-<header>Agent Chat <span id="user-status">Online</span></header>
+<header>Agent Chat <span id="user-status">🔴</span></header>
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type reply..." autocomplete="off"></textarea>
@@ -59,15 +59,24 @@ const chatContainer = document.getElementById("chat-container");
 const userStatus = document.getElementById("user-status");
 
 let isLoggedIn = false;
+let sessionToken = null;
 
-function checkPwd() {
+async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
-  if (pwd === "1") {
+  const res = await fetch(`${BACKEND_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, password: pwd })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    sessionToken = data.session_token;
     document.getElementById("login-overlay").style.display = "none";
     isLoggedIn = true;
     startPolling();
   } else {
-    document.getElementById("login-msg").textContent = "Wrong password!";
+    document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
 }
 
@@ -89,8 +98,11 @@ async function sendMessage() {
   if (!text) return;
   await fetch(`${BACKEND_URL}/send`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "agent", text})
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "agent", text })
   });
   msgInput.value = "";
   await sendTyping("");
@@ -147,8 +159,11 @@ async function sendTyping(text) {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/live_typing`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "agent", text})
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "agent", text })
   });
 }
 
@@ -161,7 +176,13 @@ async function checkStatus() {
 
 async function clearChat() {
   if (!isLoggedIn) return;
-  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {method: "POST"});
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    }
+  });
   chatContainer.innerHTML = "";
 }
 
@@ -169,8 +190,11 @@ async function markOnline() {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/mark_online`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "agent"})
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "agent" })
   });
 }
 
@@ -188,8 +212,8 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("beforeunload", () => {
   try {
-    const data = JSON.stringify({chat_id: chatId, sender: "agent"});
-    const blob = new Blob([data], {type: "application/json"});
+    const data = JSON.stringify({ chat_id: chatId, sender: "agent" });
+    const blob = new Blob([data], { type: "application/json" });
     navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob);
   } catch (e) {}
 });
@@ -199,3 +223,20 @@ window.addEventListener("beforeunload", () => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
