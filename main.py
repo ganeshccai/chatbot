@@ -17,6 +17,8 @@ last_seen = {}
 active_sessions = {}  # key = f"{chat_id}:{sender}" → token
 _store_lock = Lock()
 
+SESSION_TIMEOUT = timedelta(seconds=2)
+
 def is_valid_session(chat_id, sender):
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     key = f"{chat_id}:{sender}"
@@ -42,8 +44,12 @@ def login():
 
     with _store_lock:
         key = f"{chat_id}:{sender}"
+        last = last_seen.get(sender)
         if key in active_sessions:
-            return jsonify({"success": False, "error": "Session already active"}), 403
+            if not last or datetime.utcnow() - last > SESSION_TIMEOUT:
+                active_sessions.pop(key, None)  # Expired session
+            else:
+                return jsonify({"success": False, "error": "Session already active"}), 403
 
         token = str(uuid4())
         active_sessions[key] = token
@@ -89,17 +95,16 @@ def get_messages(chat_id):
 @app.route("/is_online/<chat_id>", methods=["GET"])
 def is_online(chat_id):
     now = datetime.utcnow()
-    timeout = timedelta(seconds=2)
     with _store_lock:
         user_active = (
             online_users.get(chat_id, False) and
             last_seen.get(chat_id) and
-            now - last_seen[chat_id] < timeout
+            now - last_seen[chat_id] < SESSION_TIMEOUT
         )
         agent_active = (
             online_users.get("agent", False) and
             last_seen.get("agent") and
-            now - last_seen["agent"] < timeout
+            now - last_seen["agent"] < SESSION_TIMEOUT
         )
         return jsonify({
             "user_online": user_active,
@@ -164,6 +169,7 @@ def logout_user():
     chat_id = data.get("chat_id") or CHAT_ID
     key = f"{chat_id}:user"
     with _store_lock:
+        print(f"Logout received for {key}")
         online_users[chat_id] = False
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
         active_sessions.pop(key, None)
@@ -175,6 +181,7 @@ def logout_agent():
     chat_id = data.get("chat_id") or CHAT_ID
     key = f"{chat_id}:agent"
     with _store_lock:
+        print(f"Logout received for {key}")
         online_users["agent"] = False
         active_sessions.pop(key, None)
     return jsonify({"status": "ok"})
