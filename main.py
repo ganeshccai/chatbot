@@ -5,25 +5,20 @@ from threading import Lock
 from flask import Flask, render_template, request, session, jsonify, redirect, url_for
 from flask_cors import CORS
 
-# App setup
-app = Flask(__name__, template_folder="../templates", static_folder="../static")
-app.secret_key = os.environ.get("SECRET_KEY", "temp_key")
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
 CORS(app, supports_credentials=True)
 
 CHAT_ID = "1234"
 CHAT_PASSWORD = "1"
 
-# In-memory stores (note: not persistent; not for multi-process production)
 all_chats = {}
 online_users = {}
-# live_typing will store per-chat objects: {"sender": "user"|"agent"|"", "text": "<text>"}
 live_typing = {}
 
-# Lock to protect in-memory stores from concurrent access
 _store_lock = Lock()
 
 
-# ---------------- User Page ----------------
 @app.route("/", methods=["GET"])
 def index():
     return redirect(url_for("user_page"))
@@ -37,17 +32,17 @@ def user_page():
             session["chat_id"] = CHAT_ID
             with _store_lock:
                 all_chats.setdefault(CHAT_ID, [])
-                online_users[CHAT_ID] = True  # user online
+                online_users[CHAT_ID] = True
                 live_typing.setdefault(CHAT_ID, {"sender": "", "text": ""})
             return render_template("user.html")
         return "Wrong password", 401
-    return """<form method="post">
-                <input type="password" name="password" placeholder="*****"/>
-                <input type="submit" value="➤"/>
+    return """<form method="post" style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:Arial;">
+                <h2>User Login</h2>
+                <input type="password" name="password" placeholder="Enter Password" style="padding:10px;margin:10px;border-radius:5px;border:1px solid #ccc;"/>
+                <input type="submit" value="Login" style="padding:10px 20px;background:#ff5f6d;color:white;border:none;border-radius:5px;cursor:pointer;"/>
               </form>"""
 
 
-# ---------------- Agent Page ----------------
 @app.route("/agent", methods=["GET", "POST"])
 def agent_page():
     if request.method == "POST":
@@ -55,18 +50,17 @@ def agent_page():
         if password == CHAT_PASSWORD:
             with _store_lock:
                 online_users["agent"] = True
-                # ensure chat defaults exist
                 all_chats.setdefault(CHAT_ID, [])
                 live_typing.setdefault(CHAT_ID, {"sender": "", "text": ""})
             return render_template("agent.html")
         return "Wrong password", 401
-    return """<form method="post">
-                <input type="password" name="password" placeholder="Enter Password"/>
-                <input type="submit" value="Login"/>
+    return """<form method="post" style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:Arial;">
+                <h2>Agent Login</h2>
+                <input type="password" name="password" placeholder="Enter Password" style="padding:10px;margin:10px;border-radius:5px;border:1px solid #ccc;"/>
+                <input type="submit" value="Login" style="padding:10px 20px;background:#ff5f6d;color:white;border:none;border-radius:5px;cursor:pointer;"/>
               </form>"""
 
 
-# ---------------- Send Message ----------------
 @app.route("/send", methods=["POST"])
 def send_message():
     data = request.get_json(silent=True)
@@ -79,7 +73,6 @@ def send_message():
     if not chat_id or not sender or text is None:
         return jsonify({"error": "Missing required fields: chat_id, sender, text"}), 400
 
-    # Add a timestamp if the client didn't provide one
     if "timestamp" not in data:
         data["timestamp"] = datetime.utcnow().isoformat() + "Z"
 
@@ -90,13 +83,11 @@ def send_message():
             "text": text,
             "timestamp": data["timestamp"],
         })
-        # Clear live typing for this chat when a message is sent by either party
         live_typing[chat_id] = {"sender": "", "text": ""}
 
     return jsonify({"status": "ok"})
 
 
-# ---------------- Get Messages ----------------
 @app.route("/messages/<chat_id>", methods=["GET"])
 def get_messages(chat_id):
     with _store_lock:
@@ -104,7 +95,6 @@ def get_messages(chat_id):
     return jsonify(msgs)
 
 
-# ---------------- Online Status ----------------
 @app.route("/is_online/<chat_id>", methods=["GET"])
 def is_online(chat_id):
     with _store_lock:
@@ -113,18 +103,12 @@ def is_online(chat_id):
     return jsonify({
         "user_online": user_online,
         "agent_online": agent_online,
-        # legacy key for backward compatibility
         "online": agent_online,
     })
 
 
-# ---------------- Live Typing ----------------
 @app.route("/live_typing", methods=["POST"])
 def update_live_typing():
-    """
-    Expected JSON payload: {"chat_id": "<id>", "sender": "user"|"agent", "text": "<text>"}
-    Stores live_typing[chat_id] = {"sender": sender, "text": text}
-    """
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Invalid or missing JSON payload"}), 400
@@ -136,12 +120,10 @@ def update_live_typing():
     if not chat_id or not sender:
         return jsonify({"error": "Missing required fields: chat_id, sender"}), 400
 
-    # Normalize
     if not isinstance(text, str):
         text = str(text)
 
     with _store_lock:
-        # Store both who is typing and the text (agents' text may be empty intentionally)
         live_typing[chat_id] = {"sender": sender, "text": text.strip()}
 
     return jsonify({"status": "ok"})
@@ -151,13 +133,11 @@ def update_live_typing():
 def get_live_typing(chat_id):
     with _store_lock:
         obj = live_typing.get(chat_id, {"sender": "", "text": ""})
-    # Ensure structure
     if not isinstance(obj, dict):
         obj = {"sender": "", "text": ""}
     return jsonify(obj)
 
 
-# ---------------- Logout Handlers ----------------
 @app.route("/logout_user", methods=["POST"])
 def logout_user():
     data = request.get_json(silent=True) or {}
@@ -176,4 +156,4 @@ def logout_agent():
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
+    app.run(host="0.0.0.0", port=8080)
