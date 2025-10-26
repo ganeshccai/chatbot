@@ -79,6 +79,7 @@ async function checkPwd() {
     document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
 }
+
 function startPolling() {
   markOnline();
   checkStatus();
@@ -107,8 +108,7 @@ async function sendMessage() {
   await sendTyping("");
   loadMessages();
 }
-
-async function loadMessages() {
+  async function loadMessages() {
   if (!isLoggedIn) return;
   const isTabActive = document.visibilityState === "visible";
   const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=agent&active=${isTabActive}`);
@@ -221,6 +221,3 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
-
-
-  
