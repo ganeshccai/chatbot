@@ -1,3 +1,4 @@
+<!-- user.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,18 +6,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>User Chat 💖</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; display:flex; flex-direction:column; height:100vh; background:#f4f7f9; }
-  header { background:#ff5f6d; color:white; padding:10px; text-align:center; font-weight:bold; position:relative; border-bottom:2px solid #ff9a9e; }
-  #agent-status { position:absolute; right:10px; top:10px; font-weight:bold; }
-  #typing-indicator { font-style:italic; text-align:center; min-height:20px; color:#ff69b4; background:#fff; padding:6px 8px; border-bottom:1px solid #eee; }
-  #chat-container { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; }
-  .message { margin:6px 0; padding:8px 12px; border-radius:12px; max-width:80%; word-wrap:break-word; }
-  .user-msg { background:#ffc0cb; align-self:flex-end; }
-  .agent-msg { background:#ffffff; border:1px solid #ddd; align-self:flex-start; }
+  :root {
+    --accent: #ff5f6d;
+    --accent2: #ff9a9e;
+    --bg: #fef2f4;
+    --bubble-user: #ffb3c1;
+    --bubble-agent: #ffffff;
+    --agent-border: #dcdcdc;
+  }
+  body { font-family: Arial, sans-serif; margin:0; display:flex; flex-direction:column; height:100vh; background:var(--bg); }
+  header { background: linear-gradient(90deg, var(--accent), var(--accent2)); color:white; padding:12px; text-align:center; font-weight:bold; position:relative; border-bottom:2px solid var(--accent2); }
+  #agent-status { position:absolute; right:12px; top:12px; font-weight:bold; }
+  #typing-indicator { font-style:italic; text-align:center; min-height:24px; color:#ff69b4; background:#fff; padding:6px 8px; border-bottom:1px solid #eee; }
+  #chat-container { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; }
+  .message { margin:6px 0; padding:10px 14px; border-radius:14px; max-width:80%; word-wrap:break-word; }
+  /* User window: user message RIGHT, agent message LEFT */
+  .user-msg { background:var(--bubble-user); align-self:flex-end; }
+  .agent-msg { background:var(--bubble-agent); border:1px solid var(--agent-border); align-self:flex-start; }
   #input-container { display:flex; gap:8px; padding:10px; background:#fff; border-top:1px solid #ccc; }
-  #msg { flex:1; resize:none; border-radius:12px; padding:10px 12px; border:1px solid #ccc; font-size:16px; outline:none; }
-  #msg:focus { border-color:#ff5f6d; }
-  button { padding:10px 16px; background:#ff5f6d; color:white; border:none; border-radius:12px; cursor:pointer; font-size:16px; }
+  #msg { flex:1; resize:none; border-radius:14px; padding:10px 12px; border:1px solid #ccc; font-size:16px; outline:none; }
+  #msg:focus { border-color: var(--accent); }
+  button { padding:10px 16px; background:var(--accent); color:white; border:none; border-radius:14px; cursor:pointer; font-size:16px; }
   button:active { opacity:0.9; }
 </style>
 </head>
@@ -43,23 +53,22 @@ const chatContainer = document.getElementById("chat-container");
 const typingIndicator = document.getElementById("typing-indicator");
 const agentStatus = document.getElementById("agent-status");
 
-// Send a message from user
 async function sendMessage(){
   const text = msgInput.value.trim();
   if(!text) return;
   try{
-    await fetch(`${BACKEND_URL}/send`, {
+    const res = await fetch(`${BACKEND_URL}/send`, {
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ chat_id: chatId, sender: "user", text })
     });
+    if(!res.ok) throw new Error("Send failed");
     msgInput.value = "";
-    await sendTyping(""); // clear typing state
-    await loadMessages();
+    await sendTyping(""); // clear live typing
+    await loadMessages(); // show immediately
   }catch(e){ console.error("sendMessage error:", e); }
 }
 
-// Load all messages
 async function loadMessages(){
   try{
     const res = await fetch(`${BACKEND_URL}/messages/${chatId}`);
@@ -68,6 +77,7 @@ async function loadMessages(){
     chatContainer.innerHTML = "";
     data.forEach(m=>{
       const d = document.createElement("div");
+      // On USER window: user right, agent left
       d.className = "message " + (m.sender==="user" ? "user-msg" : "agent-msg");
       d.textContent = m.text || "";
       chatContainer.appendChild(d);
@@ -76,7 +86,6 @@ async function loadMessages(){
   }catch(e){ console.error("loadMessages error:", e); }
 }
 
-// Send live typing from user
 async function sendTyping(text){
   try{
     await fetch(`${BACKEND_URL}/live_typing`, {
@@ -87,7 +96,6 @@ async function sendTyping(text){
   }catch(e){ console.error("sendTyping error:", e); }
 }
 
-// Show "Agent is typing..." on user side
 async function checkAgentTyping(){
   try{
     const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
@@ -97,7 +105,6 @@ async function checkAgentTyping(){
   }catch(e){ console.error("checkAgentTyping error:", e); }
 }
 
-// Check agent online status
 async function checkStatus(){
   try{
     const res = await fetch(`${BACKEND_URL}/is_online/${chatId}`);
@@ -107,7 +114,6 @@ async function checkStatus(){
   }catch(e){ console.error("checkStatus error:", e); }
 }
 
-// Clear chat history
 async function clearChat(){
   try{
     await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, { method:"POST" });
@@ -115,7 +121,6 @@ async function clearChat(){
   }catch(e){ console.error("clearChat error:", e); }
 }
 
-// Mark this user online (for static hosting)
 async function markOnline(){
   try{
     await fetch(`${BACKEND_URL}/mark_online`, {
@@ -126,18 +131,14 @@ async function markOnline(){
   }catch(e){ console.error("markOnline error:", e); }
 }
 
-// Events
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
 msgInput.addEventListener("keydown", (e)=>{
-  if(e.key === "Enter" && !e.shiftKey){
-    e.preventDefault();
-    sendMessage();
-  }
+  if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); sendMessage(); }
 });
 msgInput.addEventListener("input", (e)=>{ sendTyping(e.target.value); });
 
-// Fast polling for near real-time UX
+// Fast polling and heartbeat
 setInterval(loadMessages, 1000);
 setInterval(checkStatus, 1000);
 setInterval(checkAgentTyping, 500);
@@ -149,13 +150,13 @@ checkStatus();
 loadMessages();
 checkAgentTyping();
 
-// Graceful logout on unload (optional – if you add a logout endpoint for user)
+// Logout on close
 window.addEventListener("beforeunload", ()=>{
   try{
     const data = JSON.stringify({ chat_id: chatId });
     const blob = new Blob([data], { type:"application/json" });
     navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
-  }catch(e){ /* ignore */ }
+  }catch(e){}
 });
 </script>
 </body>
