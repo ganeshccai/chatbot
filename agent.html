@@ -5,142 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Agent Interface</title>
 <style>
-  * {
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f7f9;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-  }
-
-  header {
-    background: linear-gradient(90deg, #ff5f6d, #ffc371, #ff9a9e, #f77062);
-    color: white;
-    padding: 12px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    border-bottom: 2px solid #ff9a9e;
-    border-radius: 0 0 15px 15px;
-  }
-
-  #online-status {
-    text-align: center;
-    font-size: 16px;
-    padding: 6px;
-    font-weight: bold;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-  }
-
-  #live-typing {
-    text-align: center;
-    font-size: 14px;
-    color: #ff69b4;
-    padding: 4px;
-    font-style: italic;
-    min-height: 24px;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-  }
-
-  #chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    padding-bottom: 80px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .message {
-    max-width: 80%;
-    margin: 4px 0;
-    padding: 8px 12px;
-    border-radius: 12px;
-    word-wrap: break-word;
-  }
-
-  .user-msg {
-    background: #ffc0cb;
-    align-self: flex-start;
-  }
-
-  .agent-msg {
-    background: #ffffff;
-    border: 1px solid #ddd;
-    align-self: flex-end;
-  }
-
-  #input-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    padding: 10px;
-    background: #fff;
-    border-top: 1px solid #ccc;
-    z-index: 1000;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  }
-
-  #msg {
-    flex: 1;
-    padding: 10px 14px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    outline: none;
-  }
-
-  #msg:focus {
-    border-color: #ff5f6d;
-  }
-
-  #send-btn {
-    margin-left: 8px;
-    padding: 10px 20px;
-    border: none;
-    background: linear-gradient(90deg, #ff5f6d, #ffc371);
-    color: white;
-    border-radius: 20px;
-    font-size: 16px;
-    cursor: pointer;
-    min-width: 70px;
-  }
-
-  #send-btn:active {
-    opacity: 0.8;
-  }
-
-  @media (max-width: 600px) {
-    #msg {
-      font-size: 16px;
-    }
-    #send-btn {
-      font-size: 16px;
-      padding: 10px 16px;
-    }
-  }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f4f7f9; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
+  header { background: linear-gradient(90deg, #ff5f6d, #ffc371); color: white; padding: 12px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 2px solid #ff9a9e; border-radius: 0 0 15px 15px; }
+  #online-status { text-align: center; font-size: 16px; padding: 6px; font-weight: bold; background: #fff; border-bottom: 1px solid #eee; }
+  #live-typing { text-align: center; font-size: 14px; color: #ff69b4; padding: 4px; font-style: italic; min-height: 24px; background: #fff; border-bottom: 1px solid #eee; }
+  #chat-container { flex: 1; display: flex; flex-direction: column; padding: 10px; padding-bottom: 90px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .message { max-width: 80%; margin: 6px 0; padding: 8px 12px; border-radius: 12px; word-wrap: break-word; }
+  .user-msg { background: #ffc0cb; align-self: flex-start; }
+  .agent-msg { background: #ffffff; border: 1px solid #ddd; align-self: flex-end; }
+  #input-container { position: fixed; bottom: 0; left: 0; right: 0; display: flex; padding: 10px; background: #fff; border-top: 1px solid #ccc; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); }
+  #msg { flex: 1; padding: 10px 14px; border-radius: 20px; border: 1px solid #ccc; font-size: 16px; outline: none; }
+  #msg:focus { border-color: #ff5f6d; }
+  #send-btn { margin-left: 8px; padding: 10px 20px; border: none; background: linear-gradient(90deg, #ff5f6d, #ffc371); color: white; border-radius: 20px; font-size: 16px; cursor: pointer; min-width: 70px; }
+  #send-btn:active { opacity: 0.9; }
+  @media (max-width: 600px) { #msg { font-size: 16px; } #send-btn { font-size: 16px; padding: 10px 16px; } }
 </style>
 </head>
-<body>
+<body data-chat-id="1234">
 
 <header>Agent Interface</header>
 <div id="online-status">User Offline 🔴</div>
 <div id="live-typing"></div>
 
-<div id="chat-container"></div>
+<div id="chat-container" aria-live="polite"></div>
 
 <div id="input-container">
   <input id="msg" placeholder="Type reply..." autocomplete="off">
@@ -148,126 +36,129 @@
 </div>
 
 <script>
-const chatId = "1234";
+// BACKEND_URL: set to your Cloud Run or backend origin when deployed (no trailing slash)
+const BACKEND_URL = window.__BACKEND_URL__ || ""; // e.g. "https://my-service-xxxxx.a.run.app"
+const chatId = document.body.dataset.chatId || "1234";
 
-async function sendMessage() {
-  const msgInput = document.getElementById("msg");
-  const message = msgInput.value.trim();
-  if (!message) return;
+// helpers
+function withBackend(path){ return BACKEND_URL ? `${BACKEND_URL}${path}` : path; }
+function debounce(fn, wait){ let t; return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); }; }
 
-  await fetch("/send", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({chat_id: chatId, sender: "agent", text: message})
-  });
+// DOM
+const msgInput = document.getElementById('msg');
+const sendBtn = document.getElementById('send-btn');
+const chatContainer = document.getElementById('chat-container');
+const onlineStatus = document.getElementById('online-status');
+const liveTypingElem = document.getElementById('live-typing');
 
-  msgInput.value = "";
-  lastTypingText = "";
-  loadMessages();
+// send message to backend
+async function sendMessage(){
+  const text = msgInput.value.trim();
+  if(!text) return;
+  try{
+    const res = await fetch(withBackend(`/send`), {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chatId, sender: 'agent', text })
+    });
+    if(!res.ok) throw new Error('Send failed '+res.status);
+    msgInput.value = '';
+    // clear live typing on send
+    await sendLiveTyping('');
+    await loadMessages();
+  }catch(err){ console.error('sendMessage error:', err); }
 }
 
-async function loadMessages() {
-  try {
-    const res = await fetch(`/messages/${chatId}`);
+// load messages
+async function loadMessages(){
+  try{
+    const res = await fetch(withBackend(`/messages/${chatId}`));
+    if(!res.ok) return;
     const data = await res.json();
-    const container = document.getElementById("chat-container");
-    container.innerHTML = "";
-
+    chatContainer.innerHTML = '';
     data.forEach(msg => {
-      const div = document.createElement("div");
-      div.className = "message " + (msg.sender === "user" ? "user-msg" : "agent-msg");
-      div.textContent = msg.text;
-      container.appendChild(div);
+      const div = document.createElement('div');
+      div.className = 'message ' + (msg.sender === 'user' ? 'user-msg' : 'agent-msg');
+      div.textContent = msg.text || '';
+      chatContainer.appendChild(div);
     });
-
-    container.scrollTop = container.scrollHeight;
-  } catch (error) {
-    console.error("Error loading messages:", error);
-  }
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }catch(err){ console.error('loadMessages error:', err); }
 }
 
-let lastTypingText = "";
-async function sendLiveTyping() {
-  const msgInput = document.getElementById("msg");
-  const currentText = msgInput.value;
-  
-  if (currentText === lastTypingText) return;
-  lastTypingText = currentText;
-  
-  try {
-    await fetch("/live_typing", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ 
-        chat_id: chatId, 
-        sender: "agent",
-        text: currentText
-      })
+// typing (debounced)
+const sendLiveTypingDebounced = debounce(async (text)=>{
+  await sendLiveTyping(text);
+}, 300);
+
+async function sendLiveTyping(text){
+  try{
+    await fetch(withBackend(`/live_typing`), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chatId, sender: 'agent', text })
     });
-  } catch (error) {
-    console.error("Error sending typing:", error);
-  }
+  }catch(err){ console.error('sendLiveTyping error:', err); }
 }
 
-async function checkOnline() {
-  try {
-    const res = await fetch(`/is_online/${chatId}`);
+// load live typing status
+async function loadLiveTyping(){
+  try{
+    const res = await fetch(withBackend(`/get_live_typing/${chatId}`));
+    if(!res.ok) return;
     const data = await res.json();
-    const status = document.getElementById("online-status");
-    status.textContent = data.user_online ? "User Online 🟢" : "User Offline 🔴";
-  } catch (error) {
-    console.error("Error checking status:", error);
-  }
-}
-
-async function loadLiveTyping() {
-  try {
-    const res = await fetch(`/get_live_typing/${chatId}`);
-    const data = await res.json();
-    const typingElem = document.getElementById("live-typing");
-    
-    if (data.sender === "user" && data.text) {
-      typingElem.textContent = `User typing: ${data.text}`;
+    if(data && data.text){
+      const who = data.sender || 'User';
+      liveTypingElem.textContent = `${who} typing: ${data.text}`;
     } else {
-      typingElem.textContent = "";
+      liveTypingElem.textContent = '';
     }
-  } catch (error) {
-    console.error("Error loading typing:", error);
-  }
+  }catch(err){ console.error('loadLiveTyping error:', err); }
 }
 
-document.getElementById("send-btn").addEventListener("click", sendMessage);
-document.getElementById("msg").addEventListener("keypress", e => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    sendMessage();
-  }
-});
-
-document.getElementById("msg").addEventListener("input", () => {
-  sendLiveTyping();
-});
-
-async function markOnline() {
-  try {
-    await fetch("/is_online/" + chatId);
-  } catch (error) {
-    console.error("Error marking online:", error);
-  }
+// online checks
+async function markOnline(){
+  try{
+    await fetch(withBackend(`/mark_online`), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chatId, sender: 'agent' })
+    });
+  }catch(err){ console.error('markOnline error:', err); }
 }
 
-setInterval(loadMessages, 1500);
-setInterval(checkOnline, 500);
-setInterval(loadLiveTyping, 200);
-setInterval(markOnline, 5000);
+async function checkOnline(){
+  try{
+    const res = await fetch(withBackend(`/is_online/${chatId}`));
+    if(!res.ok) return;
+    const data = await res.json();
+    const online = !!data.user_online;
+    onlineStatus.textContent = online ? 'User Online 🟢' : 'User Offline 🔴';
+  }catch(err){ console.error('checkOnline error:', err); }
+}
 
-markOnline();
-checkOnline();
-loadMessages();
-
-window.addEventListener("beforeunload", () => {
-  navigator.sendBeacon("/logout_agent", JSON.stringify({}));
+// graceful logout on unload
+window.addEventListener('beforeunload', ()=>{
+  try{
+    const data = JSON.stringify({ chat_id: chatId, sender: 'agent' });
+    const blob = new Blob([data], { type: 'application/json' });
+    navigator.sendBeacon(withBackend(`/logout_agent`), blob);
+  }catch(err){ /* ignore */ }
 });
+
+// events
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+msgInput.addEventListener('input', (e)=>{ sendLiveTypingDebounced(e.target.value); });
+
+// polling intervals (throttled)
+setInterval(loadMessages, 2000);
+setInterval(checkOnline, 3000);
+setInterval(loadLiveTyping, 500);
+setInterval(markOnline, 10000);
+
+// initial
+markOnline(); checkOnline(); loadMessages();
+
 </script>
 
 </body>
