@@ -13,6 +13,8 @@ CHAT_ID = "1234"
 all_chats = {}
 online_users = {}
 live_typing = {}
+last_seen = {}
+last_read = {}  # Tracks last message read per chat
 _store_lock = Lock()
 
 @app.route("/", methods=["GET"])
@@ -40,7 +42,8 @@ def send_message():
             "chat_id": chat_id,
             "sender": sender,
             "text": text,
-            "timestamp": timestamp
+            "timestamp": timestamp,
+            "seen": False
         })
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
@@ -54,15 +57,36 @@ def get_messages(chat_id):
             m for m in messages
             if datetime.fromisoformat(m["timestamp"].replace("Z", "")) > cutoff
         ]
-        all_chats[chat_id] = filtered  # prune old messages
+        all_chats[chat_id] = filtered
+
+        # Mark last message as seen if viewer is not the sender
+        if filtered:
+            viewer = request.args.get("viewer")
+            last_msg = filtered[-1]
+            if last_msg["sender"] != viewer:
+                last_msg["seen"] = True
+                last_read[chat_id] = datetime.utcnow()
+
         return jsonify(filtered)
 
 @app.route("/is_online/<chat_id>", methods=["GET"])
 def is_online(chat_id):
+    now = datetime.utcnow()
+    timeout = timedelta(seconds=15)
     with _store_lock:
+        user_active = (
+            online_users.get(chat_id, False) and
+            last_seen.get(chat_id) and
+            now - last_seen[chat_id] < timeout
+        )
+        agent_active = (
+            online_users.get("agent", False) and
+            last_seen.get("agent") and
+            now - last_seen["agent"] < timeout
+        )
         return jsonify({
-            "user_online": online_users.get(chat_id, False),
-            "agent_online": online_users.get("agent", False)
+            "user_online": user_active,
+            "agent_online": agent_active
         })
 
 @app.route("/mark_online", methods=["POST"])
@@ -73,16 +97,12 @@ def mark_online():
     if not chat_id or not sender:
         return jsonify({"error": "missing"}), 400
     with _store_lock:
-        already_online = (
-            online_users.get(chat_id) if sender == "user"
-            else online_users.get("agent")
-        )
         if sender == "user":
             online_users[chat_id] = True
+            last_seen[chat_id] = datetime.utcnow()
         elif sender == "agent":
             online_users["agent"] = True
-        if not already_online:
-            live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
+            last_seen["agent"] = datetime.utcnow()
     return jsonify({"status": "ok"})
 
 @app.route("/live_typing", methods=["POST"])
@@ -125,7 +145,6 @@ def logout_user():
         online_users[chat_id] = False
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
-
 
 @app.route("/logout_agent", methods=["POST"])
 def logout_agent():
