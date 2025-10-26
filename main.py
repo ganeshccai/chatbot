@@ -1,15 +1,19 @@
-# main.py
+# app.py
 from datetime import datetime
 import os
 from threading import Lock
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
+
+# Allow calls from your GitHub Pages domain
 CORS(app, origins=["https://ganeshccai.github.io"], supports_credentials=True)
 
 CHAT_ID = "1234"
+
+# In‑memory stores
 all_chats = {}
 online_users = {}
 live_typing = {}
@@ -17,27 +21,27 @@ _store_lock = Lock()
 
 @app.route("/", methods=["GET"])
 def index():
-    return redirect(url_for("user_page"))
+    return redirect(url_for("status"))
 
-@app.route("/user", methods=["GET"])
-def user_page():
-    return render_template("user.html")
-
-@app.route("/agent", methods=["GET"])
-def agent_page():
-    return render_template("agent.html")
+@app.route("/status", methods=["GET"])
+def status():
+    return jsonify({"status": "running"})
 
 @app.route("/send", methods=["POST"])
 def send_message():
     data = request.get_json(silent=True)
-    if not data: return jsonify({"error": "Invalid JSON"}), 400
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
     chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text")
     if not chat_id or not sender or text is None:
         return jsonify({"error": "Missing fields"}), 400
     timestamp = datetime.utcnow().isoformat() + "Z"
     with _store_lock:
         all_chats.setdefault(chat_id, []).append({
-            "chat_id": chat_id, "sender": sender, "text": text, "timestamp": timestamp
+            "chat_id": chat_id,
+            "sender": sender,
+            "text": text,
+            "timestamp": timestamp
         })
         # Clear typing once a message is sent
         live_typing[chat_id] = {"sender": "", "text": ""}
@@ -73,9 +77,11 @@ def mark_online():
 @app.route("/live_typing", methods=["POST"])
 def update_live_typing():
     data = request.get_json(silent=True)
-    if not data: return jsonify({"error": "Invalid JSON"}), 400
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
     chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text", "")
-    if not chat_id or not sender: return jsonify({"error": "Missing fields"}), 400
+    if not chat_id or not sender:
+        return jsonify({"error": "Missing fields"}), 400
     with _store_lock:
         live_typing[chat_id] = {"sender": sender, "text": text}
     return jsonify({"status": "ok"})
@@ -107,4 +113,5 @@ def logout_agent():
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
+    # Run locally on port 8080
     app.run(host="0.0.0.0", port=8080)
