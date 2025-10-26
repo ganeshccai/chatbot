@@ -213,10 +213,12 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("beforeunload", () => {
   try {
-    const data = JSON.stringify({ chat_id: chatId, sender: "agent" });
+    const data = JSON.stringify({ chat_id: chatId, sender: "user" }); // or "agent" depending on context
     const blob = new Blob([data], { type: "application/json" });
-    navigator.sendBeacon(`${BACKEND_URL}/logout_agent`, blob);
-  } catch (e) {}
+    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob); // or logout_agent for agent.html
+  } catch (e) {
+    console.warn("Logout beacon failed:", e);
+  }
 });
 </script>
 </body>
@@ -241,5 +243,6 @@ window.addEventListener("beforeunload", () => {
 
 
     
+
 
 
