@@ -1,4 +1,3 @@
-# app.py
 from datetime import datetime
 import os
 from threading import Lock
@@ -13,7 +12,7 @@ CORS(app, origins=["https://ganeshccai.github.io"], supports_credentials=True)
 
 CHAT_ID = "1234"
 
-# In‑memory stores
+# In-memory stores
 all_chats = {}
 online_users = {}
 live_typing = {}
@@ -32,19 +31,23 @@ def send_message():
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
-    chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text")
+    chat_id = data.get("chat_id")
+    sender = data.get("sender")
+    text = data.get("text")
     if not chat_id or not sender or text is None:
         return jsonify({"error": "Missing fields"}), 400
     timestamp = datetime.utcnow().isoformat() + "Z"
     with _store_lock:
-        all_chats.setdefault(chat_id, []).append({
+        chat = all_chats.setdefault(chat_id, [])
+        chat.append({
             "chat_id": chat_id,
             "sender": sender,
             "text": text,
             "timestamp": timestamp
         })
-        # Clear typing once a message is sent
-        live_typing[chat_id] = {"sender": "", "text": ""}
+        if len(chat) > 100:
+            chat.pop(0)
+        live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
 
 @app.route("/messages/<chat_id>", methods=["GET"])
@@ -79,17 +82,26 @@ def update_live_typing():
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
-    chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text", "")
+    chat_id = data.get("chat_id")
+    sender = data.get("sender")
+    text = data.get("text", "")
     if not chat_id or not sender:
         return jsonify({"error": "Missing fields"}), 400
     with _store_lock:
-        live_typing[chat_id] = {"sender": sender, "text": text}
+        live_typing[chat_id] = {
+            "sender": sender,
+            "text": text,
+            "timestamp": datetime.utcnow().timestamp()
+        }
     return jsonify({"status": "ok"})
 
 @app.route("/get_live_typing/<chat_id>", methods=["GET"])
 def get_live_typing(chat_id):
     with _store_lock:
-        return jsonify(live_typing.get(chat_id, {"sender": "", "text": ""}))
+        typing = live_typing.get(chat_id, {"sender": "", "text": "", "timestamp": 0})
+        if datetime.utcnow().timestamp() - typing.get("timestamp", 0) > 5:
+            return jsonify({"sender": "", "text": ""})
+        return jsonify(typing)
 
 @app.route("/clear_chat/<chat_id>", methods=["POST"])
 def clear_chat(chat_id):
@@ -103,7 +115,7 @@ def logout_user():
     chat_id = data.get("chat_id") or CHAT_ID
     with _store_lock:
         online_users[chat_id] = False
-        live_typing[chat_id] = {"sender": "", "text": ""}
+        live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
 
 @app.route("/logout_agent", methods=["POST"])
@@ -113,5 +125,4 @@ def logout_agent():
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
-    # Run locally on port 8080
     app.run(host="0.0.0.0", port=8080)
