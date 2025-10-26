@@ -1,7 +1,8 @@
+# main.py
 from datetime import datetime
 import os
 from threading import Lock
-from flask import Flask, render_template, request, session, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -9,12 +10,9 @@ app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
 CORS(app, origins=["https://ganeshccai.github.io"], supports_credentials=True)
 
 CHAT_ID = "1234"
-CHAT_PASSWORD = "1"
-
 all_chats = {}
 online_users = {}
 live_typing = {}
-
 _store_lock = Lock()
 
 @app.route("/", methods=["GET"])
@@ -36,13 +34,12 @@ def send_message():
     chat_id, sender, text = data.get("chat_id"), data.get("sender"), data.get("text")
     if not chat_id or not sender or text is None:
         return jsonify({"error": "Missing fields"}), 400
-    if "timestamp" not in data:
-        data["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    timestamp = datetime.utcnow().isoformat() + "Z"
     with _store_lock:
         all_chats.setdefault(chat_id, []).append({
-            "chat_id": chat_id, "sender": sender,
-            "text": text, "timestamp": data["timestamp"]
+            "chat_id": chat_id, "sender": sender, "text": text, "timestamp": timestamp
         })
+        # Clear typing once a message is sent
         live_typing[chat_id] = {"sender": "", "text": ""}
     return jsonify({"status": "ok"})
 
