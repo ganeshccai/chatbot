@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>User Chat 💖</title>
 <style>
   :root {
@@ -32,6 +33,7 @@
 </style>
 </head>
 <body data-chat-id="1234">
+
 <div id="login-overlay">
   <div id="login-box">
     <input type="password" id="pwd" placeholder="Enter password">
@@ -52,6 +54,7 @@
 <script>
 const BACKEND_URL="https://chatbot-788207962975.us-central1.run.app";
 const chatId=document.body.dataset.chatId||"1234";
+
 const msgInput=document.getElementById("msg");
 const sendBtn=document.getElementById("send-btn");
 const clearBtn=document.getElementById("clear-btn");
@@ -98,6 +101,7 @@ async function markOnline(){
   await fetch(`${BACKEND_URL}/mark_online`,{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({chat_id:chatId,sender:"user"})});
 }
+
 sendBtn.addEventListener("mousedown",e=>e.preventDefault());
 sendBtn.addEventListener("click",sendMessage);
 clearBtn.addEventListener("click",clearChat);
