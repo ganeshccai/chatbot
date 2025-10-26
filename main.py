@@ -126,6 +126,7 @@ def logout_user():
         live_typing[chat_id] = {"sender": "", "text": "", "timestamp": 0}
     return jsonify({"status": "ok"})
 
+
 @app.route("/logout_agent", methods=["POST"])
 def logout_agent():
     with _store_lock:
