@@ -1,3 +1,4 @@
+# main.py
 from datetime import datetime
 import os
 from threading import Lock
@@ -5,7 +6,8 @@ from threading import Lock
 from flask import Flask, render_template, request, session, jsonify, redirect, url_for
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static")
+# use env var in prod — do NOT keep temp_key in real deployment
 app.secret_key = os.environ.get("SESSION_SECRET", "temp_key")
 CORS(app, supports_credentials=True)
 
@@ -36,6 +38,7 @@ def user_page():
                 live_typing.setdefault(CHAT_ID, {"sender": "", "text": ""})
             return render_template("user.html")
         return "Wrong password", 401
+    # simple login page
     return """<form method="post" style="display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:Arial;">
                 <h2>User Login</h2>
                 <input type="password" name="password" placeholder="Enter Password" style="padding:10px;margin:10px;border-radius:5px;border:1px solid #ccc;"/>
@@ -83,6 +86,7 @@ def send_message():
             "text": text,
             "timestamp": data["timestamp"],
         })
+        # clear typing for this chat after a send
         live_typing[chat_id] = {"sender": "", "text": ""}
 
     return jsonify({"status": "ok"})
@@ -101,10 +105,27 @@ def is_online(chat_id):
         user_online = online_users.get(chat_id, False)
         agent_online = online_users.get("agent", False)
     return jsonify({
-        "user_online": user_online,
-        "agent_online": agent_online,
-        "online": agent_online,
+        "user_online": bool(user_online),
+        "agent_online": bool(agent_online),
+        "online": bool(agent_online),
     })
+
+
+# NEW: mark_online endpoint (clients call this to heartbeat / mark presence)
+@app.route("/mark_online", methods=["POST"])
+def mark_online():
+    data = request.get_json(silent=True) or {}
+    chat_id = data.get("chat_id", CHAT_ID)
+    sender = data.get("sender", "").lower()
+
+    with _store_lock:
+        if sender == "agent":
+            online_users["agent"] = True
+        else:
+            # default mark the user/chat id as online
+            online_users[chat_id] = True
+
+    return jsonify({"status": "ok"})
 
 
 @app.route("/live_typing", methods=["POST"])
@@ -151,9 +172,18 @@ def logout_user():
 
 @app.route("/logout_agent", methods=["POST"])
 def logout_agent():
+    # allow sendBeacon or JSON
+    data = request.get_json(silent=True) or {}
+    chat_id = data.get("chat_id", CHAT_ID)
     with _store_lock:
         online_users["agent"] = False
+        # clear typing related to this chat if provided
+        live_typing.setdefault(chat_id, {"sender": "", "text": ""})
+        live_typing[chat_id] = {"sender": "", "text": ""}
     return jsonify({"status": "ok"})
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    # Cloud Run expects port from $PORT env — default to 8080 locally
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
