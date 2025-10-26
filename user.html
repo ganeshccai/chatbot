@@ -80,7 +80,9 @@ function startPolling() {
   setInterval(loadMessages, 1000);
   setInterval(checkStatus, 1000);
   setInterval(loadTyping, 500);
-  setInterval(markOnline, 10000);
+  setInterval(() => {
+    if (document.visibilityState === "visible") markOnline();
+  }, 10000);
 }
 
 async function sendMessage() {
@@ -98,7 +100,8 @@ async function sendMessage() {
 
 async function loadMessages() {
   if (!isLoggedIn) return;
-  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user`);
+  const isTabActive = document.visibilityState === "visible";
+  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
   const data = await res.json();
   chatContainer.innerHTML = "";
 
@@ -178,6 +181,13 @@ sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
 msgInput.addEventListener("input", e => sendTyping(e.target.value));
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    markOnline();
+    loadMessages();
+  }
+});
 
 window.addEventListener("beforeunload", () => {
   try {
