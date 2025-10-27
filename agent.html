@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
   <title>Agent Chat</title>
   <style>
     :root {
@@ -74,16 +74,6 @@
       padding: 12px;
       background: #fff;
       border-top: 1px solid #ccc;
-      align-items: center;
-    }
-    #upload-btn {
-      font-size: 18px;
-      padding: 6px 10px;
-      border-radius: 50%;
-      background: var(--accent2);
-      color: white;
-      border: none;
-      cursor: pointer;
     }
     #msg {
       flex: 1;
@@ -140,23 +130,10 @@
       border-radius: 8px;
       outline: none;
     }
-    #preview-box {
-      margin: 10px;
-      padding: 10px;
-      background: #eef;
-      border-radius: 12px;
-      display: none;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    #preview-box img, #preview-box video {
-      max-width: 240px;
-      border-radius: 12px;
-      margin-bottom: 8px;
-    }
   </style>
 </head>
 <body data-chat-id="1234">
+
 <div id="login-overlay">
   <div id="login-box">
     <input type="password" id="pwd" placeholder="Enter password" />
@@ -166,112 +143,149 @@
 </div>
 
 <header>Agent Chat <span id="user-status">🔴</span></header>
-
 <div id="chat-container"></div>
-
-<div id="preview-box">
-  <div id="preview-media"></div>
-  <button id="send-preview">Send</button>
-</div>
-
 <div id="input-container">
-  <button id="upload-btn">📎</button>
   <textarea id="msg" rows="2" placeholder="Type reply..." autocomplete="off"></textarea>
   <button id="send-btn">Send</button>
   <button id="clear-btn">Clear</button>
-  <input type="file" id="file-input" accept="image/*,video/*" style="display:none" />
+  <input type="file" id="file-input" accept="image/*" style="display:none" />
+  <button id="upload-btn">📎</button>
 </div>
 <script>
-function loadMessages() {
+const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
+const chatId = document.body.dataset.chatId || "1234";
+
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send-btn");
+const clearBtn = document.getElementById("clear-btn");
+const chatContainer = document.getElementById("chat-container");
+const userStatus = document.getElementById("user-status");
+const uploadBtn = document.getElementById("upload-btn");
+const fileInput = document.getElementById("file-input");
+
+let isLoggedIn = false;
+let sessionToken = null;
+
+async function checkPwd() {
+  const pwd = document.getElementById("pwd").value;
+  const res = await fetch(`${BACKEND_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "agent" })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    sessionToken = data.session_token;
+    document.getElementById("login-overlay").style.display = "none";
+    isLoggedIn = true;
+    startPolling();
+  } else {
+    document.getElementById("login-msg").textContent = data.error || "Login failed";
+  }
+}
+
+function startPolling() {
+  markOnline();
+  checkStatus();
+  loadMessages();
+  loadTyping();
+  setInterval(loadMessages, 1000);
+  setInterval(checkStatus, 1000);
+  setInterval(loadTyping, 500);
+  setInterval(() => {
+    if (document.visibilityState === "visible") markOnline();
+  }, 2000);
+}
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text || !isLoggedIn || !sessionToken) return;
+
+  await fetch(`${BACKEND_URL}/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "agent", text })
+  });
+
+  msgInput.value = "";
+  await sendTyping("");
+  loadMessages();
+}
+
+async function loadMessages() {
   if (!isLoggedIn) return;
   const isTabActive = document.visibilityState === "visible";
-  fetch(`${BACKEND_URL}/messages/${chatId}?viewer=agent&active=${isTabActive}`)
-    .then(res => res.json())
-    .then(data => {
-      chatContainer.innerHTML = "";
-      data.forEach((m, i) => {
-        const d = document.createElement("div");
-        d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
+  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=agent&active=${isTabActive}`);
+  const data = await res.json();
+  chatContainer.innerHTML = "";
 
-        if (m.type === "image" && m.url) {
-          const img = document.createElement("img");
-          img.src = m.url;
-          img.style.maxWidth = "240px";
-          img.style.borderRadius = "12px";
-          img.style.display = "block";
-          img.style.marginBottom = "6px";
+  data.forEach((m, i) => {
+    const d = document.createElement("div");
+    d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
 
-          const download = document.createElement("a");
-          download.href = m.url;
-          download.download = "image.jpg";
-          download.textContent = "⬇️";
-          download.style.fontSize = "14px";
-          download.style.textDecoration = "none";
-          download.style.color = "#555";
+    if (m.type === "image" && m.url) {
+      const img = document.createElement("img");
+      img.src = m.url;
+      img.style.maxWidth = "240px";
+      img.style.borderRadius = "12px";
+      img.style.display = "block";
+      img.style.marginBottom = "6px";
 
-          d.appendChild(img);
-          d.appendChild(download);
-        } else if (m.type === "video" && m.url) {
-          const video = document.createElement("video");
-          video.src = m.url;
-          video.controls = true;
-          video.style.maxWidth = "240px";
-          video.style.borderRadius = "12px";
-          video.style.display = "block";
-          video.style.marginBottom = "6px";
+      const download = document.createElement("a");
+      download.href = m.url;
+      download.download = "image.jpg";
+      download.textContent = "⬇️";
+      download.style.fontSize = "14px";
+      download.style.textDecoration = "none";
+      download.style.color = "#555";
 
-          const download = document.createElement("a");
-          download.href = m.url;
-          download.download = "video.mp4";
-          download.textContent = "⬇️";
-          download.style.fontSize = "14px";
-          download.style.textDecoration = "none";
-          download.style.color = "#555";
+      d.appendChild(img);
+      d.appendChild(download);
+    } else {
+      d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
+    }
 
-          d.appendChild(video);
-          d.appendChild(download);
-        } else {
-          d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
-        }
+    const isLast = i === data.length - 1;
+    if (m.sender === "agent" && m.seen_by === "user" && isLast) {
+      const seenTag = document.createElement("div");
+      seenTag.style.fontSize = "12px";
+      seenTag.style.color = "#888";
+      seenTag.style.marginTop = "4px";
+      seenTag.textContent = "Seen ✅";
+      d.appendChild(seenTag);
+    }
 
-        const isLast = i === data.length - 1;
-        if (m.sender === "agent" && m.seen_by === "user" && isLast) {
-          const seenTag = document.createElement("div");
-          seenTag.style.fontSize = "12px";
-          seenTag.style.color = "#888";
-          seenTag.style.marginTop = "4px";
-          seenTag.textContent = "Seen ✅";
-          d.appendChild(seenTag);
-        }
+    chatContainer.appendChild(d);
+  });
 
-        chatContainer.appendChild(d);
-      });
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-function loadTyping() {
+async function loadTyping() {
   if (!isLoggedIn) return;
-  fetch(`${BACKEND_URL}/get_live_typing/${chatId}`)
-    .then(res => res.json())
-    .then(d => {
-      const oldTyping = document.getElementById("user-typing-indicator");
-      if (oldTyping) oldTyping.remove();
+  const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
+  const d = await res.json();
 
-      if (d.sender === "user" && d.text) {
-        const typingMsg = document.createElement("div");
-        typingMsg.id = "user-typing-indicator";
-        typingMsg.className = "message user-msg";
-        typingMsg.innerHTML = d.text.replace(/\n/g, "<br>");
-        chatContainer.appendChild(typingMsg);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
-    });
+  const oldTyping = document.getElementById("user-typing-indicator");
+  if (oldTyping) oldTyping.remove();
+
+  if (d.sender === "user" && d.text) {
+    const typingMsg = document.createElement("div");
+    typingMsg.id = "user-typing-indicator";
+    typingMsg.className = "message user-msg";
+    typingMsg.innerHTML = d.text.replace(/\n/g, "<br>");
+    chatContainer.appendChild(typingMsg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 }
 
-function sendTyping(text) {
+async function sendTyping(text) {
   if (!isLoggedIn) return;
-  fetch(`${BACKEND_URL}/live_typing`, {
+  await fetch(`${BACKEND_URL}/live_typing`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -281,34 +295,31 @@ function sendTyping(text) {
   });
 }
 
-function checkStatus() {
+async function checkStatus() {
   if (!isLoggedIn) return;
-  fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`)
-    .then(res => res.json())
-    .then(d => {
-      const emoji = d.user_online ? "🟢" : "🔴";
-      const time = d.user_online ? "" : ` Last seen: ${d.user_last_seen}`;
-      userStatus.textContent = `${emoji}${time}`;
-    });
+  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
+  const d = await res.json();
+  const emoji = d.user_online ? "🟢" : "🔴";
+  const time = d.user_online ? "" : ` Last seen: ${d.user_last_seen}`;
+  userStatus.textContent = `${emoji}${time}`;
 }
 
-function clearChat() {
+async function clearChat() {
   if (!isLoggedIn) return;
-  fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${sessionToken}`
     },
     body: JSON.stringify({ sender: "agent" })
-  }).then(() => {
-    chatContainer.innerHTML = "";
   });
+  chatContainer.innerHTML = "";
 }
 
-function markOnline() {
+async function markOnline() {
   if (!isLoggedIn) return;
-  fetch(`${BACKEND_URL}/mark_online`, {
+  await fetch(`${BACKEND_URL}/mark_online`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -320,33 +331,31 @@ function markOnline() {
 
 uploadBtn.addEventListener("click", () => fileInput.click());
 
-fileInput.addEventListener("change", () => {
+fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
   if (!file || !isLoggedIn || !sessionToken) return;
 
   const reader = new FileReader();
-  reader.onload = () => {
-    previewData = reader.result;
-    previewType = file.type.startsWith("video") ? "video" : "image";
-    previewMedia.innerHTML = "";
-
-    if (previewType === "image") {
-      const img = document.createElement("img");
-      img.src = previewData;
-      previewMedia.appendChild(img);
-    } else {
-      const video = document.createElement("video");
-      video.src = previewData;
-      video.controls = true;
-      previewMedia.appendChild(video);
-    }
-
-    previewBox.style.display = "flex";
+  reader.onload = async () => {
+    const base64 = reader.result;
+    await fetch(`${BACKEND_URL}/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        sender: "agent",
+        type: "image",
+        url: base64
+      })
+    });
+    loadMessages();
   };
   reader.readAsDataURL(file);
 });
 
-sendPreviewBtn.addEventListener("click", sendPreview);
 sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
@@ -371,8 +380,4 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
-
-  
-
-
   
