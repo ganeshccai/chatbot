@@ -33,11 +33,13 @@ def send():
     data = request.json
     chat_id = data["chat_id"]
     sender = data["sender"]
-    text = data["text"]
+    text = data["text"].strip()
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
 
     if not verify_token(chat_id, sender, token):
         return jsonify(error="Unauthorized"), 403
+    if not text:
+        return jsonify(error="Empty message"), 400
 
     messages.setdefault(chat_id, []).append({
         "sender": sender,
