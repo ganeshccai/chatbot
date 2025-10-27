@@ -13,7 +13,7 @@ session_tokens = {}  # key: (chat_id, sender), value: set of tokens
 
 # Token validation
 def verify_token(chat_id, sender, token):
-    return session_tokens.get((chat_id, sender)) == token
+    return token in session_tokens.get((chat_id, sender), set())
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -23,9 +23,9 @@ def login():
     sender = data["sender"]
 
     if password == "1":
-        token = f"{sender}-{int(time.time())}"
-        session_tokens[(chat_id, sender)] = token
-        return jsonify(success=True, session_token=token)
+    token = f"{sender}-{int(time.time())}"
+    session_tokens.setdefault((chat_id, sender), set()).add(token)
+    return jsonify(success=True, session_token=token)
     return jsonify(success=False, error="Invalid password")
 
 @app.route("/send", methods=["POST"])
