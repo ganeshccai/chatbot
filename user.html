@@ -305,7 +305,7 @@ async function checkStatus() {
   const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
   const d = await res.json();
   const emoji = d.agent_online ? "🟢" : "🔴";
-  const time = d.agent_online ? "" : ` Last seen: ${d.agent_last_seen}`;
+  const time = d.agent_online ? "" : ` ${d.agent_last_seen}`;
   agentStatus.textContent = `${emoji}${time}`;
 }
 
@@ -386,3 +386,4 @@ window.addEventListener("beforeunload", () => {
 </body>
 </html>
   
+
