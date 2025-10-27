@@ -134,25 +134,25 @@
     outline: none;
   }
 
-  /* 💖 Love Bubble Animation */
+  /* 💖 Love Bubble Animation - SLOWER VERSION */
   .bubble {
     position: absolute;
     bottom: 0;
     font-size: 60px;
-    animation: floatUp 3s ease-out forwards;
+    animation: floatUpSlow 3s linear forwards;
     pointer-events: none;
     z-index: 100;
   }
-  @keyframes floatUp {
+  @keyframes floatUpSlow {
     0% {
       transform: translateY(0) translateX(-50%);
       opacity: 1;
     }
-    80% {
+    85% {
       opacity: 1;
     }
     100% {
-      transform: translateY(-350px) translateX(-50%);
+      transform: translateY(-250px) translateX(-50%);
       opacity: 0;
     }
   }
@@ -473,7 +473,7 @@ function spawnLoveBubbles() {
       
       // Remove bubble after 3 seconds
       setTimeout(() => bubble.remove(), 3000);
-    }, index * 100); // Slight delay between each emoji
+    }, index * 150); // Slight delay between each emoji
   });
 }
 </script>
