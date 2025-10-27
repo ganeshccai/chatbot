@@ -562,7 +562,7 @@ function spawnLoveBubbles() {
       const bubble = document.createElement("div");
       bubble.className = "bubble";
       bubble.textContent = "💖";
-      bubble.style.left = `${20 + Math.random() * 60}%`;
+      bubble.style.left = `${20 + Math.random() * 90}%`;
       document.body.appendChild(bubble);
       setTimeout(() => bubble.remove(), 3000);
     }, i * 200);
@@ -575,7 +575,7 @@ function spawnSleepBubbles() {
       const bubble = document.createElement("div");
       bubble.className = "bubble";
       bubble.textContent = "GN 😴 रेश्मा";
-      bubble.style.left = `${20 + Math.random() * 60}%`;
+      bubble.style.left = `${20 + Math.random() * 90}%`;
       document.body.appendChild(bubble);
       setTimeout(() => bubble.remove(), 3000);
     }, i * 200);
@@ -586,6 +586,7 @@ navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
 
 
