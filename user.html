@@ -77,6 +77,7 @@
     padding: 12px;
     background: rgba(255,255,255,0.9);
     border-top: 1px solid #ccc;
+    position: relative;
   }
   #msg {
     flex: 1;
@@ -134,6 +135,59 @@
     outline: none;
   }
 
+  /* Emoji and Upload buttons container */
+  .extra-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+  
+  .extra-buttons button {
+    padding: 10px 14px;
+    font-size: 18px;
+  }
+
+  /* Emoji picker popup */
+  #emoji-picker {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    max-width: 280px;
+    margin-bottom: 8px;
+    z-index: 100;
+  }
+  
+  #emoji-picker.show {
+    display: block;
+  }
+  
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  
+  .emoji-btn {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  
+  .emoji-btn:hover {
+    background: #f0f0f0;
+  }
+
   /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
   .bubble {
     position: fixed;
@@ -174,8 +228,33 @@
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
   <button id="send-btn">➤</button>
   <button id="clear-btn">❌</button>
-  <input type="file" id="file-input" accept="image/*" style="display:none" />
-  <button id="upload-btn">📎</button>
+  <div class="extra-buttons">
+    <button id="emoji-btn">😊</button>
+    <div id="emoji-picker">
+      <div class="emoji-grid">
+        <button class="emoji-btn" data-emoji="😊">😊</button>
+        <button class="emoji-btn" data-emoji="❤️">❤️</button>
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="👍">👍</button>
+        <button class="emoji-btn" data-emoji="🙏">🙏</button>
+        <button class="emoji-btn" data-emoji="😍">😍</button>
+        <button class="emoji-btn" data-emoji="🎉">🎉</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="💕">💕</button>
+        <button class="emoji-btn" data-emoji="😘">😘</button>
+        <button class="emoji-btn" data-emoji="💖">💖</button>
+        <button class="emoji-btn" data-emoji="😢">😢</button>
+        <button class="emoji-btn" data-emoji="🥰">🥰</button>
+        <button class="emoji-btn" data-emoji="😭">😭</button>
+        <button class="emoji-btn" data-emoji="🤗">🤗</button>
+        <button class="emoji-btn" data-emoji="😴">😴</button>
+        <button class="emoji-btn" data-emoji="💋">💋</button>
+        <button class="emoji-btn" data-emoji="🌹">🌹</button>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" />
+    <button id="upload-btn">📎</button>
+  </div>
 </div>
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -188,12 +267,43 @@ const chatContainer = document.getElementById("chat-container");
 const agentStatus = document.getElementById("agent-status");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPicker = document.getElementById("emoji-picker");
 
 let isLoggedIn = false;
 let sessionToken = null;
 let typingDots = 0;
 let lastMessageCount = 0;
 let lastProcessedMessages = [];
+
+// Emoji picker toggle
+emojiBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  emojiPicker.classList.toggle("show");
+});
+
+// Close emoji picker when clicking outside
+document.addEventListener("click", (e) => {
+  if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+    emojiPicker.classList.remove("show");
+  }
+});
+
+// Insert emoji into message
+document.querySelectorAll(".emoji-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const emoji = btn.dataset.emoji;
+    const cursorPos = msgInput.selectionStart;
+    const textBefore = msgInput.value.substring(0, cursorPos);
+    const textAfter = msgInput.value.substring(cursorPos);
+    msgInput.value = textBefore + emoji + textAfter;
+    msgInput.focus();
+    msgInput.selectionStart = msgInput.selectionEnd = cursorPos + emoji.length;
+    emojiPicker.classList.remove("show");
+    sendTyping(msgInput.value);
+  });
+});
 
 async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
@@ -252,17 +362,13 @@ async function loadMessages() {
   const data = await res.json();
   chatContainer.innerHTML = "";
 
-  // Check for new messages with "love" or goodnight words
   const currentMessageIds = data.map((m, i) => `${m.sender}-${m.text}-${i}`);
   const newMessages = data.filter((m, i) => {
     const msgId = `${m.sender}-${m.text}-${i}`;
     return !lastProcessedMessages.includes(msgId);
   });
 
-  // Check if any new message contains "love"
   const newLoveMessage = newMessages.some(m => m.text && /\blove\b/i.test(m.text));
-  
-  // Check if any new message contains goodnight words (goodnight, gn,gnsd, gntc, gnsdtc - any casing)
   const newGoodnightMessage = newMessages.some(m => 
     m.text && /\b(goodnight|gn|gnsd|gntc|gnsdtc)\b/i.test(m.text)
   );
@@ -275,7 +381,6 @@ async function loadMessages() {
     spawnSleepBubbles();
   }
 
-  // Update last processed messages
   lastProcessedMessages = currentMessageIds;
 
   data.forEach((m, i) => {
@@ -317,7 +422,6 @@ async function loadMessages() {
     chatContainer.appendChild(d);
   });
 
-  // Detect new messages
   if (data.length > lastMessageCount) {
     lastMessageCount = data.length;
   }
@@ -442,72 +546,33 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-navigator.serviceWorker?.register("sw.js");
-
-const manifest = {
-  name: "Agent Chat",
-  short_name: "Chat",
-  start_url: "agent.html",
-  display: "standalone",
-  background_color: "#f3f6fb",
-  theme_color: "#2563eb",
-  icons: [
-    {
-      src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHuCAYAAACcZXXHAAAQAElEQVR4AeydB6BkRZX3z6nb3e+9mSGKJAkSVUBQRFcQUcyyRnBZkqiooJIxJxRx1fVb47quecUAOiQRRVB0lCwMTJ4hTCBMfPm9ebn7Vn3/f91b3dX9ut8Ess7d/vWpOnXq1Klwq+7tN7hGtlxbRmDLCGwZgS0jsGUEtozAP+QIbDnk/yGnNeuUc06BAcks5wpk9mxXXLTIlch1D7i2RmbNcu2zZq3w3HbbIx3k2tmrp90wb+30Om5YO33WrM4ZMbfc0rXVxtJY7xrUJddd17N1lTt6tv7Tn3q3aSQuvw42G9vmxtgxBkJb+t4QjbFtbH7WrL5tm/G7m/u3a8b1tw1svzHceOPgM2JmzRrcoTWrUbZ6h5tuWvPMqbj11rU7tuIGlJFQfuON63aKuQP ...[Truncated]",
-      sizes: "512x512",
-      type: "image/png"
-    }
-  ]
-};
-
-const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
-const manifestURL = URL.createObjectURL(blob);
-document.querySelector("link[rel='manifest']")?.remove();
-const link = document.createElement("link");
-link.rel = "manifest";
-link.href = manifestURL;
-document.head.appendChild(link);
-
 function spawnLoveBubbles() {
-  // Spawn exactly 2 love emojis
-  const positions = [30, 70]; // Two different horizontal positions
-  
-  positions.forEach((pos, index) => {
+  for (let i = 0; i < 5; i++) {
     setTimeout(() => {
       const bubble = document.createElement("div");
       bubble.className = "bubble";
       bubble.textContent = "💖";
-      bubble.style.left = `${pos}%`;
+      bubble.style.left = `${20 + Math.random() * 60}%`;
       document.body.appendChild(bubble);
-      
-      // Remove bubble after 3 seconds
       setTimeout(() => bubble.remove(), 3000);
-    }, index * 150); // Slight delay between each emoji
-  });
+    }, i * 200);
+  }
 }
 
 function spawnSleepBubbles() {
-  // Spawn exactly 2 sleeping emojis
-  const positions = [50]; // Two different horizontal positions
-  
-  positions.forEach((pos, index) => {
+  for (let i = 0; i < 5; i++) {
     setTimeout(() => {
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-      bubble.textContent = "😴 GN रेश्मा";
-      bubble.style.left = `${pos}%`;
+      bubble.textContent = "😴";
+      bubble.style.left = `${20 + Math.random() * 60}%`;
       document.body.appendChild(bubble);
-      
-      // Remove bubble after 3 seconds
       setTimeout(() => bubble.remove(), 3000);
-    }, index * 150); // Slight delay between each emoji
-  });
+    }, i * 200);
+  }
 }
+
+navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
-
-
-
-
-
