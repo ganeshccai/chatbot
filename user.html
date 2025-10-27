@@ -130,6 +130,58 @@
   <button id="clear-btn">❌</button>
 </div>
 <script>
+const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
+const chatId = document.body.dataset.chatId || "1234";
+
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send-btn");
+const clearBtn = document.getElementById("clear-btn");
+const chatContainer = document.getElementById("chat-container");
+const agentStatus = document.getElementById("agent-status");
+
+let isLoggedIn = false;
+let sessionToken = null;
+let typingDots = 0;
+
+function checkPwd() {
+  const pwd = document.getElementById("pwd").value;
+  if (pwd === "1") {
+    document.getElementById("login-overlay").style.display = "none";
+    isLoggedIn = true;
+    sessionToken = "user-session-token"; // Replace with real token logic if needed
+    markOnline();
+    checkStatus();
+    loadMessages();
+    loadTyping();
+    setInterval(loadMessages, 1000);
+    setInterval(checkStatus, 1000);
+    setInterval(loadTyping, 500);
+    setInterval(() => {
+      if (document.visibilityState === "visible") markOnline();
+    }, 10000);
+  } else {
+    document.getElementById("login-msg").textContent = "Wrong password!";
+  }
+}
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text || !isLoggedIn || !sessionToken) return;
+
+  await fetch(`${BACKEND_URL}/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
+  });
+
+  msgInput.value = "";
+  await sendTyping("");
+  loadMessages();
+}
+
 async function loadMessages() {
   if (!isLoggedIn) return;
   const isTabActive = document.visibilityState === "visible";
@@ -243,28 +295,9 @@ window.addEventListener("beforeunload", () => {
     console.warn("Logout beacon failed:", e);
   }
 });
-
-async function sendMessage() {
-  const text = msgInput.value.trim();
-  if (!text || !isLoggedIn || !sessionToken) return;
-
-  await fetch(`${BACKEND_URL}/send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
-  });
-
-  msgInput.value = "";
-  await sendTyping("");
-  loadMessages();
-}  
 </script>
 </body>
 </html>
 
 
   
-
