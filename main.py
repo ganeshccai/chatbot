@@ -10,10 +10,11 @@ CORS(app)
 messages = {}
 typing_status = {}
 online_status = {}
-session_tokens = {}  # key: (chat_id, sender), value: set of tokens
+session_tokens = {}  # key: (chat_id, sender), value: {token: timestamp}
+
 
 def verify_token(chat_id, sender, token):
-    return token in session_tokens.get((chat_id, sender), set())
+    return token in session_tokens.get((chat_id, sender), {})
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -22,9 +23,16 @@ def login():
     password = data["password"]
     sender = data["sender"]
 
+    # Reject if active token exists
+    active_tokens = session_tokens.get((chat_id, sender), {})
+    now = time.time()
+    for t, ts in active_tokens.items():
+        if now - ts < 10:  # 10s grace period
+            return jsonify(success=False, error="Already logged in elsewhere")
+
     if password == "1":
-        token = f"{sender}-{int(time.time())}"
-        session_tokens.setdefault((chat_id, sender), set()).add(token)
+        token = f"{sender}-{int(now)}"
+        session_tokens.setdefault((chat_id, sender), {})[token] = now
         return jsonify(success=True, session_token=token)
     return jsonify(success=False, error="Invalid password")
 
