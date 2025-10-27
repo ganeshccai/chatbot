@@ -12,7 +12,6 @@ typing_status = {}
 online_status = {}
 session_tokens = {}  # key: (chat_id, sender), value: {token: timestamp}
 
-
 def verify_token(chat_id, sender, token):
     return token in session_tokens.get((chat_id, sender), {})
 
@@ -96,6 +95,8 @@ def mark_online():
     if not verify_token(chat_id, sender, token):
         return jsonify(error="Unauthorized"), 403
 
+    # Refresh session timestamp to keep it active
+    session_tokens[(chat_id, sender)][token] = time.time()
     online_status[(chat_id, sender)] = time.time()
     return jsonify(success=True)
 
@@ -128,7 +129,7 @@ def logout():
     chat_id = data["chat_id"]
     sender = data["sender"]
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    session_tokens.get((chat_id, sender), set()).discard(token)
+    session_tokens.get((chat_id, sender), {}).pop(token, None)
     return jsonify(success=True)
 
 # Cloud Run entry point
