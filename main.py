@@ -9,7 +9,7 @@ CORS(app)
 messages = {}
 typing_status = {}
 online_status = {}
-session_tokens = {}
+session_tokens = {}  # key: (chat_id, sender), value: set of tokens
 
 # Token validation
 def verify_token(chat_id, sender, token):
