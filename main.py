@@ -17,7 +17,7 @@ def verify_token(chat_id, sender, token):
     return token in session_tokens.get((chat_id, sender), {})
 
 def format_last_seen(ts):
-    if not ts:
+    if not ts or ts == 0:
         return "Never"
     delta = int(time.time() - ts)
     if delta < 60:
@@ -145,11 +145,11 @@ def mark_online():
 @app.route("/is_online/<chat_id>")
 def is_online(chat_id):
     now = time.time()
-    user_time = online_status.get((chat_id, "user"), 0)
-    agent_time = online_status.get((chat_id, "agent"), 0)
+    user_time = online_status.get((chat_id, "user"))
+    agent_time = online_status.get((chat_id, "agent"))
     return jsonify(
-        user_online=(now - user_time < 5),
-        agent_online=(now - agent_time < 5),
+        user_online=(user_time is not None and now - user_time < 5),
+        agent_online=(agent_time is not None and now - agent_time < 5),
         user_last_seen=format_last_seen(user_time),
         agent_last_seen=format_last_seen(agent_time)
     )
