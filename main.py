@@ -15,6 +15,19 @@ session_tokens = {}  # key: (chat_id, sender), value: {token: timestamp}
 def verify_token(chat_id, sender, token):
     return token in session_tokens.get((chat_id, sender), {})
 
+def format_last_seen(ts):
+    if not ts:
+        return "Never"
+    delta = int(time.time() - ts)
+    if delta < 60:
+        return f"{delta} sec ago"
+    elif delta < 3600:
+        return f"{delta // 60} min ago"
+    elif delta < 86400:
+        return f"{delta // 3600} hr ago"
+    else:
+        return f"{delta // 86400} days ago"
+
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
@@ -107,7 +120,9 @@ def is_online(chat_id):
     agent_time = online_status.get((chat_id, "agent"), 0)
     return jsonify(
         user_online=(now - user_time < 5),
-        agent_online=(now - agent_time < 5)
+        agent_online=(now - agent_time < 5),
+        user_last_seen=format_last_seen(user_time),
+        agent_last_seen=format_last_seen(agent_time)
     )
 
 @app.route("/clear_chat/<chat_id>", methods=["POST"])
