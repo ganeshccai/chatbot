@@ -252,7 +252,7 @@ async function loadMessages() {
   const data = await res.json();
   chatContainer.innerHTML = "";
 
-  // Check for new messages with "love"
+  // Check for new messages with "love" or goodnight words
   const currentMessageIds = data.map((m, i) => `${m.sender}-${m.text}-${i}`);
   const newMessages = data.filter((m, i) => {
     const msgId = `${m.sender}-${m.text}-${i}`;
@@ -262,8 +262,17 @@ async function loadMessages() {
   // Check if any new message contains "love"
   const newLoveMessage = newMessages.some(m => m.text && /\blove\b/i.test(m.text));
   
+  // Check if any new message contains goodnight words (goodnight, gn, gntc, gnsdtc - any casing)
+  const newGoodnightMessage = newMessages.some(m => 
+    m.text && /\b(goodnight|gn|gntc|gnsdtc)\b/i.test(m.text)
+  );
+  
   if (newLoveMessage) {
     spawnLoveBubbles();
+  }
+  
+  if (newGoodnightMessage) {
+    spawnSleepBubbles();
   }
 
   // Update last processed messages
@@ -468,6 +477,24 @@ function spawnLoveBubbles() {
       const bubble = document.createElement("div");
       bubble.className = "bubble";
       bubble.textContent = "💖";
+      bubble.style.left = `${pos}%`;
+      document.body.appendChild(bubble);
+      
+      // Remove bubble after 3 seconds
+      setTimeout(() => bubble.remove(), 3000);
+    }, index * 150); // Slight delay between each emoji
+  });
+}
+
+function spawnSleepBubbles() {
+  // Spawn exactly 2 sleeping emojis
+  const positions = [30, 70]; // Two different horizontal positions
+  
+  positions.forEach((pos, index) => {
+    setTimeout(() => {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = "😴";
       bubble.style.left = `${pos}%`;
       document.body.appendChild(bubble);
       
