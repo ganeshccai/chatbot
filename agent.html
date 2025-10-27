@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agent Chat</title>
   <style>
     :root {
@@ -157,7 +157,6 @@
   </style>
 </head>
 <body data-chat-id="1234">
-
 <div id="login-overlay">
   <div id="login-box">
     <input type="password" id="pwd" placeholder="Enter password" />
@@ -167,11 +166,14 @@
 </div>
 
 <header>Agent Chat <span id="user-status">🔴</span></header>
+
 <div id="chat-container"></div>
+
 <div id="preview-box">
   <div id="preview-media"></div>
   <button id="send-preview">Send</button>
 </div>
+
 <div id="input-container">
   <button id="upload-btn">📎</button>
   <textarea id="msg" rows="2" placeholder="Type reply..." autocomplete="off"></textarea>
@@ -179,101 +181,75 @@
   <button id="clear-btn">Clear</button>
   <input type="file" id="file-input" accept="image/*,video/*" style="display:none" />
 </div>
-
 <script>
-const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
-const chatId = document.body.dataset.chatId || "1234";
+function loadMessages() {
+  if (!isLoggedIn) return;
+  const isTabActive = document.visibilityState === "visible";
+  fetch(`${BACKEND_URL}/messages/${chatId}?viewer=agent&active=${isTabActive}`)
+    .then(res => res.json())
+    .then(data => {
+      chatContainer.innerHTML = "";
+      data.forEach((m, i) => {
+        const d = document.createElement("div");
+        d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
 
-const msgInput = document.getElementById("msg");
-const sendBtn = document.getElementById("send-btn");
-const clearBtn = document.getElementById("clear-btn");
-const chatContainer = document.getElementById("chat-container");
-const userStatus = document.getElementById("user-status");
-const uploadBtn = document.getElementById("upload-btn");
-const fileInput = document.getElementById("file-input");
-const previewBox = document.getElementById("preview-box");
-const previewMedia = document.getElementById("preview-media");
-const sendPreviewBtn = document.getElementById("send-preview");
+        if (m.type === "image" && m.url) {
+          const img = document.createElement("img");
+          img.src = m.url;
+          img.style.maxWidth = "240px";
+          img.style.borderRadius = "12px";
+          img.style.display = "block";
+          img.style.marginBottom = "6px";
 
-let isLoggedIn = false;
-let sessionToken = null;
-let previewData = null;
-let previewType = null;
+          const download = document.createElement("a");
+          download.href = m.url;
+          download.download = "image.jpg";
+          download.textContent = "⬇️";
+          download.style.fontSize = "14px";
+          download.style.textDecoration = "none";
+          download.style.color = "#555";
 
-async function checkPwd() {
-  const pwd = document.getElementById("pwd").value;
-  const res = await fetch(`${BACKEND_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "agent" })
-  });
+          d.appendChild(img);
+          d.appendChild(download);
+        } else if (m.type === "video" && m.url) {
+          const video = document.createElement("video");
+          video.src = m.url;
+          video.controls = true;
+          video.style.maxWidth = "240px";
+          video.style.borderRadius = "12px";
+          video.style.display = "block";
+          video.style.marginBottom = "6px";
 
-  const data = await res.json();
-  if (data.success) {
-    sessionToken = data.session_token;
-    document.getElementById("login-overlay").style.display = "none";
-    isLoggedIn = true;
-    startPolling();
-  } else {
-    document.getElementById("login-msg").textContent = data.error || "Login failed";
-  }
+          const download = document.createElement("a");
+          download.href = m.url;
+          download.download = "video.mp4";
+          download.textContent = "⬇️";
+          download.style.fontSize = "14px";
+          download.style.textDecoration = "none";
+          download.style.color = "#555";
+
+          d.appendChild(video);
+          d.appendChild(download);
+        } else {
+          d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
+        }
+
+        const isLast = i === data.length - 1;
+        if (m.sender === "agent" && m.seen_by === "user" && isLast) {
+          const seenTag = document.createElement("div");
+          seenTag.style.fontSize = "12px";
+          seenTag.style.color = "#888";
+          seenTag.style.marginTop = "4px";
+          seenTag.textContent = "Seen ✅";
+          d.appendChild(seenTag);
+        }
+
+        chatContainer.appendChild(d);
+      });
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
 }
 
-function startPolling() {
-  markOnline();
-  checkStatus();
-  loadMessages();
-  loadTyping();
-  setInterval(loadMessages, 1000);
-  setInterval(checkStatus, 1000);
-  setInterval(loadTyping, 500);
-  setInterval(() => {
-    if (document.visibilityState === "visible") markOnline();
-  }, 2000);
-}
-
-async function sendMessage() {
-  const text = msgInput.value.trim();
-  if (!text || !isLoggedIn || !sessionToken) return;
-
-  await fetch(`${BACKEND_URL}/send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({ chat_id: chatId, sender: "agent", text })
-  });
-
-  msgInput.value = "";
-  await sendTyping("");
-  loadMessages();
-}
-
-async function sendPreview() {
-  if (!previewData || !previewType || !isLoggedIn || !sessionToken) return;
-
-  await fetch(`${BACKEND_URL}/send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({
-      chat_id: chatId,
-      sender: "agent",
-      type: previewType,
-      url: previewData
-    })
-  });
-
-  previewBox.style.display = "none";
-  previewMedia.innerHTML = "";
-  previewData = null;
-  previewType = null;
-  loadMessages();
-}
-</script>
 function loadTyping() {
   if (!isLoggedIn) return;
   fetch(`${BACKEND_URL}/get_live_typing/${chatId}`)
@@ -395,6 +371,7 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
+
   
 
 
