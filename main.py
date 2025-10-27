@@ -1,182 +1,110 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, session, jsonify
 from flask_cors import CORS
-import time
-import os
-import base64
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates", static_folder="../static")
+app.secret_key = "temp_key"
 CORS(app)
 
+CHAT_ID = "1234"
+CHAT_PASSWORD = "1"
+
 # In-memory stores
-messages = {}
-typing_status = {}
-online_status = {}
-session_tokens = {}  # key: (chat_id, sender), value: {token: timestamp}
+all_chats = {}
+online_users = {}
+live_typing = {}
 
-def verify_token(chat_id, sender, token):
-    return token in session_tokens.get((chat_id, sender), {})
 
-def format_last_seen(ts):
-    if not ts or ts == 0:
-        return ""
-    delta = int(time.time() - ts)
-    if delta < 60:
-        return f"{delta} sec ago"
-    elif delta < 3600:
-        return f"{delta // 60} min ago"
-    elif delta < 86400:
-        return f"{delta // 3600} hr ago"
-    else:
-        return f"{delta // 86400} days ago"
+# ---------------- User Page ----------------
+@app.route("/user", methods=["GET", "POST"])
+def user_page():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == CHAT_PASSWORD:
+            session["chat_id"] = CHAT_ID
+            all_chats[CHAT_ID] = []
+            online_users[CHAT_ID] = True  # user online
+            live_typing[CHAT_ID] = ""
+            return render_template("user.html")
+        return "Wrong password"
+    return """<form method="post">
+                <input type="password" name="password" placeholder="*****"/>
+                <input type="submit" value="➤"/>
+              </form>"""
 
-@app.route("/login", methods=["POST"])
-def login():
-    data = request.json
-    chat_id = data["chat_id"]
-    password = data["password"]
-    sender = data["sender"]
 
-    active_tokens = session_tokens.get((chat_id, sender), {})
-    now = time.time()
-    for t, ts in active_tokens.items():
-        if now - ts < 10:
-            return jsonify(success=False, error="Already logged in elsewhere")
+# ---------------- Agent Page ----------------
+@app.route("/agent", methods=["GET", "POST"])
+def agent_page():
+    if request.method == "POST":
+        password = request.form.get("password")
+        if password == CHAT_PASSWORD:
+            online_users["agent"] = True  # mark agent online
+            return render_template("agent.html")
+        return "Wrong password"
+    return """<form method="post">
+                <input type="password" name="password" placeholder="Enter Password"/>
+                <input type="submit" value="Login"/>
+              </form>"""
 
-    if password == "1":
-        token = f"{sender}-{int(now)}"
-        session_tokens.setdefault((chat_id, sender), {})[token] = now
-        return jsonify(success=True, session_token=token)
-    return jsonify(success=False, error="Invalid password")
 
+# ---------------- Send Message ----------------
 @app.route("/send", methods=["POST"])
-def send():
-    data = request.json
-    chat_id = data["chat_id"]
-    sender = data["sender"]
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+def send_message():
+    data = request.get_json()
+    chat_id = data.get("chat_id")
+    all_chats.setdefault(chat_id, []).append(data)
+    return jsonify({"status": "ok"})
 
-    if not verify_token(chat_id, sender, token):
-        return jsonify(error="Unauthorized"), 403
 
-    msg = {
-        "sender": sender,
-        "timestamp": time.time(),
-        "seen_by": None
-    }
-
-    if data.get("type") == "image" and data.get("url"):
-        msg["type"] = "image"
-        msg["url"] = data["url"]
-        msg["text"] = None
-    else:
-        text = data.get("text", "").strip()
-        if not text:
-            return jsonify(error="Empty message"), 400
-        msg["text"] = text
-        msg["type"] = "text"
-
-    messages.setdefault(chat_id, []).append(msg)
-    return jsonify(success=True)
-
-@app.route("/upload", methods=["POST"])
-def upload():
-    chat_id = request.form.get("chat_id")
-    sender = request.form.get("sender")
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    file = request.files.get("file")
-
-    if not verify_token(chat_id, sender, token):
-        return jsonify(success=False, error="Unauthorized"), 403
-    if not file:
-        return jsonify(success=False, error="No file uploaded"), 400
-
-    ext = file.filename.split(".")[-1].lower()
-    if ext not in ["jpg", "jpeg", "png", "gif"]:
-        return jsonify(success=False, error="Unsupported file type"), 400
-
-    b64 = base64.b64encode(file.read()).decode("utf-8")
-    mime = "image/jpeg" if ext in ["jpg", "jpeg"] else f"image/{ext}"
-    url = f"data:{mime};base64,{b64}"
-    return jsonify(success=True, url=url)
-
+# ---------------- Get Messages ----------------
 @app.route("/messages/<chat_id>")
 def get_messages(chat_id):
-    viewer = request.args.get("viewer")
-    active = request.args.get("active") == "true"
-    chat = messages.get(chat_id, [])
+    return jsonify(all_chats.get(chat_id, []))
 
-    if active and chat and chat[-1]["sender"] != viewer:
-        chat[-1]["seen_by"] = viewer
 
-    return jsonify(chat)
+# ---------------- Online Status ----------------
+@app.route("/is_online/<chat_id>")
+def is_online(chat_id):
+    user_online = online_users.get(chat_id, False)
+    agent_online = online_users.get("agent", False)
+    return jsonify(
+        {
+            "user_online": user_online,
+            "online": agent_online,  # keep 'online' for backward compatibility
+        }
+    )
 
+
+# ---------------- Live Typing ----------------
 @app.route("/live_typing", methods=["POST"])
-def live_typing():
-    data = request.json
-    chat_id = data["chat_id"]
-    sender = data["sender"]
-    text = data["text"]
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+def update_live_typing():
+    data = request.get_json()
+    chat_id = data.get("chat_id")
+    text = data.get("text", "")
+    live_typing[chat_id] = text.strip()
+    return jsonify({"status": "ok"})
 
-    if not verify_token(chat_id, sender, token):
-        return jsonify(error="Unauthorized"), 403
-
-    typing_status[chat_id] = {"sender": sender, "text": text}
-    return jsonify(success=True)
 
 @app.route("/get_live_typing/<chat_id>")
 def get_live_typing(chat_id):
-    return jsonify(typing_status.get(chat_id, {}))
+    return jsonify({"text": live_typing.get(chat_id, "")})
 
-@app.route("/mark_online", methods=["POST"])
-def mark_online():
-    data = request.json
-    chat_id = data["chat_id"]
-    sender = data["sender"]
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
 
-    if not verify_token(chat_id, sender, token):
-        return jsonify(error="Unauthorized"), 403
-
-    session_tokens[(chat_id, sender)][token] = time.time()
-    online_status[(chat_id, sender)] = time.time()
-    return jsonify(success=True)
-
-@app.route("/is_online/<chat_id>")
-def is_online(chat_id):
-    now = time.time()
-    user_time = online_status.get((chat_id, "user"))
-    agent_time = online_status.get((chat_id, "agent"))
-    return jsonify(
-        user_online=(user_time is not None and now - user_time < 5),
-        agent_online=(agent_time is not None and now - agent_time < 5),
-        user_last_seen=format_last_seen(user_time),
-        agent_last_seen=format_last_seen(agent_time)
-    )
-
-@app.route("/clear_chat/<chat_id>", methods=["POST"])
-def clear_chat(chat_id):
-    data = request.json
-    sender = data["sender"]
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-
-    if not verify_token(chat_id, sender, token):
-        return jsonify(error="Unauthorized"), 403
-
-    messages[chat_id] = []
-    return jsonify(success=True)
-
+# ---------------- Logout Handlers ----------------
 @app.route("/logout_user", methods=["POST"])
-@app.route("/logout_agent", methods=["POST"])
-def logout():
-    data = request.json
-    chat_id = data["chat_id"]
-    sender = data["sender"]
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    session_tokens.get((chat_id, sender), {}).pop(token, None)
-    return jsonify(success=True)
+def logout_user():
+    data = request.get_json(force=True, silent=True) or {}
+    chat_id = data.get("chat_id", CHAT_ID)
+    online_users[chat_id] = False
+    live_typing[chat_id] = ""
+    return jsonify({"status": "ok"})
 
-# Cloud Run entry point
+
+@app.route("/logout_agent", methods=["POST"])
+def logout_agent():
+    online_users["agent"] = False
+    return jsonify({"status": "ok"})
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=8080, debug=True)
