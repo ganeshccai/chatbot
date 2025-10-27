@@ -18,7 +18,7 @@ def verify_token(chat_id, sender, token):
 
 def format_last_seen(ts):
     if not ts or ts == 0:
-        return "Never"
+        return ""
     delta = int(time.time() - ts)
     if delta < 60:
         return f"{delta} sec ago"
