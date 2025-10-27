@@ -114,13 +114,13 @@ def clear_chat(chat_id):
     messages[chat_id] = []
     return jsonify(success=True)
 
-@app.route("/logout_user", methods=["POST"])
+
 @app.route("/logout_agent", methods=["POST"])
 def logout():
     data = request.json
     chat_id = data["chat_id"]
     sender = data["sender"]
-    session_tokens.pop((chat_id, sender), None)
+    session_tokens.get((chat_id, sender), set()).discard(token)
     return jsonify(success=True)
 
 if __name__ == "__main__":
