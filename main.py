@@ -1,17 +1,17 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import time
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# In-memory stores (replace with persistent DB in production)
+# In-memory stores
 messages = {}
 typing_status = {}
 online_status = {}
 session_tokens = {}  # key: (chat_id, sender), value: set of tokens
 
-# Token validation
 def verify_token(chat_id, sender, token):
     return token in session_tokens.get((chat_id, sender), set())
 
@@ -23,9 +23,9 @@ def login():
     sender = data["sender"]
 
     if password == "1":
-    token = f"{sender}-{int(time.time())}"
-    session_tokens.setdefault((chat_id, sender), set()).add(token)
-    return jsonify(success=True, session_token=token)
+        token = f"{sender}-{int(time.time())}"
+        session_tokens.setdefault((chat_id, sender), set()).add(token)
+        return jsonify(success=True, session_token=token)
     return jsonify(success=False, error="Invalid password")
 
 @app.route("/send", methods=["POST"])
@@ -59,7 +59,6 @@ def get_messages(chat_id):
         chat[-1]["seen_by"] = viewer
 
     return jsonify(chat)
-
 
 @app.route("/live_typing", methods=["POST"])
 def live_typing():
@@ -114,14 +113,17 @@ def clear_chat(chat_id):
     messages[chat_id] = []
     return jsonify(success=True)
 
-
+@app.route("/logout_user", methods=["POST"])
 @app.route("/logout_agent", methods=["POST"])
 def logout():
     data = request.json
     chat_id = data["chat_id"]
     sender = data["sender"]
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
     session_tokens.get((chat_id, sender), set()).discard(token)
     return jsonify(success=True)
 
+# Cloud Run entry point
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
