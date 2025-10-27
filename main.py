@@ -55,10 +55,11 @@ def get_messages(chat_id):
     active = request.args.get("active") == "true"
     chat = messages.get(chat_id, [])
 
-    if chat and chat[-1]["sender"] != viewer:
+    if active and chat and chat[-1]["sender"] != viewer:
         chat[-1]["seen_by"] = viewer
 
     return jsonify(chat)
+
 
 @app.route("/live_typing", methods=["POST"])
 def live_typing():
