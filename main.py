@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import time
 import os
+import base64
 
 app = Flask(__name__)
 CORS(app)
@@ -35,11 +36,10 @@ def login():
     password = data["password"]
     sender = data["sender"]
 
-    # Reject if active token exists
     active_tokens = session_tokens.get((chat_id, sender), {})
     now = time.time()
     for t, ts in active_tokens.items():
-        if now - ts < 10:  # 10s grace period
+        if now - ts < 10:
             return jsonify(success=False, error="Already logged in elsewhere")
 
     if password == "1":
@@ -53,21 +53,51 @@ def send():
     data = request.json
     chat_id = data["chat_id"]
     sender = data["sender"]
-    text = data["text"].strip()
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
 
     if not verify_token(chat_id, sender, token):
         return jsonify(error="Unauthorized"), 403
-    if not text:
-        return jsonify(error="Empty message"), 400
 
-    messages.setdefault(chat_id, []).append({
+    msg = {
         "sender": sender,
-        "text": text,
         "timestamp": time.time(),
         "seen_by": None
-    })
+    }
+
+    if data.get("type") == "image" and data.get("url"):
+        msg["type"] = "image"
+        msg["url"] = data["url"]
+        msg["text"] = None
+    else:
+        text = data.get("text", "").strip()
+        if not text:
+            return jsonify(error="Empty message"), 400
+        msg["text"] = text
+        msg["type"] = "text"
+
+    messages.setdefault(chat_id, []).append(msg)
     return jsonify(success=True)
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    chat_id = request.form.get("chat_id")
+    sender = request.form.get("sender")
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    file = request.files.get("file")
+
+    if not verify_token(chat_id, sender, token):
+        return jsonify(success=False, error="Unauthorized"), 403
+    if not file:
+        return jsonify(success=False, error="No file uploaded"), 400
+
+    ext = file.filename.split(".")[-1].lower()
+    if ext not in ["jpg", "jpeg", "png", "gif"]:
+        return jsonify(success=False, error="Unsupported file type"), 400
+
+    b64 = base64.b64encode(file.read()).decode("utf-8")
+    mime = "image/jpeg" if ext in ["jpg", "jpeg"] else f"image/{ext}"
+    url = f"data:{mime};base64,{b64}"
+    return jsonify(success=True, url=url)
 
 @app.route("/messages/<chat_id>")
 def get_messages(chat_id):
@@ -108,7 +138,6 @@ def mark_online():
     if not verify_token(chat_id, sender, token):
         return jsonify(error="Unauthorized"), 403
 
-    # Refresh session timestamp to keep it active
     session_tokens[(chat_id, sender)][token] = time.time()
     online_status[(chat_id, sender)] = time.time()
     return jsonify(success=True)
