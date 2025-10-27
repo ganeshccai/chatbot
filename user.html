@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-  <title>Chat</title>
+  <title>User Chat</title>
   <style>
     :root {
       --accent: #feda75;
@@ -13,7 +13,12 @@
       --bubble-agent: #ffffff;
       --agent-border: #e0e0e0;
     }
-    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
     body {
       font-family: 'Segoe UI', sans-serif;
       display: flex;
@@ -35,8 +40,8 @@
     }
     #agent-status {
       position: absolute;
-      right: 12px;
-      top: 12px;
+      right: 14px;
+      top: 14px;
       font-weight: bold;
     }
     #chat-container {
@@ -49,8 +54,8 @@
     }
     .message {
       margin: 4px 0;
-      padding: 8px 12px;
-      border-radius: 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
       max-width: 80%;
       word-wrap: break-word;
       font-size: 15px;
@@ -75,26 +80,32 @@
     #msg {
       flex: 1;
       resize: none;
-      border-radius: 16px;
-      padding: 12px 14px;
+      border-radius: 14px;
+      padding: 12px;
       border: 1px solid #ccc;
       font-size: 16px;
       outline: none;
       max-height: 120px;
     }
-    #msg:focus { border-color: var(--accent2); }
+    #msg:focus {
+      border-color: var(--accent2);
+    }
     button {
-      padding: 12px 18px;
+      padding: 12px 16px;
       background: var(--accent2);
       color: white;
       border: none;
-      border-radius: 16px;
+      border-radius: 14px;
       cursor: pointer;
       font-size: 16px;
       transition: background 0.3s ease;
     }
-    button:hover { background: #c2185b; }
-    button:active { opacity: 0.9; }
+    button:hover {
+      background: #c2185b;
+    }
+    button:active {
+      opacity: 0.9;
+    }
     #login-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -109,6 +120,17 @@
       padding: 24px;
       border-radius: 12px;
       box-shadow: 0 0 12px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 280px;
+    }
+    #login-box input {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
     }
   </style>
 </head>
@@ -116,9 +138,9 @@
 
 <div id="login-overlay">
   <div id="login-box">
-    <input type="password" id="pwd" placeholder="*****" />
-    <button onclick="checkPwd()">🔓</button>
-    <div id="login-msg" style="color:red;margin-top:10px;"></div>
+    <input type="password" id="pwd" placeholder="Enter password" />
+    <button onclick="checkPwd()">Login 🔓</button>
+    <div id="login-msg" style="color:red;"></div>
   </div>
 </div>
 
@@ -143,25 +165,36 @@ let isLoggedIn = false;
 let sessionToken = null;
 let typingDots = 0;
 
-function checkPwd() {
+async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
-  if (pwd === "1") {
+  const res = await fetch(`${BACKEND_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "user" })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    sessionToken = data.session_token;
     document.getElementById("login-overlay").style.display = "none";
     isLoggedIn = true;
-    sessionToken = "user-session-token"; // Replace with real token logic if needed
-    markOnline();
-    checkStatus();
-    loadMessages();
-    loadTyping();
-    setInterval(loadMessages, 1000);
-    setInterval(checkStatus, 1000);
-    setInterval(loadTyping, 500);
-    setInterval(() => {
-      if (document.visibilityState === "visible") markOnline();
-    }, 10000);
+    startPolling();
   } else {
-    document.getElementById("login-msg").textContent = "Wrong password!";
+    document.getElementById("login-msg").textContent = data.error || "Login failed";
   }
+}
+
+function startPolling() {
+  markOnline();
+  checkStatus();
+  loadMessages();
+  loadTyping();
+  setInterval(loadMessages, 1000);
+  setInterval(checkStatus, 1000);
+  setInterval(loadTyping, 500);
+  setInterval(() => {
+    if (document.visibilityState === "visible") markOnline();
+  }, 2000);
 }
 
 async function sendMessage() {
@@ -298,5 +331,6 @@ window.addEventListener("beforeunload", () => {
 </script>
 </body>
 </html>
+
 
   
