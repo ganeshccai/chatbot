@@ -150,6 +150,8 @@
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
   <button id="send-btn">➤</button>
   <button id="clear-btn">❌</button>
+  <input type="file" id="file-input" accept="image/*" style="display:none" />
+  <button id="upload-btn">📎</button>
 </div>
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -160,6 +162,8 @@ const sendBtn = document.getElementById("send-btn");
 const clearBtn = document.getElementById("clear-btn");
 const chatContainer = document.getElementById("chat-container");
 const agentStatus = document.getElementById("agent-status");
+const uploadBtn = document.getElementById("upload-btn");
+const fileInput = document.getElementById("file-input");
 
 let isLoggedIn = false;
 let sessionToken = null;
@@ -225,7 +229,28 @@ async function loadMessages() {
   data.forEach((m, i) => {
     const d = document.createElement("div");
     d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
-    d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
+
+    if (m.type === "image" && m.url) {
+      const img = document.createElement("img");
+      img.src = m.url;
+      img.style.maxWidth = "240px";
+      img.style.borderRadius = "12px";
+      img.style.display = "block";
+      img.style.marginBottom = "6px";
+
+      const download = document.createElement("a");
+      download.href = m.url;
+      download.download = "image.jpg";
+      download.textContent = "⬇️";
+      download.style.fontSize = "14px";
+      download.style.textDecoration = "none";
+      download.style.color = "#555";
+
+      d.appendChild(img);
+      d.appendChild(download);
+    } else {
+      d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
+    }
 
     const isLast = i === data.length - 1;
     if (m.sender === "user" && m.seen_by === "agent" && isLast) {
@@ -284,7 +309,6 @@ async function checkStatus() {
   agentStatus.textContent = `${emoji}${time}`;
 }
 
-
 async function clearChat() {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
@@ -309,6 +333,33 @@ async function markOnline() {
     body: JSON.stringify({ chat_id: chatId, sender: "user" })
   });
 }
+
+uploadBtn.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files[0];
+  if (!file || !isLoggedIn || !sessionToken) return;
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result;
+    await fetch(`${BACKEND_URL}/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        sender: "user",
+        type: "image",
+        url: base64
+      })
+    });
+    loadMessages();
+  };
+  reader.readAsDataURL(file);
+});
 
 sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
@@ -335,4 +386,3 @@ window.addEventListener("beforeunload", () => {
 </body>
 </html>
   
-
