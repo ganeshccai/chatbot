@@ -5,12 +5,13 @@ import time
 app = Flask(__name__)
 CORS(app)
 
-# In-memory store (replace with DB in production)
+# In-memory stores (replace with persistent DB in production)
 messages = {}
 typing_status = {}
 online_status = {}
 session_tokens = {}
 
+# Token validation
 def verify_token(chat_id, sender, token):
     return session_tokens.get((chat_id, sender)) == token
 
@@ -52,7 +53,6 @@ def get_messages(chat_id):
     active = request.args.get("active") == "true"
     chat = messages.get(chat_id, [])
 
-    # Mark last message as seen
     if chat and chat[-1]["sender"] != viewer:
         chat[-1]["seen_by"] = viewer
 
@@ -64,6 +64,11 @@ def live_typing():
     chat_id = data["chat_id"]
     sender = data["sender"]
     text = data["text"]
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+
+    if not verify_token(chat_id, sender, token):
+        return jsonify(error="Unauthorized"), 403
+
     typing_status[chat_id] = {"sender": sender, "text": text}
     return jsonify(success=True)
 
@@ -76,6 +81,11 @@ def mark_online():
     data = request.json
     chat_id = data["chat_id"]
     sender = data["sender"]
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+
+    if not verify_token(chat_id, sender, token):
+        return jsonify(error="Unauthorized"), 403
+
     online_status[(chat_id, sender)] = time.time()
     return jsonify(success=True)
 
@@ -85,12 +95,19 @@ def is_online(chat_id):
     user_time = online_status.get((chat_id, "user"), 0)
     agent_time = online_status.get((chat_id, "agent"), 0)
     return jsonify(
-        user_online=(now - user_time < 15),
-        agent_online=(now - agent_time < 15)
+        user_online=(now - user_time < 5),
+        agent_online=(now - agent_time < 5)
     )
 
 @app.route("/clear_chat/<chat_id>", methods=["POST"])
 def clear_chat(chat_id):
+    data = request.json
+    sender = data["sender"]
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+
+    if not verify_token(chat_id, sender, token):
+        return jsonify(error="Unauthorized"), 403
+
     messages[chat_id] = []
     return jsonify(success=True)
 
