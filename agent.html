@@ -274,7 +274,9 @@ async function checkStatus() {
   if (!isLoggedIn) return;
   const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
   const d = await res.json();
-  userStatus.textContent = d.user_online ? "🟢" : "🔴";
+  const emoji = d.user_online ? "🟢" : "🔴";
+  const time = d.user_online ? "" : ` Last seen: ${d.user_last_seen}`;
+  userStatus.textContent = `${emoji}${time}`;
 }
 
 async function clearChat() {
@@ -333,3 +335,4 @@ window.addEventListener("beforeunload", () => {
 
 
   
+
