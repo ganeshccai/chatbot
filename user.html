@@ -138,8 +138,8 @@
   .bubble {
     position: absolute;
     bottom: 0;
-    font-size: 36px;
-    animation: floatUp 3s ease-out forwards;
+    font-size: 60px;
+    animation: floatUp 3s ease-out infinite;
     pointer-events: none;
     z-index: 100;
   }
@@ -193,6 +193,8 @@ let isLoggedIn = false;
 let sessionToken = null;
 let typingDots = 0;
 let lastMessageCount = 0;
+let loveAnimationActive = false;
+let loveAnimationInterval = null;
 
 async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
@@ -249,7 +251,12 @@ async function loadMessages() {
   const isTabActive = document.visibilityState === "visible";
   const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
   const data = await res.json();
-  chatContainer.innerHTML = "";
+  
+  // Clear only message elements, not bubbles
+  const messages = chatContainer.querySelectorAll('.message, #agent-typing-indicator');
+  messages.forEach(msg => msg.remove());
+
+  let shouldStartLoveAnimation = false;
 
   data.forEach((m, i) => {
     const d = document.createElement("div");
@@ -289,11 +296,18 @@ async function loadMessages() {
 
     chatContainer.appendChild(d);
 
-    // Check for "love" in message text and trigger animation
+    // Check for "love" in message text
     if (m.text && /\blove\b/i.test(m.text)) {
-      spawnLoveBubbles();
+      shouldStartLoveAnimation = true;
     }
   });
+
+  // Start or stop love animation based on presence of "love"
+  if (shouldStartLoveAnimation && !loveAnimationActive) {
+    startLoveAnimation();
+  } else if (!shouldStartLoveAnimation && loveAnimationActive) {
+    stopLoveAnimation();
+  }
 
   // Detect new messages
   if (data.length > lastMessageCount) {
@@ -356,6 +370,7 @@ async function clearChat() {
   });
   chatContainer.innerHTML = "";
   lastMessageCount = 0;
+  stopLoveAnimation();
 }
 
 async function markOnline() {
@@ -445,21 +460,30 @@ link.rel = "manifest";
 link.href = manifestURL;
 document.head.appendChild(link);
 
-function spawnLoveBubbles() {
-  // Spawn 2 love emojis
-  for (let i = 0; i < 2; i++) {
-    setTimeout(() => {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = "💖";
-      // Random horizontal position within chat container
-      bubble.style.left = `${20 + Math.random() * 60}%`;
-      chatContainer.appendChild(bubble);
-      
-      // Remove after 3 seconds
-      setTimeout(() => bubble.remove(), 3000);
-    }, i * 200); // Slight delay between each emoji
-  }
+function startLoveAnimation() {
+  if (loveAnimationActive) return;
+  loveAnimationActive = true;
+  
+  // Create exactly 2 bubbles
+  const positions = [30, 70]; // Two different horizontal positions
+  
+  positions.forEach((pos, index) => {
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.classList.add(`love-bubble-${index}`);
+    bubble.textContent = "💖";
+    bubble.style.left = `${pos}%`;
+    chatContainer.appendChild(bubble);
+  });
+}
+
+function stopLoveAnimation() {
+  if (!loveAnimationActive) return;
+  loveAnimationActive = false;
+  
+  // Remove all love bubbles
+  const bubbles = chatContainer.querySelectorAll('.bubble');
+  bubbles.forEach(bubble => bubble.remove());
 }
 </script>
 </body>
