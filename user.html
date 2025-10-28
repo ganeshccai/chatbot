@@ -483,8 +483,6 @@ async function markOnline() {
 
 async function clearChat() {
   if (!isLoggedIn || !sessionToken) return;
-  const confirmed = confirm("Clear all messages?");
-  if (!confirmed) return;
 
   await fetch(`${BACKEND_URL}/clear`, {
     method: "POST",
@@ -527,9 +525,6 @@ function spawnSleepBubbles() {
 
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
-
-// REMOVED: Enter key sending message - now Enter creates new line naturally
-// Users must click the send button (➤) to send messages
 
 msgInput.addEventListener("input", () => {
   sendTyping(msgInput.value);
