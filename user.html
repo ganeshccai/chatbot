@@ -49,7 +49,7 @@
     font-weight: bold;
   }
   #send-btn, #clear-btn {
-    font-size: 28px;
+    font-size: 35px;
   }
   #chat-container {
     flex: 1;
@@ -263,6 +263,8 @@
         <button class="emoji-btn" data-emoji="💕">💕</button>
         <button class="emoji-btn" data-emoji="🎉">🎉</button>
         <button class="emoji-btn" data-emoji="🌹">🌹</button>
+        <button class="emoji-btn" data-emoji="🎶">🎶</button>
+        <button class="emoji-btn" data-emoji="🥺">🥺</button>
       </div>
     </div>
     <input type="file" id="file-input" accept="image/*" style="display:none" />
@@ -428,7 +430,7 @@ async function loadMessages() {
       seenTag.style.fontSize = "12px";
       seenTag.style.color = "#888";
       seenTag.style.marginTop = "4px";
-      seenTag.textContent = "✅";
+      seenTag.textContent = "👀";
       d.appendChild(seenTag);
     }
 
@@ -589,6 +591,7 @@ navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
 
 
