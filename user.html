@@ -113,11 +113,11 @@
     opacity: 0.9;
   }
   
-  /* 3D Login Overlay */
+  /* Modern 3D Login Form */
   #login-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.95);
+    background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -125,41 +125,62 @@
     perspective: 1000px;
   }
   #login-box {
-    background: #fff;
-    padding: 24px;
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.98);
+    padding: 40px 30px;
+    border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    width: 280px;
+    gap: 20px;
+    width: 320px;
     transform-style: preserve-3d;
     transform: translateZ(50px);
     transition: transform 0.3s ease;
   }
   #login-box:hover {
-    transform: translateZ(50px) rotateY(5deg) rotateX(-5deg);
+    transform: translateZ(50px) rotateY(3deg) rotateX(-3deg);
+  }
+  #login-box h2 {
+    text-align: center;
+    margin: 0 0 10px 0;
+    background: linear-gradient(135deg, #d62976, #962fbf);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 28px;
+    transform: translateZ(20px);
   }
   #login-box input {
-    padding: 10px;
+    padding: 14px;
     font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
     outline: none;
     transform: translateZ(15px);
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
   }
   #login-box input:focus {
     transform: translateZ(25px);
-    border-color: var(--accent2);
+    border-color: #d62976;
     box-shadow: 0 4px 12px rgba(214, 41, 118, 0.2);
   }
   #login-box button {
     transform: translateZ(20px);
-    transition: transform 0.3s ease;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #d62976, #962fbf);
+    transition: all 0.3s ease;
   }
   #login-box button:hover {
     transform: translateZ(30px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(214, 41, 118, 0.4);
+  }
+  #login-msg {
+    color: #d62976;
+    text-align: center;
+    font-size: 14px;
+    transform: translateZ(10px);
   }
 
   /* Emoji and Upload buttons container */
@@ -240,18 +261,18 @@
     }
   }
 
-  /* White Bird Animation */
+  /* Flying Bird Animation */
   .flying-bird {
     position: fixed;
-    font-size: 40px;
+    font-size: 35px;
     pointer-events: none;
     z-index: 200;
-    animation: bird-flap 0.3s steps(2) infinite;
+    animation: bird-flap 0.2s ease-in-out infinite;
   }
   
   @keyframes bird-flap {
     0%, 100% { transform: scaleY(1); }
-    50% { transform: scaleY(0.8); }
+    50% { transform: scaleY(0.85); }
   }
 </style>
 </head>
@@ -259,9 +280,10 @@
 
 <div id="login-overlay">
   <div id="login-box">
+    <h2>𝓡𝓮𝓰𝓪𝓵</h2>
     <input type="password" id="pwd" placeholder="Enter password" />
     <button onclick="checkPwd()">Login 🔓</button>
-    <div id="login-msg" style="color:red;"></div>
+    <div id="login-msg"></div>
   </div>
 </div>
 
@@ -384,57 +406,58 @@ function startPolling() {
   }, 2000);
 }
 
-// Bird Animation Function
+// Bird Animation - flies from message box to new message
 function flyBirdToMessage() {
-  const sendBtnRect = sendBtn.getBoundingClientRect();
-  const messages = chatContainer.querySelectorAll('.message');
-  if (messages.length === 0) return;
+  const msgInputRect = msgInput.getBoundingClientRect();
   
-  const lastMessage = messages[messages.length - 1];
-  const lastMessageRect = lastMessage.getBoundingClientRect();
-  
-  const bird = document.createElement('div');
-  bird.className = 'flying-bird';
-  bird.textContent = '🕊️'; // White bird emoji (right-facing)
-  bird.style.left = sendBtnRect.left + 'px';
-  bird.style.top = sendBtnRect.top + 'px';
-  
-  document.body.appendChild(bird);
-  
-  const startX = sendBtnRect.left;
-  const startY = sendBtnRect.top;
-  const endX = lastMessageRect.right;
-  const endY = lastMessageRect.top;
-  
-  const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-  const duration = Math.min(600, distance * 1.5); // Fast flight
-  
-  const startTime = Date.now();
-  
-  function animateBird() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / duration, 1);
+  setTimeout(() => {
+    const messages = chatContainer.querySelectorAll('.message');
+    if (messages.length === 0) return;
     
-    // Easing function for smooth movement
-    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    const lastMessage = messages[messages.length - 1];
+    const lastMessageRect = lastMessage.getBoundingClientRect();
     
-    const currentX = startX + (endX - startX) * easeProgress;
-    const currentY = startY + (endY - startY) * easeProgress;
+    const bird = document.createElement('div');
+    bird.className = 'flying-bird';
+    bird.textContent = '🕊️';
+    bird.style.left = msgInputRect.left + 'px';
+    bird.style.top = msgInputRect.top + 'px';
     
-    // Add slight wave motion
-    const wave = Math.sin(progress * Math.PI * 2) * 10;
+    document.body.appendChild(bird);
     
-    bird.style.left = currentX + 'px';
-    bird.style.top = (currentY + wave) + 'px';
+    const startX = msgInputRect.left;
+    const startY = msgInputRect.top;
+    const endX = lastMessageRect.right;
+    const endY = lastMessageRect.top;
     
-    if (progress < 1) {
-      requestAnimationFrame(animateBird);
-    } else {
-      bird.remove();
+    const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+    const duration = Math.min(700, distance * 2);
+    
+    const startTime = Date.now();
+    
+    function animateBird() {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      const currentX = startX + (endX - startX) * easeProgress;
+      const currentY = startY + (endY - startY) * easeProgress;
+      
+      const wave = Math.sin(progress * Math.PI * 3) * 8;
+      
+      bird.style.left = currentX + 'px';
+      bird.style.top = (currentY + wave) + 'px';
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateBird);
+      } else {
+        bird.remove();
+      }
     }
-  }
-  
-  animateBird();
+    
+    animateBird();
+  }, 150);
 }
 
 async function sendMessage() {
@@ -452,13 +475,8 @@ async function sendMessage() {
 
   msgInput.value = "";
   await sendTyping("");
-  
-  // Trigger bird animation
-  setTimeout(() => {
-    flyBirdToMessage();
-  }, 100);
-  
   loadMessages();
+  flyBirdToMessage();
 }
 
 async function loadMessages() {
@@ -587,7 +605,6 @@ function spawnSleepBubbles() {
 
 async function clearChat() {
   if (!isLoggedIn || !sessionToken) return;
-  if (!confirm("Clear all messages?")) return;
   
   await fetch(`${BACKEND_URL}/clear`, {
     method: "POST",
