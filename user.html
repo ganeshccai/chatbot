@@ -244,8 +244,11 @@
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
  
   <div class="extra-buttons">
-    <button id="clear-btn">❌</button>
+   
     <button id="emoji-btn">😊</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none" />
+    <button id="upload-btn">📎</button>
+     <button id="clear-btn">❌</button>
     <div id="emoji-picker">
       <div class="emoji-grid">
        <button class="emoji-btn" data-emoji="😊">😊</button>
@@ -275,8 +278,7 @@
       </div>
     </div>
    
-    <input type="file" id="file-input" accept="image/*" style="display:none" />
-    <button id="upload-btn">📎</button>
+  
   </div>
    
    <button id="send-btn">➤</button>
@@ -601,6 +603,7 @@ navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
 
 
