@@ -53,7 +53,7 @@
   }
 
   #clear-btn {
-    font-size: 20px;
+    font-size: 10px;
   }
   #chat-container {
     flex: 1;
@@ -158,7 +158,7 @@
   
   .extra-buttons button {
     padding: 10px 14px;
-    font-size: 18px;
+    font-size: 12px;
   }
 
   /* Emoji picker popup */
@@ -248,7 +248,7 @@
     <button id="emoji-btn">😊</button>
       <input type="file" id="file-input" accept="image/*" style="display:none" />
     <button id="upload-btn">📎</button>
-     <button id="clear-btn">❌</button>
+
     <div id="emoji-picker">
       <div class="emoji-grid">
        <button class="emoji-btn" data-emoji="😊">😊</button>
@@ -277,11 +277,12 @@
         <button class="emoji-btn" data-emoji="🥺">🥺</button>
       </div>
     </div>
-   
+       <button id="send-btn">➤</button>
+     <button id="clear-btn">❌</button>
   
   </div>
    
-   <button id="send-btn">➤</button>
+   
 </div>
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -603,6 +604,7 @@ navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
 
 
