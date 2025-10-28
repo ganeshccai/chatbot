@@ -3,191 +3,120 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-  <title>Regal Chat</title>
+  <title>R</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23feda75'/><stop offset='25%' style='stop-color:%23fa7e1e'/><stop offset='50%' style='stop-color:%23d62976'/><stop offset='75%' style='stop-color:%23962fbf'/><stop offset='100%' style='stop-color:%234f5bd5'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/></svg>" />
-  <meta name="theme-color" content="#ffb3d9" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23feda75'/><stop offset='25%' style='stop-color:%23fa7e1e'/><stop offset='50%' style='stop-color:%23d62976'/><stop offset='75%' style='stop-color:%23962fbf'/><stop offset='100%' style='stop-color:%234f5bd5'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/></svg>" />
+  <meta name="theme-color" content="#d62976" />
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Regal%20Chat%22%2C%22short_name%22%3A%22Regal%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f6fb%22%2C%22theme_color%22%3A%22%23d62976%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27grad%27%20x1%3D%270%25%27%20y1%3D%270%25%27%20x2%3D%27100%25%27%20y2%3D%27100%25%27%3E%3Cstop%20offset%3D%270%25%27%20style%3D%27stop-color%3A%2523feda75%27%2F%3E%3Cstop%20offset%3D%2725%25%27%20style%3D%27stop-color%3A%2523fa7e1e%27%2F%3E%3Cstop%20offset%3D%2750%25%27%20style%3D%27stop-color%3A%2523d62976%27%2F%3E%3Cstop%20offset%3D%2775%25%27%20style%3D%27stop-color%3A%2523962fbf%27%2F%3E%3Cstop%20offset%3D%27100%25%27%20style%3D%27stop-color%3A%25234f5bd5%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27100%27%20fill%3D%27url(%2523grad)%27%2F%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D" />
 <style>
   :root {
-    --baby-pink: #ffb3d9;
-    --pink-dark: #ff8dc7;
+    --accent: #feda75;
     --accent2: #d62976;
     --bg: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
     --bubble-user: #ffcce0;
     --bubble-agent: #ffffff;
     --agent-border: #e0e0e0;
   }
-  
-  * {
-    box-sizing: border-box;
-  }
-  
   html, body {
     height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden;
   }
-  
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
     display: flex;
     flex-direction: column;
-    background: #fafafa;
-    color: #262626;
+    background: var(--bg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #333;
   }
-  
-  /* Header with Baby Pink 3D Regal */
   header {
-    background: #ffffff;
-    border-bottom: 1px solid #dbdbdb;
-    color: #262626;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: white;
+    padding: 14px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
     position: relative;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   }
-  
-  .regal-3d {
-    font-size: 28px;
-    font-weight: 700;
-    font-family: 'Brush Script MT', cursive;
-    color: var(--baby-pink);
-    text-shadow: 
-      1px 1px 2px rgba(255, 179, 217, 0.8),
-      2px 2px 4px rgba(255, 179, 217, 0.6),
-      3px 3px 6px rgba(255, 179, 217, 0.4),
-      4px 4px 8px rgba(255, 179, 217, 0.2);
-    letter-spacing: 1px;
-    transform: perspective(500px) rotateX(10deg);
-    display: inline-block;
-  }
-  
   #agent-status {
     position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    right: 14px;
+    top: 14px;
+    font-weight: bold;
   }
-  
-  .status-indicator {
-    font-size: 12px;
-  }
-  
   #chat-container {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 16px;
+    padding: 14px;
     display: flex;
     flex-direction: column;
-    background-color: #ffffff;
+    background-color: #f8f8f8;
     position: relative;
   }
-  
   .message {
-    margin: 6px 0;
-    padding: 12px 16px;
-    border-radius: 18px;
-    max-width: 75%;
+    margin: 4px 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 80%;
     word-wrap: break-word;
     font-size: 15px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    animation: messageSlideIn 0.3s ease;
-    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
   }
-  
-  @keyframes messageSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
   .user-msg {
     background: var(--bubble-user);
     align-self: flex-end;
-    border-bottom-right-radius: 4px;
   }
-  
   .agent-msg {
     background: var(--bubble-agent);
     border: 1px solid var(--agent-border);
     align-self: flex-start;
-    border-bottom-left-radius: 4px;
   }
-  
-  .message-status {
-    font-size: 11px;
-    color: #8e8e8e;
-    margin-top: 4px;
-    text-align: right;
-  }
-  
   #input-container {
     display: flex;
-    gap: 12px;
-    padding: 16px;
-    background: #ffffff;
-    border-top: 1px solid #dbdbdb;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255,255,255,0.9);
+    border-top: 1px solid #ccc;
     position: relative;
-    align-items: flex-end;
   }
-  
   #msg {
     flex: 1;
     resize: none;
-    border-radius: 24px;
-    padding: 12px 18px;
-    border: 1px solid #dbdbdb;
-    font-size: 15px;
+    border-radius: 14px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    font-size: 16px;
     outline: none;
     max-height: 120px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: #fafafa;
   }
-  
   #msg:focus {
-    border-color: var(--baby-pink);
-    background: #ffffff;
+    border-color: var(--accent2);
   }
-  
   button {
-    padding: 10px 14px;
-    background: var(--baby-pink);
+    padding: 12px 16px;
+    background: var(--accent2);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 14px;
     cursor: pointer;
     font-size: 16px;
-    transition: all 0.2s ease;
-    font-weight: 600;
+    transition: background 0.3s ease;
   }
-  
   button:hover {
-    background: var(--pink-dark);
-    transform: scale(1.05);
+    background: #c2185b;
   }
-  
   button:active {
-    transform: scale(0.95);
+    opacity: 0.9;
   }
   
-  /* Modern 3D Login Form */
+  /* Modern 3D Login Overlay */
   #login-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     justify-content: center;
@@ -208,7 +137,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
-    width: 380px;
+    width: 360px;
     transform-style: preserve-3d;
     animation: loginFloat 4s ease-in-out infinite;
     position: relative;
@@ -219,13 +148,13 @@
       transform: translateY(0px) rotateX(0deg) rotateY(0deg);
     }
     25% {
-      transform: translateY(-8px) rotateX(2deg) rotateY(-1deg);
+      transform: translateY(-10px) rotateX(3deg) rotateY(-2deg);
     }
     50% {
-      transform: translateY(-15px) rotateX(0deg) rotateY(0deg);
+      transform: translateY(-18px) rotateX(0deg) rotateY(0deg);
     }
     75% {
-      transform: translateY(-8px) rotateX(-2deg) rotateY(1deg);
+      transform: translateY(-10px) rotateX(-3deg) rotateY(2deg);
     }
   }
   
@@ -239,7 +168,7 @@
     background: linear-gradient(135deg, #667eea, #764ba2, #f093fb, #4facfe);
     border-radius: 30px;
     z-index: -1;
-    opacity: 0.7;
+    opacity: 0.8;
     filter: blur(25px);
     animation: gradientRotate 8s ease infinite;
   }
@@ -254,7 +183,7 @@
   }
   
   .login-title {
-    font-size: 38px;
+    font-size: 42px;
     font-weight: 800;
     text-align: center;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -262,9 +191,9 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 10px;
-    letter-spacing: 2px;
-    text-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-    transform: translateZ(40px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transform: translateZ(50px);
   }
   
   #login-box input {
@@ -281,7 +210,7 @@
   #login-box input:focus {
     border-color: #667eea;
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    transform: translateZ(20px);
+    transform: translateZ(25px);
     background: #ffffff;
   }
   
@@ -295,13 +224,14 @@
       0 0 0 1px rgba(255, 255, 255, 0.2) inset;
     transform-style: preserve-3d;
     letter-spacing: 1px;
+    font-weight: bold;
   }
   
   #login-box button:hover {
     box-shadow: 
       0 15px 40px rgba(102, 126, 234, 0.6),
       0 0 0 1px rgba(255, 255, 255, 0.3) inset;
-    transform: translateZ(10px) scale(1.02);
+    transform: translateZ(15px) scale(1.03);
     background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
   }
   
@@ -310,32 +240,29 @@
     text-align: center;
     font-size: 14px;
     font-weight: 500;
-    transform: translateZ(20px);
   }
-  
-  /* Button Layout - 2 rows */
-  .button-group {
+
+  /* Emoji and Upload buttons container */
+  .extra-buttons {
     display: flex;
     flex-direction: column;
     gap: 8px;
-  }
-  
-  .button-row {
-    display: flex;
-    gap: 8px;
-  }
-  
-  .extra-buttons {
     position: relative;
   }
   
+  .extra-buttons button {
+    padding: 10px 14px;
+    font-size: 18px;
+  }
+
+  /* Emoji picker popup */
   #emoji-picker {
     position: absolute;
     bottom: 100%;
     right: 0;
     background: white;
-    border: 1px solid #dbdbdb;
-    border-radius: 16px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
     padding: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: none;
@@ -362,14 +289,14 @@
     font-size: 24px;
     padding: 8px;
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: background 0.2s;
   }
   
   .emoji-btn:hover {
     background: #f0f0f0;
   }
-  
+
   /* White Bird Flying Animation */
   .flying-bird {
     position: fixed;
@@ -377,24 +304,23 @@
     pointer-events: none;
     z-index: 1000;
     animation: birdFly 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    transform: scaleX(1);
   }
   
   @keyframes birdFly {
     0% {
       opacity: 1;
-      transform: translate(0, 0) scaleX(1) rotate(0deg);
+      transform: translate(0, 0) rotate(0deg);
     }
     50% {
-      transform: translate(var(--fly-x-mid), var(--fly-y-mid)) scaleX(1) rotate(-5deg);
+      transform: translate(var(--fly-x-mid), var(--fly-y-mid)) rotate(-5deg);
     }
     100% {
       opacity: 0;
-      transform: translate(var(--fly-x), var(--fly-y)) scaleX(1) rotate(0deg);
+      transform: translate(var(--fly-x), var(--fly-y)) rotate(0deg);
     }
   }
-  
-  /* Love Bubble Animation */
+
+  /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
   .bubble {
     position: fixed;
     bottom: 80px;
@@ -403,7 +329,6 @@
     pointer-events: none;
     z-index: 100;
   }
-  
   @keyframes floatUpSlow {
     0% {
       transform: translateY(0) translateX(-50%);
@@ -424,63 +349,50 @@
 <div id="login-overlay">
   <div id="login-box">
     <div class="login-title">LOGIN</div>
-    <input type="password" id="pwd" placeholder="Enter your password" />
-    <button onclick="checkPwd()">Sign In</button>
+    <input type="password" id="pwd" placeholder="Enter password" />
+    <button onclick="checkPwd()">Sign In 🔓</button>
     <div id="login-msg"></div>
   </div>
 </div>
 
-<header>
-  <span class="regal-3d">𝓡𝓮𝓰𝓪𝓵</span>
-  <div id="agent-status">
-    <span class="status-indicator">🔴</span>
-  </div>
-</header>
+<header>𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
 <div id="chat-container"></div>
 <div id="input-container">
-  <textarea id="msg" rows="2" placeholder="Message..." autocomplete="off"></textarea>
-  <div class="button-group">
-    <div class="button-row">
-      <button id="send-btn">➤</button>
-      <button id="clear-btn">❌</button>
-    </div>
-    <div class="button-row">
-      <div class="extra-buttons">
-        <button id="emoji-btn">😊</button>
-        <div id="emoji-picker">
-          <div class="emoji-grid">
-            <button class="emoji-btn" data-emoji="😊">😊</button>
-            <button class="emoji-btn" data-emoji="😂">😂</button>
-            <button class="emoji-btn" data-emoji="🤣">🤣</button>
-            <button class="emoji-btn" data-emoji="🥰">🥰</button>
-            <button class="emoji-btn" data-emoji="😀">😀</button>
-            <button class="emoji-btn" data-emoji="😢">😢</button>
-            <button class="emoji-btn" data-emoji="😁">😁</button>
-            <button class="emoji-btn" data-emoji="😍">😍</button>
-            <button class="emoji-btn" data-emoji="😎">😎</button>
-            <button class="emoji-btn" data-emoji="❤️">❤️</button>
-            <button class="emoji-btn" data-emoji="💖">💖</button>
-            <button class="emoji-btn" data-emoji="😭">😭</button>
-            <button class="emoji-btn" data-emoji="🤗">🤗</button>
-            <button class="emoji-btn" data-emoji="👍">👍</button>
-            <button class="emoji-btn" data-emoji="👋">👋</button>
-            <button class="emoji-btn" data-emoji="💯">💯</button>
-            <button class="emoji-btn" data-emoji="🙏">🙏</button>
-            <button class="emoji-btn" data-emoji="😴">😴</button>
-            <button class="emoji-btn" data-emoji="🔥">🔥</button>
-            <button class="emoji-btn" data-emoji="💕">💕</button>
-            <button class="emoji-btn" data-emoji="🎉">🎉</button>
-            <button class="emoji-btn" data-emoji="🌹">🌹</button>
-          </div>
-        </div>
+  <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
+  <button id="send-btn">➤</button>
+  <button id="clear-btn">❌</button>
+  <div class="extra-buttons">
+    <button id="emoji-btn">😊</button>
+    <div id="emoji-picker">
+      <div class="emoji-grid">
+       <button class="emoji-btn" data-emoji="😊">😊</button>
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="🤣">🤣</button>
+        <button class="emoji-btn" data-emoji="🥰">🥰</button>
+        <button class="emoji-btn" data-emoji="😀">😀</button>
+        <button class="emoji-btn" data-emoji="😢">😢</button>
+        <button class="emoji-btn" data-emoji="😁">😁</button>
+        <button class="emoji-btn" data-emoji="😍">😍</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+        <button class="emoji-btn" data-emoji="❤️">❤️</button>
+         <button class="emoji-btn" data-emoji="💖">💖</button>
+        <button class="emoji-btn" data-emoji="😭">😭</button>
+        <button class="emoji-btn" data-emoji="🤗">🤗</button>
+        <button class="emoji-btn" data-emoji="👍">👍</button>
+        <button class="emoji-btn" data-emoji="👋">👋</button>
+        <button class="emoji-btn" data-emoji="💯">💯</button>
+        <button class="emoji-btn" data-emoji="🙏">🙏</button>
+         <button class="emoji-btn" data-emoji="😴">😴</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="💕">💕</button>
+        <button class="emoji-btn" data-emoji="🎉">🎉</button>
+        <button class="emoji-btn" data-emoji="🌹">🌹</button>
       </div>
-      <button id="upload-btn">📎</button>
     </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" />
+    <button id="upload-btn">📎</button>
   </div>
 </div>
-
-<input type="file" id="file-input" accept="image/*" style="display:none" />
-
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = document.body.dataset.chatId || "1234";
@@ -534,7 +446,7 @@ document.querySelectorAll(".emoji-btn").forEach(btn => {
 function spawnFlyingBird() {
   const bird = document.createElement("div");
   bird.className = "flying-bird";
-  bird.textContent = "🕊️";
+  bird.textContent = "🕊️"; // White bird facing right
   
   const inputRect = msgInput.getBoundingClientRect();
   const startX = inputRect.left + inputRect.width / 2;
@@ -568,7 +480,6 @@ function spawnFlyingBird() {
   }, 1500);
 }
 
-// Love bubbles
 function spawnLoveBubbles() {
   for (let i = 0; i < 5; i++) {
     setTimeout(() => {
@@ -631,6 +542,7 @@ async function sendMessage() {
   const text = msgInput.value.trim();
   if (!text || !isLoggedIn || !sessionToken) return;
 
+  // Spawn flying bird animation
   spawnFlyingBird();
 
   await fetch(`${BACKEND_URL}/send`, {
@@ -644,7 +556,6 @@ async function sendMessage() {
 
   msgInput.value = "";
   await sendTyping("");
-  
   setTimeout(loadMessages, 300);
 }
 
@@ -653,7 +564,8 @@ async function loadMessages() {
   const isTabActive = document.visibilityState === "visible";
   const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
   const data = await res.json();
-  
+  chatContainer.innerHTML = "";
+
   const currentMessageIds = data.map((m, i) => `${m.sender}-${m.text}-${i}`);
   const newMessages = data.filter((m, i) => {
     const msgId = `${m.sender}-${m.text}-${i}`;
@@ -675,11 +587,9 @@ async function loadMessages() {
 
   lastProcessedMessages = currentMessageIds;
 
-  chatContainer.innerHTML = "";
-  data.forEach((m) => {
+  data.forEach((m, i) => {
     const d = document.createElement("div");
     d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
-    
     if (m.image_url) {
       const img = document.createElement("img");
       img.src = m.image_url;
@@ -687,24 +597,12 @@ async function loadMessages() {
       img.style.borderRadius = "8px";
       d.appendChild(img);
     }
-    
     if (m.text) {
-      const textSpan = document.createElement("span");
-      textSpan.textContent = m.text;
-      d.appendChild(textSpan);
+      const txt = document.createTextNode(m.text);
+      d.appendChild(txt);
     }
-    
-    // Add seen/delivered status for user messages
-    if (m.sender === "user" && m.seen !== undefined) {
-      const statusSpan = document.createElement("div");
-      statusSpan.className = "message-status";
-      statusSpan.textContent = m.seen ? "Seen" : "Delivered";
-      d.appendChild(statusSpan);
-    }
-    
     chatContainer.appendChild(d);
   });
-
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
@@ -727,20 +625,12 @@ async function checkStatus() {
   const online = data.agent_online;
   const typing = data.agent_typing;
   
-  const statusIndicator = agentStatus.querySelector('.status-indicator');
-  
   if (typing) {
-    statusIndicator.textContent = "typing...";
-    statusIndicator.style.fontSize = "12px";
-    statusIndicator.style.color = "#8e8e8e";
+    agentStatus.textContent = "✍️";
   } else if (online) {
-    statusIndicator.textContent = "🟢";
-    statusIndicator.style.fontSize = "14px";
-    statusIndicator.style.color = "";
+    agentStatus.textContent = "🟢";
   } else {
-    statusIndicator.textContent = "🔴";
-    statusIndicator.style.fontSize = "14px";
-    statusIndicator.style.color = "";
+    agentStatus.textContent = "🔴";
   }
 }
 
@@ -761,19 +651,15 @@ async function loadTyping() {
   const res = await fetch(`${BACKEND_URL}/status/${chatId}?viewer=user`);
   const data = await res.json();
   
-  const statusIndicator = agentStatus.querySelector('.status-indicator');
-  
   if (data.agent_typing) {
-    statusIndicator.textContent = "typing...";
-    statusIndicator.style.fontSize = "12px";
-    statusIndicator.style.color = "#8e8e8e";
+    agentStatus.textContent = "✍️";
   }
 }
 
 async function clearChat() {
   if (!isLoggedIn || !sessionToken) return;
+  if (!confirm("Clear all messages?")) return;
   
-  // Clear immediately without confirmation
   await fetch(`${BACKEND_URL}/clear`, {
     method: "POST",
     headers: {
@@ -784,7 +670,6 @@ async function clearChat() {
   });
   
   chatContainer.innerHTML = "";
-  lastProcessedMessages = [];
   loadMessages();
 }
 
