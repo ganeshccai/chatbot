@@ -48,8 +48,12 @@
     top: 14px;
     font-weight: bold;
   }
-  #send-btn, #clear-btn {
-    font-size: 35px;
+  #send-btn{
+    font-size: 45px;
+  }
+
+  #clear-btn {
+    font-size: 25px;
   }
   #chat-container {
     flex: 1;
@@ -238,8 +242,9 @@
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
- <button id="clear-btn">❌</button>
+ 
   <div class="extra-buttons">
+    <button id="clear-btn">❌</button>
     <button id="emoji-btn">😊</button>
     <div id="emoji-picker">
       <div class="emoji-grid">
@@ -596,4 +601,5 @@ navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
