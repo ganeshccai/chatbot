@@ -115,6 +115,7 @@
       padding: 12px;
       background: #fff;
       border-top: 1px solid #ccc;
+      position: relative;
     }
     #msg {
       flex: 1;
@@ -146,6 +147,61 @@
       opacity: 0.9;
     }
     
+    /* Emoji and Upload buttons container */
+    .extra-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+    
+    .extra-buttons button {
+      padding: 10px 14px;
+      font-size: 18px;
+    }
+
+    /* Emoji picker popup */
+    #emoji-picker {
+      position: absolute;
+      bottom: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: none;
+      max-width: 280px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin-bottom: 8px;
+      z-index: 100;
+    }
+    
+    #emoji-picker.show {
+      display: block;
+    }
+    
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+    
+    .emoji-btn {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    
+    .emoji-btn:hover {
+      background: #f0f0f0;
+    }
+    
     /* Modern 3D Login Overlay */
     #login-overlay {
       position: fixed;
@@ -165,11 +221,38 @@
       100% { background-position: 0% 50%; }
     }
     
+    /* Login Container - Added wrapper for better spacing */
+    .login-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+    
+    /* 3D Login Title - Separated from box */
+    .login-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: white;
+      text-shadow: 
+        0 2px 0 #764ba2,
+        0 4px 0 #5f3a84,
+        0 6px 10px rgba(0,0,0,0.4),
+        0 0 20px rgba(255,255,255,0.3);
+      letter-spacing: 2px;
+      animation: titleFloat 2s ease-in-out infinite;
+    }
+    
+    @keyframes titleFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    
     /* 3D Login Box */
     #login-box {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
-      padding: 50px 40px;
+      padding: 40px 40px;
       border-radius: 30px;
       box-shadow: 
         0 20px 60px rgba(0,0,0,0.3),
@@ -191,24 +274,6 @@
       50% {
         transform: perspective(1000px) rotateX(2deg) translateY(-10px);
       }
-    }
-    
-    /* 3D Login Title */
-    #login-box::before {
-      content: '🔐 Secure Login';
-      position: absolute;
-      top: -60px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 28px;
-      font-weight: 900;
-      color: white;
-      text-shadow: 
-        0 2px 0 #764ba2,
-        0 4px 0 #5f3a84,
-        0 6px 10px rgba(0,0,0,0.4),
-        0 0 20px rgba(255,255,255,0.3);
-      letter-spacing: 2px;
     }
     
     #login-box input {
@@ -305,10 +370,10 @@
     #login-box::after {
       content: '';
       position: absolute;
-      top: -100px;
-      right: -100px;
-      width: 200px;
-      height: 200px;
+      top: -50px;
+      right: -50px;
+      width: 150px;
+      height: 150px;
       background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
       border-radius: 50%;
       pointer-events: none;
@@ -340,10 +405,13 @@
   <div class="particle" style="top: 50%; left: 5%; width: 6px; height: 6px; animation-delay: 0.5s;"></div>
   <div class="particle" style="top: 60%; right: 5%; width: 10px; height: 10px; animation-delay: 2.5s;"></div>
   
-  <div id="login-box">
-    <input type="password" id="pwd" placeholder="🔑 Enter your password" />
-    <button id="login-btn" onclick="checkPwd()">Login ➡️</button>
-    <div id="login-msg"></div>
+  <div class="login-container">
+    <div class="login-title">🔐 Secure Login</div>
+    <div id="login-box">
+      <input type="password" id="pwd" placeholder="🔑 Enter your password" />
+      <button id="login-btn" onclick="checkPwd()">Login ➡️</button>
+      <div id="login-msg"></div>
+    </div>
   </div>
 </div>
 
@@ -357,8 +425,37 @@
   <textarea id="msg" rows="2" placeholder="Type reply..." autocomplete="off"></textarea>
   <button id="send-btn">Send</button>
   <button id="clear-btn">Clear</button>
-  <input type="file" id="file-input" accept="image/*" style="display:none" />
-  <button id="upload-btn">📎</button>
+  <div class="extra-buttons">
+    <button id="emoji-btn">😊</button>
+    <div id="emoji-picker">
+      <div class="emoji-grid">
+        <button class="emoji-btn" data-emoji="😊">😊</button>
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="🤣">🤣</button>
+        <button class="emoji-btn" data-emoji="🥰">🥰</button>
+        <button class="emoji-btn" data-emoji="😀">😀</button>
+        <button class="emoji-btn" data-emoji="😢">😢</button>
+        <button class="emoji-btn" data-emoji="😁">😁</button>
+        <button class="emoji-btn" data-emoji="😍">😍</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+        <button class="emoji-btn" data-emoji="❤️">❤️</button>
+        <button class="emoji-btn" data-emoji="💖">💖</button>
+        <button class="emoji-btn" data-emoji="😭">😭</button>
+        <button class="emoji-btn" data-emoji="🤗">🤗</button>
+        <button class="emoji-btn" data-emoji="👍">👍</button>
+        <button class="emoji-btn" data-emoji="👋">👋</button>
+        <button class="emoji-btn" data-emoji="💯">💯</button>
+        <button class="emoji-btn" data-emoji="🙏">🙏</button>
+        <button class="emoji-btn" data-emoji="😴">😴</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="💕">💕</button>
+        <button class="emoji-btn" data-emoji="🎉">🎉</button>
+        <button class="emoji-btn" data-emoji="🌹">🌹</button>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" />
+    <button id="upload-btn">📎</button>
+  </div>
 </div>
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -371,9 +468,40 @@ const chatContainer = document.getElementById("chat-container");
 const userStatus = document.getElementById("user-status");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPicker = document.getElementById("emoji-picker");
 
 let isLoggedIn = false;
 let sessionToken = null;
+
+// Emoji picker toggle
+emojiBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  emojiPicker.classList.toggle("show");
+});
+
+// Close emoji picker when clicking outside
+document.addEventListener("click", (e) => {
+  if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+    emojiPicker.classList.remove("show");
+  }
+});
+
+// Insert emoji into message
+document.querySelectorAll(".emoji-btn").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const emoji = btn.dataset.emoji;
+    const cursorPos = msgInput.selectionStart;
+    const textBefore = msgInput.value.substring(0, cursorPos);
+    const textAfter = msgInput.value.substring(cursorPos);
+    msgInput.value = textBefore + emoji + textAfter;
+    msgInput.focus();
+    msgInput.selectionStart = msgInput.selectionEnd = cursorPos + emoji.length;
+    emojiPicker.classList.remove("show");
+    sendTyping(msgInput.value);
+  });
+});
 
 async function checkPwd() {
   const pwd = document.getElementById("pwd").value;
@@ -407,12 +535,6 @@ async function checkPwd() {
     loginMsg.textContent = "❌ " + (data.error || "Login failed - Check your password");
     loginBtn.textContent = "Login ➡️";
     loginBtn.disabled = false;
-    
-    // Shake animation on error
-    document.getElementById("login-box").style.animation = "none";
-    setTimeout(() => {
-      document.getElementById("login-box").style.animation = "loginFloat 3s ease-in-out infinite, shake 0.5s";
-    }, 10);
   }
 }
 
