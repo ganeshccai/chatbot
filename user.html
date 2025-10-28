@@ -235,7 +235,7 @@
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
-  <button id="clear-btn">❌</button>
+
   <div class="extra-buttons">
     <button id="emoji-btn">😊</button>
     <div id="emoji-picker">
@@ -266,10 +266,12 @@
         <button class="emoji-btn" data-emoji="🥺">🥺</button>
       </div>
     </div>
-    <button id="send-btn">➤</button>
+   
     <input type="file" id="file-input" accept="image/*" style="display:none" />
     <button id="upload-btn">📎</button>
   </div>
+    <button id="clear-btn">❌</button>
+   <button id="send-btn">➤</button>
 </div>
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -591,6 +593,7 @@ navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
 
 
