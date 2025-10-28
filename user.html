@@ -43,26 +43,26 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   }
   
-  /* 3D Regal Text Effect */
+  /* 3D Baby Pink Regal Text Effect */
   .regal-3d {
     font-size: 36px;
     font-weight: 900;
     font-family: 'Georgia', serif;
-    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+    background: linear-gradient(45deg, #ffb3d9, #ffc9e3, #ffb3d9);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-shadow: 
-      0 1px 0 #cbb700,
-      0 2px 0 #c9b500,
-      0 3px 0 #c7b300,
-      0 4px 0 #c5b100,
-      0 5px 0 #c3af00,
-      0 6px 0 #c1ad00,
-      0 7px 0 #bfab00,
+      0 1px 0 #ff99cc,
+      0 2px 0 #ff8ec4,
+      0 3px 0 #ff84bd,
+      0 4px 0 #ff7ab6,
+      0 5px 0 #ff70af,
+      0 6px 0 #ff66a8,
+      0 7px 0 #ff5ca1,
       0 8px 7px rgba(0,0,0,0.3),
       0 12px 15px rgba(0,0,0,0.2),
-      0 15px 25px rgba(0,0,0,0.15);
+      0 15px 25px rgba(255,182,217,0.4);
     letter-spacing: 3px;
     position: relative;
     display: inline-block;
@@ -72,11 +72,11 @@
   @keyframes floatGlow {
     0%, 100% {
       transform: translateY(0px);
-      filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+      filter: drop-shadow(0 0 15px rgba(255, 182, 217, 0.6));
     }
     50% {
       transform: translateY(-5px);
-      filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+      filter: drop-shadow(0 0 25px rgba(255, 182, 217, 0.9));
     }
   }
   
@@ -88,6 +88,7 @@
     font-weight: bold;
     font-size: 18px;
   }
+  
   #chat-container {
     flex: 1;
     overflow-y: auto;
@@ -336,10 +337,10 @@
     background: rgba(255,255,255,0.3);
     border-radius: 50%;
     pointer-events: none;
-    animation: float 4s ease-in-out infinite;
+    animation: floatParticle 4s ease-in-out infinite;
   }
   
-  @keyframes float {
+  @keyframes floatParticle {
     0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.3; }
     50% { transform: translateY(-20px) translateX(10px); opacity: 0.6; }
   }
