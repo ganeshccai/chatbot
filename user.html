@@ -13,15 +13,15 @@
   @keyframes gnReshmaFade {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translateX(-50%) scale(0.5);
   }
   50% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translateX(-50%) scale(0.5);
   }
 }
   
@@ -606,29 +606,28 @@ function spawnSleepBubbles() {
   const txt = document.createElement("div");
   txt.textContent = "GN 😴 रेश्मा";
   txt.style.position = "fixed";
-  txt.style.top = "50%";
+  txt.style.bottom = "120px";  // Just above the input box
   txt.style.left = "50%";
-  txt.style.transform = "translate(-50%, -50%)";
-  txt.style.fontSize = "80px";
-  txt.style.color = "rgba(255, 182, 193, 0.5)";
+  txt.style.transform = "translateX(-50%)";  // Only horizontal centering
+  txt.style.fontSize = "60px";
+  txt.style.color = "#d62976";  // Dark pink color
   txt.style.fontWeight = "bold";
   txt.style.pointerEvents = "none";
   txt.style.zIndex = "150";
-  txt.style.textShadow = "2px 2px 8px rgba(0,0,0,0.3)";
+  txt.style.textShadow = "2px 2px 4px rgba(0,0,0,0.3)";
   txt.style.whiteSpace = "nowrap";
   
-  // Animation that keeps it centered
+  // Animation that keeps it centered horizontally
   txt.style.animation = "gnReshmaFade 4s ease-in-out forwards";
   
   document.body.appendChild(txt);
   
   setTimeout(() => txt.remove(), 4000);
 }
-
-navigator.serviceWorker?.register("sw.js");
 </script>
 </body>
 </html>
+
 
 
 
