@@ -186,11 +186,11 @@
   background: white;
   border: 2px solid #ccc;
   border-radius: 12px;
-  padding: 8px;
+  padding: 10px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   display: none;
-  max-width: 280px;
-  max-height: 260px;
+  max-width: 450px; /* widened for larger emojis */
+  max-height: 400px;
   overflow-y: auto;
   margin: 8px;
   z-index: 100;
@@ -202,24 +202,27 @@
 
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr); /* same layout */
-  gap: 12px; /* increased gap between emojis */
+  grid-template-columns: repeat(5, 1fr); /* fewer columns = larger emojis */
+  gap: 16px; /* space between emojis */
+  justify-items: center;
+  align-items: center;
 }
 
 .emoji-btn {
   background: transparent;
   border: none;
-  font-size: 55px; /* bigger emoji size */
-  padding: 6px;
+  font-size: 80px; /* BIG emoji size */
+  line-height: 1;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
   transition: background 0.2s, transform 0.1s;
 }
 
 .emoji-btn:hover {
   background: #f2f2f2;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
+
 
 
   /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
@@ -628,6 +631,7 @@ function spawnSleepBubbles() {
 </script>
 </body>
 </html>
+
 
 
 
