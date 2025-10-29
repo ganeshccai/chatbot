@@ -16,10 +16,6 @@ session_tokens = {}  # key: (chat_id, sender), value: {token: timestamp}
 def verify_token(chat_id, sender, token):
     return token in session_tokens.get((chat_id, sender), {})
 
-import time
-
-import time
-
 def format_last_seen(ts):
     if not ts or ts == 0:
         return ""
