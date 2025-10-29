@@ -40,7 +40,7 @@ def login():
     now = time.time()
     for t, ts in active_tokens.items():
         if now - ts < 10:
-            return jsonify(success=False, error="Already logged in elsewhere")
+            return jsonify(success=False, error="Try after 5 sec")
 
     if password == "1":
         token = f"{sender}-{int(now)}"
