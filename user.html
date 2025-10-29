@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -280,8 +279,8 @@
   <div class="blocked-icon">🚫</div>
   <div class="blocked-title">Access Denied</div>
   <div class="blocked-message">
-    This page is already open in another tab, browser, or device.<br>
-    Please close other instances to access this page here.
+    This page is already open in another tab in this browser.<br>
+    Please close the other tab to access here.
   </div>
 </div>
 
@@ -340,72 +339,57 @@
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = document.body.dataset.chatId || "1234";
-
-const SESSION_KEY = 'regal_session_id_' + chatId;
-const mySessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+const TAB_KEY = 'regal_active_tab_' + chatId;
+const HEARTBEAT_KEY = 'regal_heartbeat_' + chatId;
+const myTabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 let isTabAllowed = false;
-let sessionCheckInterval = null;
+let heartbeatInterval = null;
 
 const tabBlockedOverlay = document.getElementById('tab-blocked-overlay');
 
-async function checkSessionAccess() {
-  try {
-    const storedSessionId = localStorage.getItem(SESSION_KEY);
-    
-    const response = await fetch(`${BACKEND_URL}/check_session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        chat_id: chatId, 
-        session_id: storedSessionId || mySessionId,
-        request_new: !storedSessionId
-      })
-    });
+const bc = new BroadcastChannel('regal_tab_sync_' + chatId);
 
-    const data = await response.json();
-    
-    if (data.allowed && data.session_id === mySessionId) {
-      isTabAllowed = true;
-      localStorage.setItem(SESSION_KEY, mySessionId);
-      return true;
-    } else if (data.allowed && !storedSessionId) {
-      isTabAllowed = true;
-      localStorage.setItem(SESSION_KEY, data.session_id);
-      return true;
-    } else {
-      isTabAllowed = false;
-      return false;
-    }
-  } catch (error) {
-    console.warn("Session check failed, using fallback:", error);
-    return checkFallbackAccess();
+bc.onmessage = (event) => {
+  if (event.data === 'ping' && isTabAllowed) {
+    bc.postMessage('pong_' + myTabId);
+  } else if (event.data.startsWith('pong_') && !isTabAllowed) {
+    enforceTabRestriction();
+  } else if (event.data === 'tab_closed') {
+    setTimeout(enforceTabRestriction, 100);
   }
-}
+};
 
-function checkFallbackAccess() {
-  const activeSession = localStorage.getItem(SESSION_KEY);
-  const timestamp = localStorage.getItem(SESSION_KEY + '_time');
+function checkTabAccess() {
+  const activeTab = localStorage.getItem(TAB_KEY);
+  const lastHeartbeat = parseInt(localStorage.getItem(HEARTBEAT_KEY) || '0');
   const now = Date.now();
 
-  if (!activeSession || (timestamp && now - parseInt(timestamp) > 5000)) {
-    localStorage.setItem(SESSION_KEY, mySessionId);
-    localStorage.setItem(SESSION_KEY + '_time', now.toString());
+  if (!activeTab || (now - lastHeartbeat) > 3000) {
+    localStorage.setItem(TAB_KEY, myTabId);
+    localStorage.setItem(HEARTBEAT_KEY, now.toString());
     isTabAllowed = true;
     return true;
   }
 
-  if (activeSession === mySessionId) {
-    localStorage.setItem(SESSION_KEY + '_time', now.toString());
+  if (activeTab === myTabId) {
     isTabAllowed = true;
     return true;
   }
 
+  bc.postMessage('ping');
   isTabAllowed = false;
   return false;
 }
 
-async function enforceSessionRestriction() {
-  const allowed = await checkSessionAccess();
+function sendHeartbeat() {
+  if (isTabAllowed) {
+    localStorage.setItem(TAB_KEY, myTabId);
+    localStorage.setItem(HEARTBEAT_KEY, Date.now().toString());
+  }
+}
+
+function enforceTabRestriction() {
+  const allowed = checkTabAccess();
   
   if (!allowed) {
     tabBlockedOverlay.classList.add('active');
@@ -422,24 +406,16 @@ async function enforceSessionRestriction() {
 }
 
 window.addEventListener('storage', (e) => {
-  if (e.key === SESSION_KEY) {
-    enforceSessionRestriction();
+  if (e.key === TAB_KEY || e.key === HEARTBEAT_KEY) {
+    enforceTabRestriction();
   }
 });
 
 window.addEventListener('beforeunload', () => {
   if (isTabAllowed) {
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(SESSION_KEY + '_time');
-    
-    try {
-      fetch(`${BACKEND_URL}/end_session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, session_id: mySessionId }),
-        keepalive: true
-      });
-    } catch (e) {}
+    localStorage.removeItem(TAB_KEY);
+    localStorage.removeItem(HEARTBEAT_KEY);
+    bc.postMessage('tab_closed');
   }
   
   try {
@@ -452,11 +428,12 @@ window.addEventListener('beforeunload', () => {
 });
 
 window.addEventListener('focus', () => {
-  enforceSessionRestriction();
+  enforceTabRestriction();
 });
 
-enforceSessionRestriction();
-sessionCheckInterval = setInterval(enforceSessionRestriction, 2000);
+enforceTabRestriction();
+heartbeatInterval = setInterval(sendHeartbeat, 1000);
+setInterval(enforceTabRestriction, 1000);
 
 const msgInput = document.getElementById("msg");
 const sendBtn = document.getElementById("send-btn");
