@@ -60,7 +60,7 @@
   button:active { opacity: 0.9; }
   #login-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.95); display: none; /* Set to none initially, controlled by JS */
+    background: rgba(255,255,255,0.95); display: none; 
     justify-content: center; align-items: center; z-index: 999;
   }
   #login-box {
@@ -196,6 +196,7 @@ function checkTabAccess() {
   const lastHeartbeat = parseInt(localStorage.getItem(HEARTBEAT_KEY) || '0');
   const now = Date.now();
 
+  // If no active tab or heartbeat is too old (crashed tab, >3s), claim the session
   if (!activeTab || (now - lastHeartbeat) > 3000) {
     localStorage.setItem(TAB_KEY, myTabId);
     localStorage.setItem(HEARTBEAT_KEY, now.toString());
@@ -203,8 +204,10 @@ function checkTabAccess() {
     return true;
   }
 
+  // If this tab is the active one
   if (activeTab === myTabId) { isTabAllowed = true; return true; }
 
+  // Ping other tabs to see if they are active
   bc.postMessage('ping');
   isTabAllowed = false;
   return false;
@@ -219,6 +222,7 @@ function sendHeartbeat() {
 
 // 2. Checks backend for cross-device takeover
 async function checkActiveSession() {
+  // Only run this check if we are logged in AND currently allowed locally
   if (!isLoggedIn || !isTabAllowed || !sessionToken) return;
   
   try {
@@ -228,11 +232,16 @@ async function checkActiveSession() {
     const data = await res.json();
     
     if (data.is_active === false) {
+      // Another device/browser has logged in and taken over
       isLoggedIn = false;
       enforceTabRestriction("Another session has been started on a different device or browser.<br>This session has been blocked.");
     }
   } catch (e) {
+    // Error checking session (e.g., network error, token expired, etc.) - Block temporarily
     console.error("Error checking active session:", e);
+    // If there is an error during a check, assume session is unsafe and block until next check or login
+    // A more complex app would handle this gracefully, but for single-session, blocking is safest.
+    // We will simply rely on the timer to re-evaluate.
   }
 }
 
@@ -240,43 +249,45 @@ async function checkActiveSession() {
 function enforceTabRestriction(message = "This page is already open in another tab in this browser.") {
   const allowedInBrowser = checkTabAccess();
   
-  let shouldBeBlocked = false;
-  let blockMessage = message;
-
   if (!allowedInBrowser) {
-    // Case 1: Blocked by another tab in the same browser (Local check)
-    shouldBeBlocked = true;
-    blockMessage = "This page is already open in another tab in this browser.<br>Please close the other tab to access here.";
-  } else if (isLoggedIn === false && sessionToken !== null) {
-    // Case 2: Blocked by another device/browser takeover (Backend check failed)
-    shouldBeBlocked = true;
-    blockMessage = message; // Use the message passed from checkActiveSession
-  }
-
-
-  if (shouldBeBlocked) {
-    // Show the Access Denied screen
-    tabBlockedOverlay.querySelector('.blocked-message').innerHTML = blockMessage;
+    // **CASE 1: BLOCKED by another local tab**
+    tabBlockedOverlay.querySelector('.blocked-message').innerHTML = "This page is already open in **another tab in this browser**.<br>Please close the other tab to access here.";
     tabBlockedOverlay.classList.add('active');
     loginOverlay.style.display = 'none';
+    header.style.display = 'none';
     chatContainer.style.display = 'none';
     inputContainer.style.display = 'none';
+    return;
+  } 
+  
+  if (isLoggedIn === false && sessionToken !== null) {
+    // **CASE 2: BLOCKED by remote takeover (Backend check failed)**
+    // This happens when checkActiveSession sets isLoggedIn = false
+    tabBlockedOverlay.querySelector('.blocked-message').innerHTML = message;
+    tabBlockedOverlay.classList.add('active');
+    loginOverlay.style.display = 'none';
     header.style.display = 'none';
-  } else if (!isLoggedIn) {
-    // Show the Login screen if not blocked and not logged in
+    chatContainer.style.display = 'none';
+    inputContainer.style.display = 'none';
+    return;
+  }
+
+  if (!isLoggedIn) {
+    // **CASE 3: NOT LOGGED IN (Show Login)**
     tabBlockedOverlay.classList.remove('active');
     loginOverlay.style.display = 'flex';
+    header.style.display = 'none';
     chatContainer.style.display = 'none';
     inputContainer.style.display = 'none';
-    header.style.display = 'none';
-  } else {
-    // Show the Chat screen (Logged in and allowed)
-    tabBlockedOverlay.classList.remove('active');
-    loginOverlay.style.display = 'none';
-    chatContainer.style.display = 'flex';
-    inputContainer.style.display = 'flex';
-    header.style.display = 'block';
-  }
+    return;
+  } 
+  
+  // **CASE 4: LOGGED IN AND ALLOWED (Show Chat)**
+  tabBlockedOverlay.classList.remove('active');
+  loginOverlay.style.display = 'none';
+  header.style.display = 'block';
+  chatContainer.style.display = 'flex';
+  inputContainer.style.display = 'flex';
 }
 
 
@@ -287,10 +298,12 @@ window.addEventListener('storage', (e) => {
 
 window.addEventListener('beforeunload', () => {
   if (isTabAllowed && isLoggedIn) {
+    // Only clear local storage if *this* tab was the active one
     localStorage.removeItem(TAB_KEY);
     localStorage.removeItem(HEARTBEAT_KEY);
     bc.postMessage('tab_closed');
 
+    // Send beacon to backend to try to clear the session *if it hasn't been taken over*
     try {
       const data = JSON.stringify({ chat_id: chatId, sender: "user", sessionId: mySessionId });
       const blob = new Blob([data], { type: "application/json" });
@@ -303,7 +316,7 @@ window.addEventListener('focus', enforceTabRestriction);
 enforceTabRestriction();
 setInterval(sendHeartbeat, 1000);
 setInterval(enforceTabRestriction, 1000);
-setInterval(checkActiveSession, 5000); // Check backend for takeover every 5 seconds
+setInterval(checkActiveSession, 5000); 
 
 const msgInput = document.getElementById("msg"), sendBtn = document.getElementById("send-btn"), clearBtn = document.getElementById("clear-btn"), agentStatus = document.getElementById("agent-status"), uploadBtn = document.getElementById("upload-btn"), fileInput = document.getElementById("file-input"), emojiBtn = document.getElementById("emoji-btn"), emojiPicker = document.getElementById("emoji-picker");
 let typingDots = 0, lastMessageCount = 0, lastProcessedMessages = [];
@@ -314,7 +327,7 @@ document.querySelectorAll(".emoji-btn").forEach(btn => {
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
     const emoji = btn.dataset.emoji, cursorPos = msgInput.selectionStart;
-    msgInput.value = msgInput.value.substring(0, cursorPos) + emoji + msgInput.value.substring(curpos);
+    msgInput.value = msgInput.value.substring(0, cursorPos) + emoji + msgInput.value.substring(cursorPos);
     msgInput.focus();
     msgInput.selectionStart = msgInput.selectionEnd = cursorPos + emoji.length;
     emojiPicker.classList.remove("show");
