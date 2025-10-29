@@ -148,7 +148,7 @@ def is_online(chat_id):
     user_time = online_status.get((chat_id, "user"))
     agent_time = online_status.get((chat_id, "agent"))
     return jsonify(
-        user_online=(user_time is not None and now - user_time < 1),
+        user_online=(user_time is not None and now - user_time < 5),
         agent_online=(agent_time is not None and now - agent_time < 30),
         user_last_seen=format_last_seen(user_time),
         agent_last_seen=format_last_seen(agent_time)
