@@ -3,137 +3,161 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-  <title>R</title>
-<style>
-  :root {
-    --accent: #feda75;
-    --accent2: #d62976;
-    --bg: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-    --bubble-user: #ffcce0;
-    --bubble-agent: #ffffff;
-    --agent-border: #e0e0e0;
-  }
-  html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg);
-    background-size: cover;
-    background-repeat: no-repeat;
-    color: #333;
-  }
-  header {
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    color: white;
-    padding: 14px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 20px;
-    position: relative;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  #agent-status {
-    position: absolute;
-    right: 14px;
-    top: 14px;
-    font-weight: bold;
-  }
-  #chat-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    background-color: #f8f8f8;
-    position: relative;
-  }
-  .message {
-    margin: 4px 0;
-    padding: 10px 14px;
-    border-radius: 14px;
-    max-width: 80%;
-    word-wrap: break-word;
-    font-size: 15px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-  }
-  .user-msg {
-    background: var(--bubble-user);
-    align-self: flex-end;
-  }
-  .agent-msg {
-    background: var(--bubble-agent);
-    border: 1px solid var(--agent-border);
-    align-self: flex-start;
-  }
-  #input-container {
-    display: flex;
-    gap: 10px;
-    padding: 12px;
-    background: rgba(255,255,255,0.9);
-    border-top: 1px solid #ccc;
-  }
-  #msg {
-    flex: 1;
-    resize: none;
-    border-radius: 14px;
-    padding: 12px;
-    border: 1px solid #ccc;
-    font-size: 16px;
-    outline: none;
-    max-height: 120px;
-  }
-  #msg:focus {
-    border-color: var(--accent2);
-  }
-  button {
-    padding: 12px 16px;
-    background: var(--accent2);
-    color: white;
-    border: none;
-    border-radius: 14px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background 0.3s ease;
-  }
-  button:hover {
-    background: #c2185b;
-  }
-  button:active {
-    opacity: 0.9;
-  }
- 
+  <title></title>
+  <style>
+    :root {
+      --accent: #feda75;
+      --accent2: #d62976;
+      --bg: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+      --bubble-user: #ffcce0;
+      --bubble-agent: #ffffff;
+      --agent-border: #e0e0e0;
+    }
 
-  @keyframes floatUpSlow {
-    0% {
-      transform: translateY(0) translateX(-50%);
-      opacity: 1;
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
-    90% {
-      opacity: 1;
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      background-size: cover;
+      background-repeat: no-repeat;
+      color: #333;
     }
-    100% {
-      transform: translateY(calc(-50vh + 40px)) translateX(-50%);
-      opacity: 0;
+
+    header {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: white;
+      padding: 14px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-  }
-</style>
+
+    #agent-status {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      font-weight: bold;
+    }
+
+    #chat-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f8f8; /* Silver white */
+}
+
+
+    .message {
+      margin: 8px 0;
+      padding: 12px 16px;
+      border-radius: 16px;
+      max-width: 80%;
+      word-wrap: break-word;
+      font-size: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .user-msg {
+      background: var(--bubble-user);
+      align-self: flex-end;
+    }
+
+    .agent-msg {
+      background: var(--bubble-agent);
+      border: 1px solid var(--agent-border);
+      align-self: flex-start;
+    }
+
+    #input-container {
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(255,255,255,0.9);
+      border-top: 1px solid #ccc;
+    }
+
+    #msg {
+      flex: 1;
+      resize: none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      outline: none;
+      max-height: 120px;
+    }
+
+    #msg:focus {
+      border-color: var(--accent2);
+    }
+
+    button {
+      padding: 12px 18px;
+      background: var(--accent2);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #c2185b;
+    }
+
+    button:active {
+      opacity: 0.9;
+    }
+
+    #login-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    #login-box {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.15);
+    }
+  </style>
 </head>
 <body data-chat-id="1234">
 
+<div id="login-overlay">
+  <div id="login-box">
+    <input type="password" id="pwd" placeholder="*****" />
+    <button onclick="checkPwd()">🔓</button>
+    <div id="login-msg" style="color:red;margin-top:10px;"></div>
+  </div>
+</div>
 
-<header>𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
+<header> 𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
   <button id="send-btn">➤</button>
-  <input type="file" id="file-input" accept="image/*" style="display:none" />
+  <button id="clear-btn">❌</button>
 </div>
+
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = document.body.dataset.chatId || "1234";
@@ -143,31 +167,18 @@ const sendBtn = document.getElementById("send-btn");
 const clearBtn = document.getElementById("clear-btn");
 const chatContainer = document.getElementById("chat-container");
 const agentStatus = document.getElementById("agent-status");
-const uploadBtn = document.getElementById("upload-btn");
-const fileInput = document.getElementById("file-input");
 
 let isLoggedIn = false;
-let sessionToken = null;
 let typingDots = 0;
-let lastMessageCount = 0;
-let lastProcessedMessages = [];
 
-async function checkPwd() {
+function checkPwd() {
   const pwd = document.getElementById("pwd").value;
-  const res = await fetch(`${BACKEND_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "user" })
-  });
-
-  const data = await res.json();
-  if (data.success) {
-    sessionToken = data.session_token;
+  if (pwd === "1") {
     document.getElementById("login-overlay").style.display = "none";
     isLoggedIn = true;
     startPolling();
   } else {
-    document.getElementById("login-msg").textContent = data.error || "Login failed";
+    document.getElementById("login-msg").textContent = "Wrong password!";
   }
 }
 
@@ -181,22 +192,17 @@ function startPolling() {
   setInterval(loadTyping, 500);
   setInterval(() => {
     if (document.visibilityState === "visible") markOnline();
-  }, 2000);
+  }, 10000);
 }
 
 async function sendMessage() {
   const text = msgInput.value.trim();
-  if (!text || !isLoggedIn || !sessionToken) return;
-
+  if (!text) return;
   await fetch(`${BACKEND_URL}/send`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text})
   });
-
   msgInput.value = "";
   await sendTyping("");
   loadMessages();
@@ -209,57 +215,10 @@ async function loadMessages() {
   const data = await res.json();
   chatContainer.innerHTML = "";
 
-  // Check for new messages with "love" or goodnight words
-  const currentMessageIds = data.map((m, i) => `${m.sender}-${m.text}-${i}`);
-  const newMessages = data.filter((m, i) => {
-    const msgId = `${m.sender}-${m.text}-${i}`;
-    return !lastProcessedMessages.includes(msgId);
-  });
-
-  // Check if any new message contains "love"
-  const newLoveMessage = newMessages.some(m => m.text && /\blove\b/i.test(m.text));
-  
-  // Check if any new message contains goodnight words (goodnight, gn,gnsd, gntc, gnsdtc - any casing)
-  const newGoodnightMessage = newMessages.some(m => 
-    m.text && /\b(goodnight|gn|gnsd|gntc|gnsdtc)\b/i.test(m.text)
-  );
-  
-  if (newLoveMessage) {
-    spawnLoveBubbles();
-  }
-  
-  if (newGoodnightMessage) {
-    spawnSleepBubbles();
-  }
-
-  // Update last processed messages
-  lastProcessedMessages = currentMessageIds;
-
   data.forEach((m, i) => {
     const d = document.createElement("div");
     d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
-
-    if (m.type === "image" && m.url) {
-      const img = document.createElement("img");
-      img.src = m.url;
-      img.style.maxWidth = "240px";
-      img.style.borderRadius = "12px";
-      img.style.display = "block";
-      img.style.marginBottom = "6px";
-
-      const download = document.createElement("a");
-      download.href = m.url;
-      download.download = "image.jpg";
-      download.textContent = "⬇️";
-      download.style.fontSize = "14px";
-      download.style.textDecoration = "none";
-      download.style.color = "#555";
-
-      d.appendChild(img);
-      d.appendChild(download);
-    } else {
-      d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
-    }
+    d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
 
     const isLast = i === data.length - 1;
     if (m.sender === "user" && m.seen_by === "agent" && isLast) {
@@ -267,17 +226,12 @@ async function loadMessages() {
       seenTag.style.fontSize = "12px";
       seenTag.style.color = "#888";
       seenTag.style.marginTop = "4px";
-      seenTag.textContent = "";
+      seenTag.textContent = "✅";
       d.appendChild(seenTag);
     }
 
     chatContainer.appendChild(d);
   });
-
-  // Detect new messages
-  if (data.length > lastMessageCount) {
-    lastMessageCount = data.length;
-  }
 
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
@@ -306,11 +260,8 @@ async function sendTyping(text) {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/live_typing`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({chat_id: chatId, sender: "user", text})
   });
 }
 
@@ -318,64 +269,23 @@ async function checkStatus() {
   if (!isLoggedIn) return;
   const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
   const d = await res.json();
-  const emoji = d.agent_online ? "" : "";
-  const time = d.agent_online ? "" :;
-  agentStatus.textContent = `${emoji}${time}`;
+  agentStatus.textContent = d.agent_online ? "🟢" : "🔴";
 }
 
 async function clearChat() {
   if (!isLoggedIn) return;
-  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
-    body: JSON.stringify({ sender: "user" })
-  });
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, { method: "POST" });
   chatContainer.innerHTML = "";
-  lastMessageCount = 0;
-  lastProcessedMessages = [];
 }
 
 async function markOnline() {
   if (!isLoggedIn) return;
   await fetch(`${BACKEND_URL}/mark_online`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${sessionToken}`
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, sender: "user" })
   });
 }
-
-uploadBtn.addEventListener("click", () => fileInput.click());
-
-fileInput.addEventListener("change", async () => {
-  const file = fileInput.files[0];
-  if (!file || !isLoggedIn || !sessionToken) return;
-
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const base64 = reader.result;
-    await fetch(`${BACKEND_URL}/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${sessionToken}`
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        sender: "user",
-        type: "image",
-        url: base64
-      })
-    });
-    loadMessages();
-  };
-  reader.readAsDataURL(file);
-});
 
 sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
@@ -391,76 +301,18 @@ document.addEventListener("visibilitychange", () => {
 
 window.addEventListener("beforeunload", () => {
   try {
-    const data = JSON.stringify({ chat_id: chatId, sender: "user" });
+    const data = JSON.stringify({ chat_id: chatId });
     const blob = new Blob([data], { type: "application/json" });
     navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
-  } catch (e) {
-    console.warn("Logout beacon failed:", e);
-  }
+  } catch (e) {}
 });
-
-navigator.serviceWorker?.register("sw.js");
-
-const manifest = {
-  name: "Agent Chat",
-  short_name: "Chat",
-  start_url: "agent.html",
-  display: "standalone",
-  background_color: "#f3f6fb",
-  theme_color: "#2563eb",
-  icons: [
-    {
-      src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfkAAAHuCAYAAACcZXXHAAAQAElEQVR4AeydB6BkRZX3z6nb3e+9mSGKJAkSVUBQRFcQUcyyRnBZkqiooJIxJxRx1fVb47quecUAOiQRRVB0lCwMTJ4hTCBMfPm9ebn7Vn3/f91b3dX9ut8Ess7d/vWpOnXq1Klwq+7tN7hGtlxbRmDLCGwZgS0jsGUEtozAP+QIbDnk/yGnNeuUc06BAcks5wpk9mxXXLTIlch1D7i2RmbNcu2zZq3w3HbbIx3k2tmrp90wb+30Om5YO33WrM4ZMbfc0rXVxtJY7xrUJddd17N1lTt6tv7Tn3q3aSQuvw42G9vmxtgxBkJb+t4QjbFtbH7WrL5tm/G7m/u3a8b1tw1svzHceOPgM2JmzRrcoTWrUbZ6h5tuWvPMqbj11rU7tuIGlJFQfuON63aKuQP ...[Truncated]",
-      sizes: "512x512",
-      type: "image/png"
-    }
-  ]
-};
-
-const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
-const manifestURL = URL.createObjectURL(blob);
-document.querySelector("link[rel='manifest']")?.remove();
-const link = document.createElement("link");
-link.rel = "manifest";
-link.href = manifestURL;
-document.head.appendChild(link);
-
-function spawnLoveBubbles() {
-  // Spawn exactly 2 love emojis
-  const positions = [30, 70]; // Two different horizontal positions
-  
-  positions.forEach((pos, index) => {
-    setTimeout(() => {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = "💖";
-      bubble.style.left = `${pos}%`;
-      document.body.appendChild(bubble);
-      
-      // Remove bubble after 3 seconds
-      setTimeout(() => bubble.remove(), 3000);
-    }, index * 150); // Slight delay between each emoji
-  });
-}
-
-function spawnSleepBubbles() {
-  // Spawn exactly 2 sleeping emojis
-  const positions = [30, 70]; // Two different horizontal positions
-  
-  positions.forEach((pos, index) => {
-    setTimeout(() => {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = "😴";
-      bubble.style.left = `${pos}%`;
-      document.body.appendChild(bubble);
-      
-      // Remove bubble after 3 seconds
-      setTimeout(() => bubble.remove(), 3000);
-    }, index * 150); // Slight delay between each emoji
-  });
-}
 </script>
 </body>
 </html>
+
+
+
+
+
+
 
