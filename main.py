@@ -20,7 +20,7 @@ def format_last_seen(ts):
     if not ts or ts == 0:
         return ""
     
-    delta = int(time.time() - ts)
+    60 = int(time.time() - ts)
     
     if delta < 60:
         return f"{delta} sec ago"
