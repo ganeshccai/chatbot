@@ -20,7 +20,7 @@ def format_last_seen(ts):
     if not ts or ts == 0:
         return ""
     
-    delta = 60
+    delta = 4000
     
     if delta < 60:
         return f"{delta} sec ago"
