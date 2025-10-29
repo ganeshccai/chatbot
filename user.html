@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#d62976" />
   <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Regal%20Chat%22%2C%22short_name%22%3A%22Regal%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f6fb%22%2C%22theme_color%22%3A%22%23d62976%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27grad%27%20x1%3D%270%25%27%20y1%3D%270%25%27%20x2%3D%27100%25%27%20y2%3D%27100%25%27%3E%3Cstop%20offset%3D%270%25%27%20style%3D%27stop-color%3A%23feda75%27%2F%3E%3Cstop%20offset%3D%2725%25%27%20style%3D%27stop-color%3A%23fa7e1e%27%2F%3E%3Cstop%20offset%3D%2750%25%27%20style%3D%27stop-color%3A%23d62976%27%2F%3E%3Cstop%20offset%3D%2775%25%27%20style%3D%27stop-color%3A%23962fbf%27%2F%3E%3Cstop%20offset%3D%27100%25%27%20style%3D%27stop-color%3A%234f5bd5%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27100%27%20fill%3D%27url(%23grad)%27%2F%3E%3Ctext%20x%3D%27256%27%20y%27360%27%20font-size%3D%27300%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%20font-family%3D%27serif%27%20font-style%3D%27italic%27%20font-weight%3D%27bold%27%3ER%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D" />
 <style>
-/* ... (All your existing CSS styles are unchanged) ... */
+  /* ... (All your existing CSS styles are unchanged) ... */
   @keyframes gnReshmaFade {
   0% {
     opacity: 0;
@@ -138,15 +138,21 @@
   button:active {
     opacity: 0.9;
   }
+  
+  /* --- MODIFIED --- 
+     The login overlay is now hidden by default. 
+     JS will show it only if the lock is not taken. 
+  */
   #login-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(255,255,255,0.95);
-    display: flex;
+    display: none; /* Changed from flex to none */
     justify-content: center;
     align-items: center;
     z-index: 999;
   }
+  
   #login-box {
     background: #fff;
     padding: 24px;
@@ -306,45 +312,82 @@
     
 </div>
 <script>
-// --- *** START: NEW SINGLE-TAB-LOCK LOGIC *** ---
-// This uses BroadcastChannel to prevent opening in multiple *tabs*
-// in the *same browser*. It CANNOT prevent opening in a different
-// browser or on a different device. Only a backend can do that.
-const tabLockChannel = new BroadcastChannel('regal_chat_session_lock');
+// --- *** START: NEW localStorage TAB LOCK *** ---
+const LOCK_KEY = 'regal_chat_session_lock';
+const LOCK_TIMEOUT_MS = 5000; // 5 seconds
+const thisTabId = Date.now().toString() + Math.random();
 let isThisTabActive = false; // Flag to track if this tab holds the lock
+let sessionCheckInterval = null; // Holds the interval timer
 
 function showLockScreen() {
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('lock-overlay').style.display = 'flex';
-  isLoggedIn = false; // Stop all activity
-  // Ideally, you would also clear all your 'setInterval' timers here
+  isThisTabActive = false;
+  isLoggedIn = false;
+  // Stop all polling timers if they exist
+  if (sessionCheckInterval) clearInterval(sessionCheckInterval);
 }
 
-tabLockChannel.onmessage = (event) => {
-  if (event.data === 'SESSION_TAKEN' && !isThisTabActive) {
-    // Another tab just logged in
-    console.log('Session taken by another tab. Locking this one.');
-    showLockScreen();
+function showLoginScreen() {
+  document.getElementById('lock-overlay').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+/**
+ * Checks the lock status in localStorage.
+ * This runs when the page first loads.
+ */
+function checkSessionLock() {
+  try {
+    const lockData = JSON.parse(localStorage.getItem(LOCK_KEY));
+    
+    if (!lockData) {
+      // No lock exists. Show the login screen.
+      showLoginScreen();
+      return;
+    }
+
+    const isStale = (Date.now() - lockData.timestamp) > LOCK_TIMEOUT_MS;
+    
+    if (isStale) {
+      // Lock is old or "stale". This tab can take it.
+      localStorage.removeItem(LOCK_KEY);
+      showLoginScreen();
+    } else {
+      // Lock is fresh and held by another tab.
+      showLockScreen();
+    }
+  } catch (e) {
+    // Error parsing, probably bad data. Clear it and login.
+    localStorage.removeItem(LOCK_KEY);
+    showLoginScreen();
   }
-  if (event.data === 'PING_ACTIVE_SESSION') {
-    // Another tab is asking if anyone is active
-    if (isLoggedIn && isThisTabActive) {
-      tabLockChannel.postMessage('IM_ACTIVE');
+}
+
+/**
+ * Listens for changes in other tabs.
+ */
+window.addEventListener('storage', (e) => {
+  if (e.key === LOCK_KEY) {
+    if (e.newValue === null) {
+      // The lock was released by the active tab.
+      // This tab can now try to log in. Reloading is the simplest way to reset.
+      console.log('Session lock released. Reloading to enable login.');
+      window.location.reload();
+    } else {
+      // Another tab just took or refreshed the lock.
+      // If it wasn't this tab, lock this one.
+      try {
+        const lockData = JSON.parse(e.newValue);
+        if (lockData && lockData.id !== thisTabId) {
+          console.log('Session taken by another tab. Locking this one.');
+          showLockScreen();
+        }
+      } catch (e) { /* ignore parse error */ }
     }
   }
-  if (event.data === 'IM_ACTIVE') {
-     // We just opened and another tab replied that it's active
-     console.log('Another tab is already active. Locking this one.');
-     showLockScreen();
-  }
-};
-
-// When this tab opens, ask if another one is already active
-// Give it 100ms to respond before allowing login
-setTimeout(() => {
-    tabLockChannel.postMessage('PING_ACTIVE_SESSION');
-}, 100);
-// --- *** END: NEW SINGLE-TAB-LOCK LOGIC *** ---
+});
+// --- *** END: NEW localStorage TAB LOCK *** ---
 
 
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -396,6 +439,19 @@ document.querySelectorAll(".emoji-btn").forEach(btn => {
 });
 
 async function checkPwd() {
+  // --- *** MODIFIED: Check lock before logging in *** ---
+  try {
+    const lockData = JSON.parse(localStorage.getItem(LOCK_KEY));
+    const isStale = !lockData || (Date.now() - lockData.timestamp) > LOCK_TIMEOUT_MS;
+
+    if (lockData && !isStale) {
+      // Another tab is active. Show error.
+      document.getElementById("login-msg").textContent = "Session is active in another tab.";
+      return; // Stop login
+    }
+  } catch(e) { /* continue */ }
+  // --- *** END MODIFICATION *** ---
+
   const pwd = document.getElementById("pwd").value;
   const res = await fetch(`${BACKEND_URL}/login`, {
     method: "POST",
@@ -407,7 +463,8 @@ async function checkPwd() {
   if (data.success) {
     // --- *** MODIFIED: Claim this tab as active *** ---
     isThisTabActive = true; // This tab now holds the lock
-    tabLockChannel.postMessage('SESSION_TAKEN'); // Tell other tabs to lock
+    const sessionData = { id: thisTabId, timestamp: Date.now() };
+    localStorage.setItem(LOCK_KEY, JSON.stringify(sessionData));
     // --- *** END MODIFICATION *** ---
 
     sessionToken = data.session_token;
@@ -415,27 +472,60 @@ async function checkPwd() {
     isLoggedIn = true;
     startPolling();
   } else {
-    // *** This is where your backend error will appear ***
     document.getElementById("login-msg").textContent = data.error || "Login failed";
+    // *** IMPORTANT: Make sure your backend also checks for concurrent logins!
+    // If the backend says "Session already active", show that error.
+    if (data.error === "Session is already active elsewhere.") {
+        showLockScreen();
+    }
   }
 }
 
 function startPolling() {
+  // --- *** ADDED: Heartbeat to keep the lock alive *** ---
+  // Clear any old intervals
+  if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+  
+  sessionCheckInterval = setInterval(() => {
+    if (isThisTabActive && isLoggedIn) {
+      // This tab is active, refresh its lock
+      const sessionData = { id: thisTabId, timestamp: Date.now() };
+      localStorage.setItem(LOCK_KEY, JSON.stringify(sessionData));
+    } else {
+      // This tab is no longer active, stop the heartbeat
+      clearInterval(sessionCheckInterval);
+    }
+  }, 2000); // Refresh lock every 2 seconds
+  // --- *** END ADDITION *** ---
+
   markOnline();
   checkStatus();
   loadMessages();
   loadTyping();
-  setInterval(loadMessages, 1000);
-  setInterval(checkStatus, 1000);
-  setInterval(loadTyping, 500);
+  
+  // We can bundle all intervals into the main one
+  // (This is just an optimization, your old code is fine)
   setInterval(() => {
-    if (document.visibilityState === "visible") markOnline();
+    if (!isLoggedIn || !isThisTabActive) return; // Stop polling if not active
+    loadMessages();
+    checkStatus();
+  }, 1000);
+
+  setInterval(() => {
+    if (!isLoggedIn || !isThisTabActive) return;
+    loadTyping();
+  }, 500);
+  
+  setInterval(() => {
+    if (document.visibilityState === "visible" && isLoggedIn && isThisTabActive) {
+        markOnline();
+    }
   }, 2000);
 }
 
 async function sendMessage() {
   const text = msgInput.value.trim();
-  if (!text || !isLoggedIn || !sessionToken) return;
+  if (!text || !isLoggedIn || !sessionToken || !isThisTabActive) return;
 
   await fetch(`${BACKEND_URL}/send`, {
     method: "POST",
@@ -452,7 +542,7 @@ async function sendMessage() {
 }
 
 async function loadMessages() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isThisTabActive) return;
   const isTabActive = document.visibilityState === "visible";
   const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
   const data = await res.json();
@@ -526,7 +616,7 @@ async function loadMessages() {
 }
 
 async function loadTyping() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isThisTabActive) return;
   const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
   const d = await res.json();
 
@@ -546,7 +636,7 @@ async function loadTyping() {
 }
 
 async function sendTyping(text) {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isThisTabActive) return;
   await fetch(`${BACKEND_URL}/live_typing`, {
     method: "POST",
     headers: {
@@ -558,7 +648,7 @@ async function sendTyping(text) {
 }
 
 async function checkStatus() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isThisTabActive) return;
   const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
   const d = await res.json();
   const emoji = d.agent_online ? "🟢" : "🔴";
@@ -567,7 +657,7 @@ async function checkStatus() {
 }
 
 async function clearChat() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isThisTabActive) return;
   await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
     method: "POST",
     headers: {
@@ -582,7 +672,7 @@ async function clearChat() {
 }
 
 async function markOnline() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isThisTabActive) return;
   await fetch(`${BACKEND_URL}/mark_online`, {
     method: "POST",
     headers: {
@@ -597,7 +687,7 @@ uploadBtn.addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files[0];
-  if (!file || !isLoggedIn || !sessionToken) return;
+  if (!file || !isLoggedIn || !sessionToken || !isThisTabActive) return;
 
   const reader = new FileReader();
   reader.onload = async () => {
@@ -627,16 +717,20 @@ msgInput.addEventListener("input", e => sendTyping(e.target.value));
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    markOnline();
-    loadMessages();
+    // When tab becomes visible, re-check the lock
+    checkSessionLock();
+    if (isLoggedIn) {
+        markOnline();
+        loadMessages();
+    }
   }
 });
 
 window.addEventListener("beforeunload", () => {
   // --- *** MODIFIED: Release lock if this tab is the active one *** ---
   if (isThisTabActive) {
-    // This is unreliable, but it's an attempt to free the lock
-    tabLockChannel.postMessage('SESSION_CLOSED');
+    // This is a synchronous operation, it's safe here
+    localStorage.removeItem(LOCK_KEY);
   }
   // --- *** END MODIFICATION *** ---
 
@@ -684,6 +778,11 @@ function spawnSleepBubbles() {
   
   setTimeout(() => txt.remove(), 4000);
 }
+
+// --- *** ADDED: Run the lock check on page load *** ---
+document.addEventListener('DOMContentLoaded', () => {
+    checkSessionLock();
+});
 </script>
 </body>
 </html>
