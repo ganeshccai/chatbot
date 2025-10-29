@@ -1,529 +1,688 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
-  <title>R</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23feda75'/><stop offset='25%' style='stop-color:%23fa7e1e'/><stop offset='50%' style='stop-color:%23d62976'/><stop offset='75%' style='stop-color:%23962fbf'/><stop offset='100%' style='stop-color:%234f5bd5'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='serif' font-style='italic' font-weight='bold'>R</text></svg>" />
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23feda75'/><stop offset='25%' style='stop-color:%23fa7e1e'/><stop offset='50%' style='stop-color:%23d62976'/><stop offset='75%' style='stop-color:%23962fbf'/><stop offset='100%' style='stop-color:%234f5bd5'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='serif' font-style='italic' font-weight='bold'>R</text></svg>" />
-  <meta name="theme-color" content="#d62976" />
-  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Regal%22%2C%22short_name%22%3A%22Regal%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f6fb%22%2C%22theme_color%22%3A%22%23d62976%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27grad%27%20x1%3D%270%25%27%20y1%3D%270%25%27%20x2%3D%27100%25%27%20y2%3D%27100%25%27%3E%3Cstop%20offset%3D%270%25%27%20style%3D%27stop-color%3A%23feda75%27%2F%3E%3Cstop%20offset%3D%2725%25%27%20style%3D%27stop-color%3A%23fa7e1e%27%2F%3E%3Cstop%20offset%3D%2750%25%27%20style%3D%27stop-color%3A%23d62976%27%2F%3E%3Cstop%20offset%3D%2775%25%27%20style%3D%27stop-color%3A%23962fbf%27%2F%3E%3Cstop%20offset%3D%27100%25%27%20style%3D%27stop-color%3A%234f5bd5%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27100%27%20fill%3D%27url(%23grad)%27%2F%3E%3Ctext%20x%3D%27256%27%20y%27360%27%20font-size%3D%27300%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%20font-family%3D%27serif%27%20font-style%3D%27italic%27%20font-weight%3D%27bold%27%3ER%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no" />
+  <title>R</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23feda75'/><stop offset='25%' style='stop-color:%23fa7e1e'/><stop offset='50%' style='stop-color:%23d62976'/><stop offset='75%' style='stop-color:%23962fbf'/><stop offset='100%' style='stop-color:%234f5bd5'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='serif' font-style='italic' font-weight='bold'>R</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23feda75'/><stop offset='25%' style='stop-color:%23fa7e1e'/><stop offset='50%' style='stop-color:%23d62976'/><stop offset='75%' style='stop-color:%23962fbf'/><stop offset='100%' style='stop-color:%234f5bd5'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='serif' font-style='italic' font-weight='bold'>R</text></svg>" />
+  <meta name="theme-color" content="#d62976" />
+  <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Regal%20Chat%22%2C%22short_name%22%3A%22Regal%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f3f6fb%22%2C%22theme_color%22%3A%22%23d62976%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27grad%27%20x1%3D%270%25%27%20y1%3D%270%25%27%20x2%3D%27100%25%27%20y2%3D%27100%25%27%3E%3Cstop%20offset%3D%270%25%27%20style%3D%27stop-color%3A%23feda75%27%2F%3E%3Cstop%20offset%3D%2725%25%27%20style%3D%27stop-color%3A%23fa7e1e%27%2F%3E%3Cstop%20offset%3D%2750%25%27%20style%3D%27stop-color%3A%23d62976%27%2F%3E%3Cstop%20offset%3D%2775%25%27%20style%3D%27stop-color%3A%23962fbf%27%2F%3E%3Cstop%20offset%3D%27100%25%27%20style%3D%27stop-color%3A%234f5bd5%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27100%27%20fill%3D%27url(%23grad)%27%2F%3E%3Ctext%20x%3D%27256%27%20y%27360%27%20font-size%3D%27300%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%20font-family%3D%27serif%27%20font-style%3D%27italic%27%20font-weight%3D%27bold%27%3ER%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D" />
 <style>
-  @keyframes gnReshmaFade {
-  0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
-  50% { opacity: 1; transform: translateX(-50%) scale(1); }
-  100% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+/* ... (All your existing CSS styles are unchanged) ... */
+  @keyframes gnReshmaFade {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5);
+  }
 }
-  :root {
-    --accent: #feda75; --accent2: #d62976;
-    --bg: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-    --bubble-user: #ffcce0; --bubble-agent: #ffffff; --agent-border: #e0e0e0;
-  }
-  html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; }
-  body {
-    font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column;
-    background: var(--bg); background-size: cover; color: #333;
-  }
-  header {
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    color: white; padding: 14px; text-align: center; font-weight: bold;
-    font-size: 20px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  #agent-status { position: absolute; right: 14px; top: 14px; font-weight: bold; }
-  #send-btn{ font-size: 35px; }
-  #clear-btn { font-size: 10px; }
-  #chat-container {
-    flex: 1; overflow-y: auto; padding: 10px; display: flex;
-    flex-direction: column; background-color: #f8f8f8; position: relative;
-  }
-  .message {
-    margin: 4px 0; padding: 10px 14px; border-radius: 14px; max-width: 80%;
-    word-wrap: break-word; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-  }
-  .user-msg { background: var(--bubble-user); align-self: flex-end; }
-  .agent-msg { background: var(--bubble-agent); border: 1px solid var(--agent-border); align-self: flex-start; }
-  #input-container {
-    display: flex; gap: 10px; padding: 12px; background: rgba(255,255,255,0.9);
-    border-top: 1px solid #ccc; position: relative; min-width:50px; max-height:100px;
-  }
-  #msg {
-    flex: 1; resize: none; border-radius: 14px; padding: 12px;
-    border: 1px solid #ccc; font-size: 16px; outline: none;
-    max-height: 100px; min-width:150px
-  }
-  #msg:focus { border-color: var(--accent2); }
-  button {
-    padding: 12px 16px; background: #FFB6C1; color: white; border: none;
-    border-radius: 14px; cursor: pointer; font-size: 16px; transition: background 0.3s ease;
-  }
-  button:hover { background: #c2185b; }
-  button:active { opacity: 0.9; }
-  #login-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.95); display: none; 
-    justify-content: center; align-items: center; z-index: 999;
-  }
-  #login-box {
-    background: #fff; padding: 24px; border-radius: 12px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.15); display: flex;
-    flex-direction: column; gap: 12px; width: 280px;
-  }
-  #login-box input {
-    padding: 10px; font-size: 16px; border: 1px solid #ccc;
-    border-radius: 8px; outline: none;
-  }
-  .extra-buttons { display: flex; flex-direction: column; gap: 2px; position: relative; }
-  .extra-buttons button { padding: 10px 14px; font-size: 10px; }
-  #emoji-picker {
-    position: absolute; bottom: 100%; right: 0; background: white;
-    border: 2px solid #ccc; border-radius: 12px; padding: 2px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none;
-    max-width: 250px; max-height: 240px; overflow-y: auto; margin: 5px; z-index: 100;
-  }
-  #emoji-picker.show { display: block; }
-  .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
-  .emoji-btn {
-    background: transparent; border: none; font-size: 20px; margin:5px; padding: 5px;
-    cursor: pointer; border-radius: 6px; transition: background 0.2s;
-  }
-  .emoji-btn:hover { background: #f0f0f0; }
-  .bubble {
-    position: fixed; bottom: 80px; font-size: 60px;
-    animation: floatUpSlow 3s linear forwards; pointer-events: none; z-index: 100;
-  }
-  @keyframes floatUpSlow {
-    0% { transform: translateY(0) translateX(-50%); opacity: 1; }
-    90% { opacity: 1; }
-    100% { transform: translateY(calc(-50vh + 40px)) translateX(-50%); opacity: 0; }
-  }
-  #tab-blocked-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, rgba(214, 41, 118, 0.95), rgba(79, 91, 213, 0.95));
-    display: none; justify-content: center; align-items: center; z-index: 9999;
-    flex-direction: column; color: white; text-align: center; padding: 20px;
-  }
-  #tab-blocked-overlay.active { display: flex; }
-  .blocked-icon { font-size: 80px; margin-bottom: 20px; }
-  .blocked-title { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-  .blocked-message { font-size: 18px; max-width: 500px; line-height: 1.6; }
+  
+  :root {
+    --accent: #feda75;
+    --accent2: #d62976;
+    --bg: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+    --bubble-user: #ffcce0;
+    --bubble-agent: #ffffff;
+    --agent-border: #e0e0e0;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #333;
+  }
+  header {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    color: white;
+    padding: 14px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  #agent-status {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    font-weight: bold;
+  }
+  #send-btn{
+    font-size: 35px;
+  }
+
+  #clear-btn {
+    font-size: 10px;
+  }
+  #chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8f8f8;
+    position: relative;
+  }
+  .message {
+    margin: 4px 0;
+    padding: 10px 14px;
+    border-radius: 14px;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 15px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .user-msg {
+    background: var(--bubble-user);
+    align-self: flex-end;
+  }
+  .agent-msg {
+    background: var(--bubble-agent);
+    border: 1px solid var(--agent-border);
+    align-self: flex-start;
+  }
+  #input-container {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255,255,255,0.9);
+    border-top: 1px solid #ccc;
+    position: relative;
+    min-width:50px;
+    max-height:100px;
+  }
+  #msg {
+    flex: 1;
+    resize: none;
+    border-radius: 14px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    outline: none;
+    max-height: 100px;
+    min-width:150px
+  }
+  #msg:focus {
+    border-color: var(--accent2);
+  }
+  button {
+    padding: 12px 16px;
+    background: #FFB6C1;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #c2185b;
+  }
+  button:active {
+    opacity: 0.9;
+  }
+  #login-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+  }
+  #login-box {
+    background: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 280px;
+  }
+  #login-box input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+  }
+
+  /* Emoji and Upload buttons container */
+  .extra-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: relative;
+  }
+  
+  .extra-buttons button {
+    padding: 10px 14px;
+    font-size: 10px;
+  }
+
+  /* Emoji picker popup */
+  #emoji-picker {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 12px;
+    padding: 2px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    max-width: 250px;
+    max-height: 240px;
+    overflow-y: auto;
+    margin: 5px;
+    z-index: 100;
+  }
+  
+  #emoji-picker.show {
+    display: block;
+  }
+  
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+  }
+  
+  .emoji-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    margin:5px;
+    padding: 5px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  
+  .emoji-btn:hover {
+    background: #f0f0f0;
+  }
+
+  /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
+  .bubble {
+    position: fixed;
+    bottom: 80px;
+    font-size: 60px;
+    animation: floatUpSlow 3s linear forwards;
+    pointer-events: none;
+    z-index: 100;
+  }
+  @keyframes floatUpSlow {
+    0% {
+      transform: translateY(0) translateX(-50%);
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(calc(-50vh + 40px)) translateX(-50%);
+      opacity: 0;
+    }
+  }
 </style>
 </head>
 <body data-chat-id="1234">
-<div id="tab-blocked-overlay">
-  <div class="blocked-icon">🚫</div>
-  <div class="blocked-title">Access Denied</div>
-  <div class="blocked-message">
-    This chat is currently active in another tab, device, or browser.<br>
-    Please close the other session to access here.
-  </div>
-</div>
+
 <div id="login-overlay">
-  <div id="login-box">
-    <input type="password" id="pwd" placeholder="Enter password" />
-    <button onclick="checkPwd()">Login 🔓</button>
-    <div id="login-msg" style="color:red;"></div>
-  </div>
+  <div id="login-box">
+    <input type="password" id="pwd" placeholder="Enter password" />
+    <button onclick="checkPwd()">Login 🔓</button>
+    <div id="login-msg" style="color:red;"></div>
+  </div>
+</div>
+
+<div id="lock-overlay" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(220, 0, 0, 0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; color: white; text-align: center; font-size: 22px; font-weight: bold; padding: 20px;">
+  <div>
+    🚫 Session Locked
+    <p style="font-size: 18px; font-weight: normal; margin-top: 15px;">This application is already open and active in another tab.<br>Please close this tab.</p>
+  </div>
 </div>
 <header>𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
 <div id="chat-container"></div>
 <div id="input-container">
-  <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
-  <div class="extra-buttons">
-    <button id="emoji-btn">😊</button>
-    <input type="file" id="file-input" accept="image/*" style="display:none" />
-    <button id="upload-btn">🖼️</button>
-    <div id="emoji-picker">
-      <div class="emoji-grid">
-       <button class="emoji-btn" data-emoji="😊">😊</button>
-        <button class="emoji-btn" data-emoji="😂">😂</button>
-        <button class="emoji-btn" data-emoji="🤣">🤣</button>
-        <button class="emoji-btn" data-emoji="🥰">🥰</button>
-        <button class="emoji-btn" data-emoji="😀">😀</button>
-        <button class="emoji-btn" data-emoji="😢">😢</button>
-        <button class="emoji-btn" data-emoji="😁">😁</button>
-        <button class="emoji-btn" data-emoji="😍">😍</button>
-        <button class="emoji-btn" data-emoji="😎">😎</button>
-        <button class="emoji-btn" data-emoji="❤️">❤️</button>
-         <button class="emoji-btn" data-emoji="💖">💖</button>
-        <button class="emoji-btn" data-emoji="😭">😭</button>
-        <button class="emoji-btn" data-emoji="🤗">🤗</button>
-        <button class="emoji-btn" data-emoji="👍">👍</button>
-        <button class="emoji-btn" data-emoji="👋">👋</button>
-        <button class="emoji-btn" data-emoji="💯">💯</button>
-        <button class="emoji-btn" data-emoji="🙏">🙏</button>
-         <button class="emoji-btn" data-emoji="😴">😴</button>
-        <button class="emoji-btn" data-emoji="🔥">🔥</button>
-        <button class="emoji-btn" data-emoji="💕">💕</button>
-        <button class="emoji-btn" data-emoji="🎉">🎉</button>
-        <button class="emoji-btn" data-emoji="🌹">🌹</button>
-        <button class="emoji-btn" data-emoji="🎶">🎶</button>
-        <button class="emoji-btn" data-emoji="🥺">🥺</button>
-      </div>
-    </div><button id="clear-btn">❌</button>
-  </div>
-  <button id="send-btn">➤</button>
+  <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
+  
+  <div class="extra-buttons">
+    
+    <button id="emoji-btn">😊</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none" />
+    <button id="upload-btn">📎</button>
+
+    <div id="emoji-picker">
+      <div class="emoji-grid">
+       <button class="emoji-btn" data-emoji="😊">😊</button>
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="🤣">🤣</button>
+        <button class="emoji-btn" data-emoji="🥰">🥰</button>
+        <button class="emoji-btn" data-emoji="😀">😀</button>
+        <button class="emoji-btn" data-emoji="😢">😢</button>
+        <button class="emoji-btn" data-emoji="😁">😁</button>
+        <button class="emoji-btn" data-emoji="😍">😍</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+        <button class="emoji-btn" data-emoji="❤️">❤️</button>
+        <button class="emoji-btn" data-emoji="💖">💖</button>
+        <button class="emoji-btn" data-emoji="😭">😭</button>
+        <button class="emoji-btn" data-emoji="🤗">🤗</button>
+        <button class="emoji-btn" data-emoji="👍">👍</button>
+        <button class="emoji-btn" data-emoji="👋">👋</button>
+        <button class="emoji-btn" data-emoji="💯">💯</button>
+        <button class="emoji-btn" data-emoji="🙏">🙏</button>
+        <button class="emoji-btn" data-emoji="😴">😴</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="💕">💕</button>
+        <button class="emoji-btn" data-emoji="🎉">🎉</button>
+        <button class="emoji-btn" data-emoji="🌹">🌹</button>
+        <button class="emoji-btn" data-emoji="🎶">🎶</button>
+        <button class="emoji-btn" data-emoji="🥺">🥺</button>
+      </div>
+    </div><button id="clear-btn">❌</button>
+  
+  </div>
+    <button id="send-btn">➤</button>
+    
 </div>
 <script>
-const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
-const chatId = document.body.dataset.chatId || "1234";
-const TAB_KEY = 'regal_active_tab_' + chatId;
-const HEARTBEAT_KEY = 'regal_heartbeat_' + chatId;
-const myTabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-const mySessionId = 'SESS_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+// --- *** START: NEW SINGLE-TAB-LOCK LOGIC *** ---
+// This uses BroadcastChannel to prevent opening in multiple *tabs*
+// in the *same browser*. It CANNOT prevent opening in a different
+// browser or on a different device. Only a backend can do that.
+const tabLockChannel = new BroadcastChannel('regal_chat_session_lock');
+let isThisTabActive = false; // Flag to track if this tab holds the lock
 
-let isTabAllowed = false;
-let isLoggedIn = false;
-let sessionToken = null;
+function showLockScreen() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('lock-overlay').style.display = 'flex';
+  isLoggedIn = false; // Stop all activity
+  // Ideally, you would also clear all your 'setInterval' timers here
+}
 
-const tabBlockedOverlay = document.getElementById('tab-blocked-overlay');
-const loginOverlay = document.getElementById('login-overlay');
-const chatContainer = document.getElementById("chat-container");
-const inputContainer = document.getElementById("input-container");
-const header = document.querySelector('header');
-
-const bc = new BroadcastChannel('regal_tab_sync_' + chatId);
-
-// Listen for messages from other tabs in the same browser (BroadcastChannel)
-bc.onmessage = (event) => {
-  if (event.data === 'ping' && isTabAllowed) bc.postMessage('pong_' + myTabId);
-  else if (event.data.startsWith('pong_') && !isTabAllowed) enforceTabRestriction();
-  else if (event.data === 'tab_closed') setTimeout(enforceTabRestriction, 100);
+tabLockChannel.onmessage = (event) => {
+  if (event.data === 'SESSION_TAKEN' && !isThisTabActive) {
+    // Another tab just logged in
+    console.log('Session taken by another tab. Locking this one.');
+    showLockScreen();
+  }
+  if (event.data === 'PING_ACTIVE_SESSION') {
+    // Another tab is asking if anyone is active
+    if (isLoggedIn && isThisTabActive) {
+      tabLockChannel.postMessage('IM_ACTIVE');
+    }
+  }
+  if (event.data === 'IM_ACTIVE') {
+     // We just opened and another tab replied that it's active
+     console.log('Another tab is already active. Locking this one.');
+     showLockScreen();
+  }
 };
 
-// 1. Checks if this is the active tab within THIS browser
-function checkTabAccess() {
-  const activeTab = localStorage.getItem(TAB_KEY);
-  const lastHeartbeat = parseInt(localStorage.getItem(HEARTBEAT_KEY) || '0');
-  const now = Date.now();
-
-  // If no active tab or heartbeat is too old (crashed tab, >3s), claim the session
-  if (!activeTab || (now - lastHeartbeat) > 3000) {
-    localStorage.setItem(TAB_KEY, myTabId);
-    localStorage.setItem(HEARTBEAT_KEY, now.toString());
-    isTabAllowed = true;
-    return true;
-  }
-
-  // If this tab is the active one
-  if (activeTab === myTabId) { isTabAllowed = true; return true; }
-
-  // Ping other tabs to see if they are active
-  bc.postMessage('ping');
-  isTabAllowed = false;
-  return false;
-}
-
-function sendHeartbeat() {
-  if (isTabAllowed) {
-    localStorage.setItem(TAB_KEY, myTabId);
-    localStorage.setItem(HEARTBEAT_KEY, Date.now().toString());
-  }
-}
-
-// 2. Checks backend for cross-device takeover
-async function checkActiveSession() {
-  // Only run this check if we are logged in AND currently allowed locally
-  if (!isLoggedIn || !isTabAllowed || !sessionToken) return;
-  
-  try {
-    const res = await fetch(`${BACKEND_URL}/is_active_session/${chatId}?sessionId=${mySessionId}`, {
-      method: "GET", headers: { "Authorization": `Bearer ${sessionToken}` }
-    });
-    const data = await res.json();
-    
-    if (data.is_active === false) {
-      // Another device/browser has logged in and taken over
-      isLoggedIn = false;
-      enforceTabRestriction("Another session has been started on a different device or browser.<br>This session has been blocked.");
-    }
-  } catch (e) {
-    // Error checking session (e.g., network error, token expired, etc.) - Block temporarily
-    console.error("Error checking active session:", e);
-    // If there is an error during a check, assume session is unsafe and block until next check or login
-    // A more complex app would handle this gracefully, but for single-session, blocking is safest.
-    // We will simply rely on the timer to re-evaluate.
-  }
-}
-
-// 3. Main function to show/hide the blocked overlay - REVISED LOGIC
-function enforceTabRestriction(message = "This page is already open in another tab in this browser.") {
-  const allowedInBrowser = checkTabAccess();
-  
-  if (!allowedInBrowser) {
-    // **CASE 1: BLOCKED by another local tab**
-    tabBlockedOverlay.querySelector('.blocked-message').innerHTML = "This page is already open in **another tab in this browser**.<br>Please close the other tab to access here.";
-    tabBlockedOverlay.classList.add('active');
-    loginOverlay.style.display = 'none';
-    header.style.display = 'none';
-    chatContainer.style.display = 'none';
-    inputContainer.style.display = 'none';
-    return;
-  } 
-  
-  if (isLoggedIn === false && sessionToken !== null) {
-    // **CASE 2: BLOCKED by remote takeover (Backend check failed)**
-    // This happens when checkActiveSession sets isLoggedIn = false
-    tabBlockedOverlay.querySelector('.blocked-message').innerHTML = message;
-    tabBlockedOverlay.classList.add('active');
-    loginOverlay.style.display = 'none';
-    header.style.display = 'none';
-    chatContainer.style.display = 'none';
-    inputContainer.style.display = 'none';
-    return;
-  }
-
-  if (!isLoggedIn) {
-    // **CASE 3: NOT LOGGED IN (Show Login)**
-    tabBlockedOverlay.classList.remove('active');
-    loginOverlay.style.display = 'flex';
-    header.style.display = 'none';
-    chatContainer.style.display = 'none';
-    inputContainer.style.display = 'none';
-    return;
-  } 
-  
-  // **CASE 4: LOGGED IN AND ALLOWED (Show Chat)**
-  tabBlockedOverlay.classList.remove('active');
-  loginOverlay.style.display = 'none';
-  header.style.display = 'block';
-  chatContainer.style.display = 'flex';
-  inputContainer.style.display = 'flex';
-}
+// When this tab opens, ask if another one is already active
+// Give it 100ms to respond before allowing login
+setTimeout(() => {
+    tabLockChannel.postMessage('PING_ACTIVE_SESSION');
+}, 100);
+// --- *** END: NEW SINGLE-TAB-LOCK LOGIC *** ---
 
 
-// --- Event Listeners and Initial Checks ---
-window.addEventListener('storage', (e) => {
-  if (e.key === TAB_KEY || e.key === HEARTBEAT_KEY) enforceTabRestriction();
+const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
+const chatId = document.body.dataset.chatId || "1234";
+
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send-btn");
+const clearBtn = document.getElementById("clear-btn");
+const chatContainer = document.getElementById("chat-container");
+const agentStatus = document.getElementById("agent-status");
+const uploadBtn = document.getElementById("upload-btn");
+const fileInput = document.getElementById("file-input");
+const emojiBtn = document.getElementById("emoji-btn");
+const emojiPicker = document.getElementById("emoji-picker");
+
+let isLoggedIn = false;
+let sessionToken = null;
+let typingDots = 0;
+let lastMessageCount = 0;
+let lastProcessedMessages = [];
+
+// Emoji picker toggle
+emojiBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  emojiPicker.classList.toggle("show");
 });
 
-window.addEventListener('beforeunload', () => {
-  if (isTabAllowed && isLoggedIn) {
-    // Only clear local storage if *this* tab was the active one
-    localStorage.removeItem(TAB_KEY);
-    localStorage.removeItem(HEARTBEAT_KEY);
-    bc.postMessage('tab_closed');
-
-    // Send beacon to backend to try to clear the session *if it hasn't been taken over*
-    try {
-      const data = JSON.stringify({ chat_id: chatId, sender: "user", sessionId: mySessionId });
-      const blob = new Blob([data], { type: "application/json" });
-      navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
-    } catch (e) {}
-  }
+// Close emoji picker when clicking outside
+document.addEventListener("click", (e) => {
+  if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+    emojiPicker.classList.remove("show");
+  }
 });
 
-window.addEventListener('focus', enforceTabRestriction);
-enforceTabRestriction();
-setInterval(sendHeartbeat, 1000);
-setInterval(enforceTabRestriction, 1000);
-setInterval(checkActiveSession, 5000); 
-
-const msgInput = document.getElementById("msg"), sendBtn = document.getElementById("send-btn"), clearBtn = document.getElementById("clear-btn"), agentStatus = document.getElementById("agent-status"), uploadBtn = document.getElementById("upload-btn"), fileInput = document.getElementById("file-input"), emojiBtn = document.getElementById("emoji-btn"), emojiPicker = document.getElementById("emoji-picker");
-let typingDots = 0, lastMessageCount = 0, lastProcessedMessages = [];
-
-emojiBtn.addEventListener("click", (e) => { e.stopPropagation(); emojiPicker.classList.toggle("show"); });
-document.addEventListener("click", (e) => { if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.classList.remove("show"); });
+// Insert emoji into message
 document.querySelectorAll(".emoji-btn").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const emoji = btn.dataset.emoji, cursorPos = msgInput.selectionStart;
-    msgInput.value = msgInput.value.substring(0, cursorPos) + emoji + msgInput.value.substring(cursorPos);
-    msgInput.focus();
-    msgInput.selectionStart = msgInput.selectionEnd = cursorPos + emoji.length;
-    emojiPicker.classList.remove("show");
-    sendTyping(msgInput.value);
-  });
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const emoji = btn.dataset.emoji;
+    const cursorPos = msgInput.selectionStart;
+    const textBefore = msgInput.value.substring(0, cursorPos);
+    const textAfter = msgInput.value.substring(cursorPos);
+    msgInput.value = textBefore + emoji + textAfter;
+    msgInput.focus();
+    msgInput.selectionStart = msgInput.selectionEnd = cursorPos + emoji.length;
+    emojiPicker.classList.remove("show");
+    sendTyping(msgInput.value);
+  });
 });
 
 async function checkPwd() {
-  if (!checkTabAccess()) { 
-    enforceTabRestriction();
-    return;
-  }
+  const pwd = document.getElementById("pwd").value;
+  const res = await fetch(`${BACKEND_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "user" })
+  });
 
-  const pwd = document.getElementById("pwd").value;
-  const res = await fetch(`${BACKEND_URL}/login`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, password: pwd, sender: "user", sessionId: mySessionId })
-  });
-  const data = await res.json();
-  
-  if (data.success) {
-    sessionToken = data.session_token;
-    isLoggedIn = true;
-    enforceTabRestriction(); 
-    startPolling();
-  } else {
-    document.getElementById("login-msg").textContent = data.error || "Login failed";
-  }
+  const data = await res.json();
+  if (data.success) {
+    // --- *** MODIFIED: Claim this tab as active *** ---
+    isThisTabActive = true; // This tab now holds the lock
+    tabLockChannel.postMessage('SESSION_TAKEN'); // Tell other tabs to lock
+    // --- *** END MODIFICATION *** ---
+
+    sessionToken = data.session_token;
+    document.getElementById("login-overlay").style.display = "none";
+    isLoggedIn = true;
+    startPolling();
+  } else {
+    // *** This is where your backend error will appear ***
+    document.getElementById("login-msg").textContent = data.error || "Login failed";
+  }
 }
 
 function startPolling() {
-  markOnline(); checkStatus(); loadMessages(); loadTyping();
-  setInterval(loadMessages, 1000);
-  setInterval(checkStatus, 1000);
-  setInterval(loadTyping, 500);
-  setInterval(() => { if (document.visibilityState === "visible") markOnline(); }, 2000);
+  markOnline();
+  checkStatus();
+  loadMessages();
+  loadTyping();
+  setInterval(loadMessages, 1000);
+  setInterval(checkStatus, 1000);
+  setInterval(loadTyping, 500);
+  setInterval(() => {
+    if (document.visibilityState === "visible") markOnline();
+  }, 2000);
 }
 
 async function sendMessage() {
-  if (!isTabAllowed || !isLoggedIn) return;
-  const text = msgInput.value.trim();
-  if (!text || !sessionToken) return;
+  const text = msgInput.value.trim();
+  if (!text || !isLoggedIn || !sessionToken) return;
 
-  await fetch(`${BACKEND_URL}/send`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` },
-    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
-  });
-  msgInput.value = "";
-  await sendTyping("");
-  loadMessages();
+  await fetch(`${BACKEND_URL}/send`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
+  });
+
+  msgInput.value = "";
+  await sendTyping("");
+  loadMessages();
 }
 
 async function loadMessages() {
-  if (!isLoggedIn || !isTabAllowed) return;
-  const isTabActive = document.visibilityState === "visible";
-  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
-  const data = await res.json();
+  if (!isLoggedIn) return;
+  const isTabActive = document.visibilityState === "visible";
+  const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
+  const data = await res.json();
+  chatContainer.innerHTML = "";
 
-  chatContainer.innerHTML = "";
-  const currentMessageIds = data.map((m, i) => `${m.sender}-${m.text}-${i}`);
-  const newMessages = data.filter((m, i) => !lastProcessedMessages.includes(`${m.sender}-${m.text}-${i}`));
+  const currentMessageIds = data.map((m, i) => `${m.sender}-${m.text}-${i}`);
+  const newMessages = data.filter((m, i) => {
+    const msgId = `${m.sender}-${m.text}-${i}`;
+    return !lastProcessedMessages.includes(msgId);
+  });
 
-  if (newMessages.some(m => m.text && /\blove\b/i.test(m.text))) spawnLoveBubbles();
-  if (newMessages.some(m => m.text && /\b(goodnight|gn|gnsd|gntc|gnsdtc)\b/i.test(m.text))) spawnSleepBubbles();
+  const newLoveMessage = newMessages.some(m => m.text && /\blove\b/i.test(m.text));
+  const newGoodnightMessage = newMessages.some(m => 
+    m.text && /\b(goodnight|gn|gnsd|gntc|gnsdtc)\b/i.test(m.text)
+  );
+  
+  if (newLoveMessage) {
+    spawnLoveBubbles();
+  }
+  
+  if (newGoodnightMessage) {
+    spawnSleepBubbles();
+  }
 
-  lastProcessedMessages = currentMessageIds;
-  data.forEach((m, i) => {
-    const d = document.createElement("div");
-    d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
+  lastProcessedMessages = currentMessageIds;
 
-    if (m.type === "image" && m.url) {
-      const img = document.createElement("img");
-      img.src = m.url; img.style.maxWidth = "240px"; img.style.borderRadius = "12px";
-      img.style.display = "block"; img.style.marginBottom = "6px";
-      const download = document.createElement("a");
-      download.href = m.url; download.download = "image.jpg"; download.textContent = "📥";
-      download.style.fontSize = "14px"; download.style.textDecoration = "none"; download.style.color = "#555";
-      d.appendChild(img); d.appendChild(download);
-    } else {
-      d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
-    }
+  data.forEach((m, i) => {
+    const d = document.createElement("div");
+    d.className = "message " + (m.sender === "user" ? "user-msg" : "agent-msg");
 
-    if (i === data.length - 1 && m.sender === "user" && m.seen_by === "agent") {
-      const seenTag = document.createElement("div");
-      seenTag.style.fontSize = "12px"; seenTag.style.color = "#888"; seenTag.style.marginTop = "4px";
-      seenTag.textContent = "👀";
-      d.appendChild(seenTag);
-    }
-    chatContainer.appendChild(d);
-  });
+    if (m.type === "image" && m.url) {
+      const img = document.createElement("img");
+      img.src = m.url;
+      img.style.maxWidth = "240px";
+      img.style.borderRadius = "12px";
+      img.style.display = "block";
+      img.style.marginBottom = "6px";
 
-  if (data.length > lastMessageCount) lastMessageCount = data.length;
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+      const download = document.createElement("a");
+      download.href = m.url;
+      download.download = "image.jpg";
+      download.textContent = "📥";
+      download.style.fontSize = "14px";
+      download.style.textDecoration = "none";
+      download.style.color = "#555";
+
+      d.appendChild(img);
+      d.appendChild(download);
+    } else {
+      d.innerHTML = (m.text || "").replace(/\n/g, "<br>");
+    }
+
+    const isLast = i === data.length - 1;
+    if (m.sender === "user" && m.seen_by === "agent" && isLast) {
+      const seenTag = document.createElement("div");
+      seenTag.style.fontSize = "12px";
+      seenTag.style.color = "#888";
+      seenTag.style.marginTop = "4px";
+      seenTag.textContent = "👀";
+      d.appendChild(seenTag);
+    }
+
+    chatContainer.appendChild(d);
+  });
+
+  if (data.length > lastMessageCount) {
+    lastMessageCount = data.length;
+  }
+
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 async function loadTyping() {
-  if (!isLoggedIn || !isTabAllowed) return;
-  const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
-  const d = await res.json();
-  const oldTyping = document.getElementById("agent-typing-indicator");
-  if (oldTyping) oldTyping.remove();
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
+  const d = await res.json();
 
-  if (d.sender === "agent" && d.text) {
-    typingDots = (typingDots + 1) % 4;
-    const typingMsg = document.createElement("div");
-    typingMsg.id = "agent-typing-indicator"; typingMsg.className = "message agent-msg";
-    typingMsg.textContent = `Typing${".".repeat(typingDots)}`;
-    chatContainer.appendChild(typingMsg);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }
+  const oldTyping = document.getElementById("agent-typing-indicator");
+  if (oldTyping) oldTyping.remove();
+
+  if (d.sender === "agent" && d.text) {
+    typingDots = (typingDots + 1) % 4;
+    const dots = ".".repeat(typingDots);
+    const typingMsg = document.createElement("div");
+    typingMsg.id = "agent-typing-indicator";
+    typingMsg.className = "message agent-msg";
+    typingMsg.textContent = `Typing${dots}`;
+    chatContainer.appendChild(typingMsg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 }
 
 async function sendTyping(text) {
-  if (!isLoggedIn || !isTabAllowed) return;
-  await fetch(`${BACKEND_URL}/live_typing`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` },
-    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
-  });
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/live_typing`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "user", text })
+  });
 }
 
 async function checkStatus() {
-  if (!isLoggedIn || !isTabAllowed) return;
-  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
-  const d = await res.json();
-  agentStatus.textContent = `${d.agent_online ? "🟢" : "🔴"}${d.agent_online ? "" : ` ${d.agent_last_seen}`}`;
+  if (!isLoggedIn) return;
+  const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
+  const d = await res.json();
+  const emoji = d.agent_online ? "🟢" : "🔴";
+  const time = d.agent_online ? "" : ` ${d.agent_last_seen}`;
+  agentStatus.textContent = `${emoji}${time}`;
 }
 
 async function clearChat() {
-  if (!isLoggedIn || !isTabAllowed) return;
-  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` },
-    body: JSON.stringify({ sender: "user" })
-  });
-  chatContainer.innerHTML = "";
-  lastMessageCount = 0;
-  lastProcessedMessages = [];
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ sender: "user" })
+  });
+  chatContainer.innerHTML = "";
+  lastMessageCount = 0;
+  lastProcessedMessages = [];
 }
 
 async function markOnline() {
-  if (!isLoggedIn || !isTabAllowed) return;
-  await fetch(`${BACKEND_URL}/mark_online`, {
-    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` },
-    body: JSON.stringify({ chat_id: chatId, sender: "user" })
-  });
+  if (!isLoggedIn) return;
+  await fetch(`${BACKEND_URL}/mark_online`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${sessionToken}`
+    },
+    body: JSON.stringify({ chat_id: chatId, sender: "user" })
+  });
 }
 
-const uploadBtn = document.getElementById("upload-btn");
-const fileInput = document.getElementById("file-input");
-
 uploadBtn.addEventListener("click", () => fileInput.click());
-fileInput.addEventListener("change", async () => {
-  if (!isTabAllowed || !isLoggedIn) return;
-  const file = fileInput.files[0];
-  if (!file || !sessionToken) return;
-  const reader = new FileReader();
-  
-  reader.onload = async () => {
-    await fetch(`${BACKEND_URL}/send`, {
-      method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` },
-      body: JSON.stringify({ chat_id: chatId, sender: "user", type: "image", url: reader.result })
-    });
-    loadMessages();
-  };
-  reader.readAsDataURL(file);
-});
 
-const sendBtn = document.getElementById("send-btn");
-const clearBtn = document.getElementById("clear-btn");
-const msgInput = document.getElementById("msg");
+fileInput.addEventListener("change", async () => {
+  const file = fileInput.files[0];
+  if (!file || !isLoggedIn || !sessionToken) return;
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result;
+    await fetch(`${BACKEND_URL}/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        sender: "user",
+        type: "image",
+        url: base64
+      })
+    });
+    loadMessages();
+  };
+  reader.readAsDataURL(file);
+});
 
 sendBtn.addEventListener("mousedown", e => e.preventDefault());
 sendBtn.addEventListener("click", sendMessage);
 clearBtn.addEventListener("click", clearChat);
 msgInput.addEventListener("input", e => sendTyping(e.target.value));
+
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") { markOnline(); loadMessages(); }
+  if (document.visibilityState === "visible") {
+    markOnline();
+    loadMessages();
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  // --- *** MODIFIED: Release lock if this tab is the active one *** ---
+  if (isThisTabActive) {
+    // This is unreliable, but it's an attempt to free the lock
+    tabLockChannel.postMessage('SESSION_CLOSED');
+  }
+  // --- *** END MODIFICATION *** ---
+
+  try {
+    const data = JSON.stringify({ chat_id: chatId, sender: "user" });
+    const blob = new Blob([data], { type: "application/json" });
+    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
+  } catch (e) {
+    console.warn("Logout beacon failed:", e);
+  }
 });
 
 function spawnLoveBubbles() {
-  for (let i = 0; i < 2; i++) {
-    setTimeout(() => {
-      const bubble = document.createElement("div");
-      bubble.className = "bubble"; bubble.textContent = "💖";
-      bubble.style.left = `${20 + Math.random() * 60}%`;
-      document.body.appendChild(bubble);
-      setTimeout(() => bubble.remove(), 3000);
-    }, i * 200);
-  }
+  for (let i = 0; i < 2; i++) {
+    setTimeout(() => {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = "💖";
+      bubble.style.left = `${20 + Math.random() * 60}%`;
+      document.body.appendChild(bubble);
+      setTimeout(() => bubble.remove(), 3000);
+    }, i * 200);
+  }
 }
 
 function spawnSleepBubbles() {
-  const txt = document.createElement("div");
-  txt.textContent = "GN 😴 रेश्मा";
-  txt.style.cssText = "position:fixed;bottom:120px;left:50%;transform:translateX(-50%);font-size:60px;color:#d62976;font-weight:bold;pointer-events:none;z-index:150;text-shadow:2px 2px 4px rgba(0,0,0,0.3);white-space:nowrap;animation:gnReshmaFade 4s ease-in-out forwards";
-  document.body.appendChild(txt);
-  setTimeout(() => txt.remove(), 4000);
+  const txt = document.createElement("div");
+  txt.textContent = "GN 😴 रेश्मा";
+  txt.style.position = "fixed";
+  txt.style.bottom = "120px";  // Just above the input box
+  txt.style.left = "50%";
+  txt.style.transform = "translateX(-50%)";  // Only horizontal centering
+  txt.style.fontSize = "60px";
+  txt.style.color = "#d62976";  // Dark pink color
+  txt.style.fontWeight = "bold";
+  txt.style.pointerEvents = "none";
+  txt.style.zIndex = "150";
+  txt.style.textShadow = "2px 2px 4px rgba(0,0,0,0.3)";
+  txt.style.whiteSpace = "nowrap";
+  
+  // Animation that keeps it centered horizontally
+  txt.style.animation = "gnReshmaFade 4s ease-in-out forwards";
+  
+  document.body.appendChild(txt);
+  
+  setTimeout(() => txt.remove(), 4000);
 }
 </script>
 </body>
