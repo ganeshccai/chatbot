@@ -178,49 +178,49 @@
     font-size: 10px;
   }
 
-  /* Emoji picker popup */
-  #emoji-picker {
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    background: white;
-    border: 2px solid #ccc;
-    border-radius: 12px;
-    padding: 2px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    display: none;
-    max-width: 250px;
-    max-height: 240px;
-    overflow-y: auto;
-    margin: 5px;
-    z-index: 100;
-    font-size:20px;
-  }
-  
-  #emoji-picker.show {
-    display: block;
-  }
-  
-  .emoji-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 5px;
-  }
-  
-  .emoji-btn {
-    background: transparent;
-    border: none;
-    font-size: 40px;
-    margin:5px;
-    padding: 5px;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: background 0.2s;
-  }
-  
-  .emoji-btn:hover {
-    background: #f0f0f0;
-  }
+ /* Emoji picker popup */
+#emoji-picker {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: none;
+  max-width: 280px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 8px;
+  z-index: 100;
+}
+
+#emoji-picker.show {
+  display: block;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.emoji-btn {
+  background: transparent;
+  border: none;
+  font-size: 56px; /* Bigger emoji size */
+  margin: 8px;
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.emoji-btn:hover {
+  background: #f2f2f2;
+  transform: scale(1.1);
+}
 
   /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
   .bubble {
@@ -628,6 +628,7 @@ function spawnSleepBubbles() {
 </script>
 </body>
 </html>
+
 
 
 
