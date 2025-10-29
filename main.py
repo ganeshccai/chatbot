@@ -16,6 +16,10 @@ session_tokens = {}  # key: (chat_id, sender), value: {token: timestamp}
 def verify_token(chat_id, sender, token):
     return token in session_tokens.get((chat_id, sender), {})
 
+import time
+
+import time
+
 def format_last_seen(ts):
     if not ts or ts == 0:
         return ""
@@ -25,11 +29,14 @@ def format_last_seen(ts):
     if delta < 60:
         return f"{delta} sec ago"
     elif delta < 3600:
-        return f"{delta // 60} min ago"
+        minutes = delta // 60
+        return f"{minutes} min ago"
     elif delta < 86400:
-        return f"{delta // 3600} hr ago"
+        hours = delta // 3600
+        return f"{hours} hr ago"
     else:
-        return f"{delta // 86400} days ago"
+        days = delta // 86400
+        return f"{days} days ago"
 
 @app.route("/login", methods=["POST"])
 def login():
