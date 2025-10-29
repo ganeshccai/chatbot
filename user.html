@@ -338,31 +338,64 @@
    
 </div>
 <script>
-const TAB_KEY = 'regal_active_tab_id';
-const TAB_TIMESTAMP_KEY = 'regal_tab_timestamp';
-const HEARTBEAT_INTERVAL = 2000;
-const TAB_TIMEOUT = 5000;
+const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
+const chatId = document.body.dataset.chatId || "1234";
 
-const myTabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+const SESSION_KEY = 'regal_session_id_' + chatId;
+const mySessionId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 let isTabAllowed = false;
-let heartbeatInterval = null;
-let checkInterval = null;
+let sessionCheckInterval = null;
 
 const tabBlockedOverlay = document.getElementById('tab-blocked-overlay');
 
-function checkTabAccess() {
-  const activeTabId = localStorage.getItem(TAB_KEY);
-  const lastTimestamp = parseInt(localStorage.getItem(TAB_TIMESTAMP_KEY) || '0');
+async function checkSessionAccess() {
+  try {
+    const storedSessionId = localStorage.getItem(SESSION_KEY);
+    
+    const response = await fetch(`${BACKEND_URL}/check_session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        chat_id: chatId, 
+        session_id: storedSessionId || mySessionId,
+        request_new: !storedSessionId
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.allowed && data.session_id === mySessionId) {
+      isTabAllowed = true;
+      localStorage.setItem(SESSION_KEY, mySessionId);
+      return true;
+    } else if (data.allowed && !storedSessionId) {
+      isTabAllowed = true;
+      localStorage.setItem(SESSION_KEY, data.session_id);
+      return true;
+    } else {
+      isTabAllowed = false;
+      return false;
+    }
+  } catch (error) {
+    console.warn("Session check failed, using fallback:", error);
+    return checkFallbackAccess();
+  }
+}
+
+function checkFallbackAccess() {
+  const activeSession = localStorage.getItem(SESSION_KEY);
+  const timestamp = localStorage.getItem(SESSION_KEY + '_time');
   const now = Date.now();
 
-  if (!activeTabId || (now - lastTimestamp) > TAB_TIMEOUT) {
-    localStorage.setItem(TAB_KEY, myTabId);
-    localStorage.setItem(TAB_TIMESTAMP_KEY, now.toString());
+  if (!activeSession || (timestamp && now - parseInt(timestamp) > 5000)) {
+    localStorage.setItem(SESSION_KEY, mySessionId);
+    localStorage.setItem(SESSION_KEY + '_time', now.toString());
     isTabAllowed = true;
     return true;
   }
 
-  if (activeTabId === myTabId) {
+  if (activeSession === mySessionId) {
+    localStorage.setItem(SESSION_KEY + '_time', now.toString());
     isTabAllowed = true;
     return true;
   }
@@ -371,15 +404,8 @@ function checkTabAccess() {
   return false;
 }
 
-function sendHeartbeat() {
-  if (isTabAllowed) {
-    localStorage.setItem(TAB_KEY, myTabId);
-    localStorage.setItem(TAB_TIMESTAMP_KEY, Date.now().toString());
-  }
-}
-
-function enforceTabRestriction() {
-  const allowed = checkTabAccess();
+async function enforceSessionRestriction() {
+  const allowed = await checkSessionAccess();
   
   if (!allowed) {
     tabBlockedOverlay.classList.add('active');
@@ -396,15 +422,24 @@ function enforceTabRestriction() {
 }
 
 window.addEventListener('storage', (e) => {
-  if (e.key === TAB_KEY || e.key === TAB_TIMESTAMP_KEY) {
-    enforceTabRestriction();
+  if (e.key === SESSION_KEY) {
+    enforceSessionRestriction();
   }
 });
 
 window.addEventListener('beforeunload', () => {
   if (isTabAllowed) {
-    localStorage.removeItem(TAB_KEY);
-    localStorage.removeItem(TAB_TIMESTAMP_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY + '_time');
+    
+    try {
+      fetch(`${BACKEND_URL}/end_session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, session_id: mySessionId }),
+        keepalive: true
+      });
+    } catch (e) {}
   }
   
   try {
@@ -417,16 +452,11 @@ window.addEventListener('beforeunload', () => {
 });
 
 window.addEventListener('focus', () => {
-  enforceTabRestriction();
+  enforceSessionRestriction();
 });
 
-enforceTabRestriction();
-
-heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
-checkInterval = setInterval(enforceTabRestriction, 1000);
-
-const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
-const chatId = document.body.dataset.chatId || "1234";
+enforceSessionRestriction();
+sessionCheckInterval = setInterval(enforceSessionRestriction, 2000);
 
 const msgInput = document.getElementById("msg");
 const sendBtn = document.getElementById("send-btn");
