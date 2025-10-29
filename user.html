@@ -107,42 +107,8 @@
   button:active {
     opacity: 0.9;
   }
-  #login-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.95);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-  }
-  #login-box {
-    background: #fff;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.15);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 280px;
-  }
-  #login-box input {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    outline: none;
-  }
+ 
 
-  /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
-  .bubble {
-    position: fixed;
-    bottom: 80px;
-    font-size: 60px;
-    animation: floatUpSlow 3s linear forwards;
-    pointer-events: none;
-    z-index: 100;
-  }
   @keyframes floatUpSlow {
     0% {
       transform: translateY(0) translateX(-50%);
@@ -160,22 +126,13 @@
 </head>
 <body data-chat-id="1234">
 
-<div id="login-overlay">
-  <div id="login-box">
-    <input type="password" id="pwd" placeholder="Enter password" />
-    <button onclick="checkPwd()">Login 🔓</button>
-    <div id="login-msg" style="color:red;"></div>
-  </div>
-</div>
 
 <header>𝓡𝓮𝓰𝓪𝓵 <span id="agent-status">🔴</span></header>
 <div id="chat-container"></div>
 <div id="input-container">
   <textarea id="msg" rows="2" placeholder="Type message..." autocomplete="off"></textarea>
   <button id="send-btn">➤</button>
-  <button id="clear-btn">❌</button>
   <input type="file" id="file-input" accept="image/*" style="display:none" />
-  <button id="upload-btn">📎</button>
 </div>
 <script>
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
@@ -310,7 +267,7 @@ async function loadMessages() {
       seenTag.style.fontSize = "12px";
       seenTag.style.color = "#888";
       seenTag.style.marginTop = "4px";
-      seenTag.textContent = "✅";
+      seenTag.textContent = "";
       d.appendChild(seenTag);
     }
 
@@ -361,8 +318,8 @@ async function checkStatus() {
   if (!isLoggedIn) return;
   const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
   const d = await res.json();
-  const emoji = d.agent_online ? "🟢" : "🔴";
-  const time = d.agent_online ? "" : ` ${d.agent_last_seen}`;
+  const emoji = d.agent_online ? "" : "";
+  const time = d.agent_online ? "" :;
   agentStatus.textContent = `${emoji}${time}`;
 }
 
@@ -506,3 +463,4 @@ function spawnSleepBubbles() {
 </script>
 </body>
 </html>
+
