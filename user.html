@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,7 +166,6 @@
     outline: none;
   }
 
-  /* Emoji and Upload buttons container */
   .extra-buttons {
     display: flex;
     flex-direction: column;
@@ -178,7 +178,6 @@
     font-size: 10px;
   }
 
-  /* Emoji picker popup */
   #emoji-picker {
     position: absolute;
     bottom: 100%;
@@ -221,7 +220,6 @@
     background: #f0f0f0;
   }
 
-  /* 💖 Love Bubble Animation - Slow flight from bottom to middle */
   .bubble {
     position: fixed;
     bottom: 80px;
@@ -243,9 +241,49 @@
       opacity: 0;
     }
   }
+
+  #tab-blocked-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(214, 41, 118, 0.95), rgba(79, 91, 213, 0.95));
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    flex-direction: column;
+    color: white;
+    text-align: center;
+    padding: 20px;
+  }
+  #tab-blocked-overlay.active {
+    display: flex;
+  }
+  .blocked-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+  }
+  .blocked-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .blocked-message {
+    font-size: 18px;
+    max-width: 500px;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body data-chat-id="1234">
+
+<div id="tab-blocked-overlay">
+  <div class="blocked-icon">🚫</div>
+  <div class="blocked-title">Access Denied</div>
+  <div class="blocked-message">
+    This page is already open in another tab, browser, or device.<br>
+    Please close other instances to access this page here.
+  </div>
+</div>
 
 <div id="login-overlay">
   <div id="login-box">
@@ -300,6 +338,93 @@
    
 </div>
 <script>
+const TAB_KEY = 'regal_active_tab_id';
+const TAB_TIMESTAMP_KEY = 'regal_tab_timestamp';
+const HEARTBEAT_INTERVAL = 2000;
+const TAB_TIMEOUT = 5000;
+
+const myTabId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+let isTabAllowed = false;
+let heartbeatInterval = null;
+let checkInterval = null;
+
+const tabBlockedOverlay = document.getElementById('tab-blocked-overlay');
+
+function checkTabAccess() {
+  const activeTabId = localStorage.getItem(TAB_KEY);
+  const lastTimestamp = parseInt(localStorage.getItem(TAB_TIMESTAMP_KEY) || '0');
+  const now = Date.now();
+
+  if (!activeTabId || (now - lastTimestamp) > TAB_TIMEOUT) {
+    localStorage.setItem(TAB_KEY, myTabId);
+    localStorage.setItem(TAB_TIMESTAMP_KEY, now.toString());
+    isTabAllowed = true;
+    return true;
+  }
+
+  if (activeTabId === myTabId) {
+    isTabAllowed = true;
+    return true;
+  }
+
+  isTabAllowed = false;
+  return false;
+}
+
+function sendHeartbeat() {
+  if (isTabAllowed) {
+    localStorage.setItem(TAB_KEY, myTabId);
+    localStorage.setItem(TAB_TIMESTAMP_KEY, Date.now().toString());
+  }
+}
+
+function enforceTabRestriction() {
+  const allowed = checkTabAccess();
+  
+  if (!allowed) {
+    tabBlockedOverlay.classList.add('active');
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('chat-container').style.display = 'none';
+    document.getElementById('input-container').style.display = 'none';
+    document.querySelector('header').style.display = 'none';
+  } else {
+    tabBlockedOverlay.classList.remove('active');
+    document.querySelector('header').style.display = 'block';
+    document.getElementById('chat-container').style.display = 'flex';
+    document.getElementById('input-container').style.display = 'flex';
+  }
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === TAB_KEY || e.key === TAB_TIMESTAMP_KEY) {
+    enforceTabRestriction();
+  }
+});
+
+window.addEventListener('beforeunload', () => {
+  if (isTabAllowed) {
+    localStorage.removeItem(TAB_KEY);
+    localStorage.removeItem(TAB_TIMESTAMP_KEY);
+  }
+  
+  try {
+    const data = JSON.stringify({ chat_id: chatId, sender: "user" });
+    const blob = new Blob([data], { type: "application/json" });
+    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
+  } catch (e) {
+    console.warn("Logout beacon failed:", e);
+  }
+});
+
+window.addEventListener('focus', () => {
+  enforceTabRestriction();
+});
+
+enforceTabRestriction();
+
+heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+checkInterval = setInterval(enforceTabRestriction, 1000);
+
 const BACKEND_URL = "https://chatbot-788207962975.us-central1.run.app";
 const chatId = document.body.dataset.chatId || "1234";
 
@@ -319,20 +444,17 @@ let typingDots = 0;
 let lastMessageCount = 0;
 let lastProcessedMessages = [];
 
-// Emoji picker toggle
 emojiBtn.addEventListener("click", (e) => {
   e.stopPropagation();
   emojiPicker.classList.toggle("show");
 });
 
-// Close emoji picker when clicking outside
 document.addEventListener("click", (e) => {
   if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
     emojiPicker.classList.remove("show");
   }
 });
 
-// Insert emoji into message
 document.querySelectorAll(".emoji-btn").forEach(btn => {
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -349,6 +471,8 @@ document.querySelectorAll(".emoji-btn").forEach(btn => {
 });
 
 async function checkPwd() {
+  if (!isTabAllowed) return;
+  
   const pwd = document.getElementById("pwd").value;
   const res = await fetch(`${BACKEND_URL}/login`, {
     method: "POST",
@@ -381,6 +505,8 @@ function startPolling() {
 }
 
 async function sendMessage() {
+  if (!isTabAllowed) return;
+  
   const text = msgInput.value.trim();
   if (!text || !isLoggedIn || !sessionToken) return;
 
@@ -399,7 +525,7 @@ async function sendMessage() {
 }
 
 async function loadMessages() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isTabAllowed) return;
   const isTabActive = document.visibilityState === "visible";
   const res = await fetch(`${BACKEND_URL}/messages/${chatId}?viewer=user&active=${isTabActive}`);
   const data = await res.json();
@@ -473,7 +599,7 @@ async function loadMessages() {
 }
 
 async function loadTyping() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isTabAllowed) return;
   const res = await fetch(`${BACKEND_URL}/get_live_typing/${chatId}`);
   const d = await res.json();
 
@@ -493,7 +619,7 @@ async function loadTyping() {
 }
 
 async function sendTyping(text) {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isTabAllowed) return;
   await fetch(`${BACKEND_URL}/live_typing`, {
     method: "POST",
     headers: {
@@ -505,7 +631,7 @@ async function sendTyping(text) {
 }
 
 async function checkStatus() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isTabAllowed) return;
   const res = await fetch(`${BACKEND_URL}/is_online/${chatId}?t=${Date.now()}`);
   const d = await res.json();
   const emoji = d.agent_online ? "🟢" : "🔴";
@@ -514,7 +640,7 @@ async function checkStatus() {
 }
 
 async function clearChat() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isTabAllowed) return;
   await fetch(`${BACKEND_URL}/clear_chat/${chatId}`, {
     method: "POST",
     headers: {
@@ -529,7 +655,7 @@ async function clearChat() {
 }
 
 async function markOnline() {
-  if (!isLoggedIn) return;
+  if (!isLoggedIn || !isTabAllowed) return;
   await fetch(`${BACKEND_URL}/mark_online`, {
     method: "POST",
     headers: {
@@ -543,6 +669,8 @@ async function markOnline() {
 uploadBtn.addEventListener("click", () => fileInput.click());
 
 fileInput.addEventListener("change", async () => {
+  if (!isTabAllowed) return;
+  
   const file = fileInput.files[0];
   if (!file || !isLoggedIn || !sessionToken) return;
 
@@ -579,16 +707,6 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-window.addEventListener("beforeunload", () => {
-  try {
-    const data = JSON.stringify({ chat_id: chatId, sender: "user" });
-    const blob = new Blob([data], { type: "application/json" });
-    navigator.sendBeacon(`${BACKEND_URL}/logout_user`, blob);
-  } catch (e) {
-    console.warn("Logout beacon failed:", e);
-  }
-});
-
 function spawnLoveBubbles() {
   for (let i = 0; i < 2; i++) {
     setTimeout(() => {
@@ -606,27 +724,21 @@ function spawnSleepBubbles() {
   const txt = document.createElement("div");
   txt.textContent = "GN 😴 रेश्मा";
   txt.style.position = "fixed";
-  txt.style.bottom = "120px";  // Just above the input box
+  txt.style.bottom = "120px";
   txt.style.left = "50%";
-  txt.style.transform = "translateX(-50%)";  // Only horizontal centering
+  txt.style.transform = "translateX(-50%)";
   txt.style.fontSize = "60px";
-  txt.style.color = "#d62976";  // Dark pink color
+  txt.style.color = "#d62976";
   txt.style.fontWeight = "bold";
   txt.style.pointerEvents = "none";
   txt.style.zIndex = "150";
   txt.style.textShadow = "2px 2px 4px rgba(0,0,0,0.3)";
   txt.style.whiteSpace = "nowrap";
-  
-  // Animation that keeps it centered horizontally
   txt.style.animation = "gnReshmaFade 4s ease-in-out forwards";
   
   document.body.appendChild(txt);
-  
   setTimeout(() => txt.remove(), 4000);
 }
 </script>
 </body>
 </html>
-
-
-
